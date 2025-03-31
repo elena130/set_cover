@@ -45,10 +45,14 @@ int main() {
     int d_row[nr] = {0};
     int costs[nc] = {0};
 
+    // leggi e salva i dati dal file
     for (int j = 0; j < nc; j++) {
         getline(file, line);
         metadata.push_back(read_metadata(line, d_row, &d_col[j], &costs[j] ));
+    }
+    file.close();
 
+    for (int j = 0; j < nc; j++) {
         Cella* prec = new Cella();
         cols[j] = prec;
         Cella* next;
@@ -93,11 +97,9 @@ int main() {
 
             left_ptr = left_ptr->down;
             right_ptr = right_ptr->down;
-
         }
     }
 
-    file.close();
     return 0;
 }
 
