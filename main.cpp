@@ -49,29 +49,14 @@ int main() {
         getline(file, line);
         metadata.push_back(read_metadata(line, d_row, &d_col[j], &costs[j] ));
 
-        Cella* prec = new Cella(j*10);
-
+        Cella* prec = new Cella();
         cols[j] = prec;
         Cella* next;
-        Cella* ptr_col;
-
-        if(j>0) {
-           ptr_col = cols[j-1];
-            ptr_col->right = cols[j];
-            cols[j]->left = ptr_col;
-            ptr_col = ptr_col->down;
-        }
 
         for(int i=1; i<nr; i++) {
-            next = new Cella(j*10 + i);
+            next = new Cella();
             next->up = prec;
             prec->down = next;
-
-            if(j>0) {
-                next->left = ptr_col;
-                ptr_col->right = next;
-                ptr_col = ptr_col->down;
-            }
             prec = next;
         }
 
@@ -80,21 +65,36 @@ int main() {
     }
 
     // inizializza i puntatori alle liste delle righe
-    rows[0] = cols[0];
-    for(int i=1; i<nr; i++) {
-        rows[i] = rows[i-1]->down;
-    }
-
-    // collego elementi dell'ultima colonna circolarmente rispetto alle testse delle righe
-    Cella* tail = cols[nc-1];
+    Cella *ptr = cols[0];
     for(int i=0; i<nr; i++) {
-        rows[i]->left = tail;
-        tail->right = rows[i];
-        tail = tail->down;
+        rows[i] = ptr;
+        ptr = ptr->down;
     }
 
-    for(int j=0; j<nc; j++) {
-        cout << costs[j] << "\t";
+    // collego nel verso delle righe
+    for(int j=0; j<nr; j++) {
+        int ptr = 0;
+        Cella *left_ptr = cols[j];
+        Cella *right_ptr;
+        if( j+1 < nc) {
+            right_ptr = cols[j+1];
+        } else {
+            right_ptr = cols[0];
+        }
+
+        for(int i=0; i<nr; i++) {
+            left_ptr->right = right_ptr;
+            right_ptr->left = left_ptr;
+
+            if(ptr< metadata.size() && metadata.at(j).pos[ptr] == i) {
+                left_ptr->value = 1;
+                ptr ++;
+            }
+
+            left_ptr = left_ptr->down;
+            right_ptr = right_ptr->down;
+
+        }
     }
 
     file.close();
