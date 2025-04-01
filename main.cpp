@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <fstream>
 #include <iostream>
 #include <string.h>
@@ -15,43 +16,8 @@ public:
     ColMetadata() {}
 };
 
-void trim_file(string file_name, string out_file);
 
-ColMetadata read_metadata(string line, int d_row[], int *d_col, int *cost) ;
-
-int main() {
-    fstream file;
-    string line;
-    int nr, nc;
-
-    string file_name = "../data/rail507.txt";
-    string out_file = "../clean_data/rail507.txt";
-
-    trim_file(file_name, out_file);
-    file.open(out_file);
-
-    cout << "Reading matrix ";
-    getline(file, line);
-    string del = " ";
-    nr = stoi(strtok(strdup(line.c_str()), del.c_str()));
-    nc = stoi(strtok(NULL, " "));
-
-    cout << nr << "x" << nc << endl;
-
-    Cella* cols[nc];
-    Cella* rows[nr];
-    vector<ColMetadata> metadata;
-    int d_col[nc] = {0};
-    int d_row[nr] = {0};
-    int costs[nc] = {0};
-
-    // leggi e salva i dati dal file
-    for (int j = 0; j < nc; j++) {
-        getline(file, line);
-        metadata.push_back(read_metadata(line, d_row, &d_col[j], &costs[j] ));
-    }
-    file.close();
-
+void create_cols(int nc, Cella *cols[], int nr) {
     for (int j = 0; j < nc; j++) {
         Cella* prec = new Cella();
         cols[j] = prec;
@@ -67,16 +33,17 @@ int main() {
         prec->down = cols[j];
         cols[j]->up = prec;
     }
+}
 
-    // inizializza i puntatori alle liste delle righe
+void create_rows(int nc, int nr, Cella *cols[], Cella *rows[], vector<ColMetadata> metadata) {
     Cella *ptr = cols[0];
     for(int i=0; i<nr; i++) {
         rows[i] = ptr;
         ptr = ptr->down;
     }
 
-    // collego nel verso delle righe
-    for(int j=0; j<nr; j++) {
+    // collego in orizzontale
+    for(int j=0; j<nc; j++) {
         int ptr = 0;
         Cella *left_ptr = cols[j];
         Cella *right_ptr;
@@ -90,7 +57,7 @@ int main() {
             left_ptr->right = right_ptr;
             right_ptr->left = left_ptr;
 
-            if(ptr< metadata.size() && metadata.at(j).pos[ptr] == i) {
+            if(ptr< metadata.at(j).pos.size() && metadata.at(j).pos[ptr] == i) {
                 left_ptr->value = 1;
                 ptr ++;
             }
@@ -99,8 +66,6 @@ int main() {
             right_ptr = right_ptr->down;
         }
     }
-
-    return 0;
 }
 
 void trim_file(string file_name, string out_file) {
@@ -135,5 +100,71 @@ ColMetadata read_metadata(string line, int d_row[], int *d_col, int *cost) {
         metadata.pos.push_back(row);
         d_row[row] ++;
     }
+    std::sort(metadata.pos.begin(), metadata.pos.end());
     return metadata;
 }
+
+bool test(Cella* cols[], vector<ColMetadata> metadata, int nc) {
+    for(int j=0; j<nc; j++) {
+        Cella *ref = cols[j];
+        int k=0;
+        for(int i=0; i<metadata[j].pos.size(); i++) {
+            while(k < metadata[j].pos[i]) {
+                ref = ref->down;
+                k++;
+            }
+
+            if( ref->value != 1) {
+                cout << "Error at row: " << metadata[j].pos[i] << " col: " << j << endl;
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
+int main() {
+    fstream file;
+    string line;
+    int nr, nc;
+
+    string file_name = "../data/rail507.txt";
+    string out_file = "../clean_data/rail507.txt";
+
+    trim_file(file_name, out_file);
+    file.open(out_file);
+
+    cout << "Reading matrix ";
+    getline(file, line);
+    string del = " ";
+    nr = stoi(strtok(strdup(line.c_str()), del.c_str()));
+    nc = stoi(strtok(NULL, " "));
+
+    cout << nr << "x" << nc << endl;
+
+    Cella* cols[nc];
+    Cella* rows[nr];
+    vector<ColMetadata> metadata;
+    int d_col[nc] = {0};
+    int d_row[nr] = {0};
+    int costs[nc] = {0};
+
+    // leggi e salva i dati dal file
+    for (int j = 0; j < nc; j++) {
+        getline(file, line);
+        metadata.push_back(read_metadata(line, d_row, &d_col[j], &costs[j] ));
+    }
+    file.close();
+
+    create_cols(nc, cols, nr);
+    create_rows(nc, nr, cols, rows, metadata);
+
+    if(!test(cols, metadata, nc)) {
+        cout << "Error while building the structure" <<endl;
+    } else {
+        cout << "Structure built correctly" << endl;
+    }
+
+    return 0;
+}
+
