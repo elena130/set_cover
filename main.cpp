@@ -1,30 +1,36 @@
 #include <algorithm>
 #include <fstream>
 #include <iostream>
-#include <string.h>
 #include <string>
-#include <filesystem>
 #include <vector>
-#include "Cella.h"
 
-class Cella;
 using namespace std;
 
-class ColMetadata {
+class Cell {
 public:
-    vector<int> pos;
-    ColMetadata() {}
+    int value;
+    Cell* up;
+    Cell* right;
+    Cell* down;
+    Cell* left;
+
+    Cell(int v) {
+        value = v;
+    }
+
+    Cell() {
+        value = 0;
+    }
 };
 
-
-void create_cols(int nc, Cella *cols[], int nr) {
+void create_cols(int nc, std::vector<Cell*> &cols, int nr) {
     for (int j = 0; j < nc; j++) {
-        Cella* prec = new Cella();
+        Cell* prec = new Cell();
         cols[j] = prec;
-        Cella* next;
+        Cell* next;
 
         for(int i=1; i<nr; i++) {
-            next = new Cella();
+            next = new Cell();
             next->up = prec;
             prec->down = next;
             prec = next;
@@ -35,8 +41,8 @@ void create_cols(int nc, Cella *cols[], int nr) {
     }
 }
 
-void create_rows(int nc, int nr, Cella *cols[], Cella *rows[], vector<ColMetadata> metadata) {
-    Cella *ptr = cols[0];
+void create_rows(int nc, int nr, std::vector<Cell*> &cols, std::vector<Cell*> rows, vector<vector<int>> &metadata) {
+    Cell* ptr = cols[0];
     for(int i=0; i<nr; i++) {
         rows[i] = ptr;
         ptr = ptr->down;
@@ -45,8 +51,8 @@ void create_rows(int nc, int nr, Cella *cols[], Cella *rows[], vector<ColMetadat
     // collego in orizzontale
     for(int j=0; j<nc; j++) {
         int ptr = 0;
-        Cella *left_ptr = cols[j];
-        Cella *right_ptr;
+        Cell *left_ptr = cols[j];
+        Cell *right_ptr;
         if( j+1 < nc) {
             right_ptr = cols[j+1];
         } else {
@@ -57,7 +63,7 @@ void create_rows(int nc, int nr, Cella *cols[], Cella *rows[], vector<ColMetadat
             left_ptr->right = right_ptr;
             right_ptr->left = left_ptr;
 
-            if(ptr< metadata.at(j).pos.size() && metadata.at(j).pos[ptr] == i) {
+            if(ptr< metadata.at(j).size() && metadata.at(j)[ptr] == i) {
                 left_ptr->value = 1;
                 ptr ++;
             }
@@ -69,7 +75,9 @@ void create_rows(int nc, int nr, Cella *cols[], Cella *rows[], vector<ColMetadat
 }
 
 void trim_file(string file_name, string out_file) {
-    if( !std::filesystem::exists(file_name)) {
+    struct stat buffer;
+
+    if( stat(file_name.c_str(), &buffer)) {
         throw runtime_error("File "+ file_name +" does not exist");
     }
 
@@ -89,33 +97,35 @@ void trim_file(string file_name, string out_file) {
     outfile.close();
 }
 
-ColMetadata read_metadata(string line, int d_row[], int *d_col, int *cost) {
-    ColMetadata metadata;
+std::vector<int> read_metadata(string line, std::vector<int> &d_row, int *d_col, int *cost) {
+    vector<int> positions;
     *cost = stoi(strtok(strdup(line.c_str()), " "));
     *d_col = stoi(strtok(NULL, " "));
 
     for (int k=0; k<*d_col; k++) {
-        // nel file J={1,...,n} quindi sottraggo per allineare con indici della matrice
+        // nel file J={1,...,n} quindi sottraggo per allineare con indici nel codice
         int row = stoi(strtok(NULL, " "))-1;
-        metadata.pos.push_back(row);
+        positions.push_back(row);
         d_row[row] ++;
     }
-    std::sort(metadata.pos.begin(), metadata.pos.end());
-    return metadata;
+    // le righe coperte non sono listate in ordine nel file
+    std::sort(positions.begin(), positions.end());
+    return positions;
 }
 
-bool test(Cella* cols[], vector<ColMetadata> metadata, int nc) {
+
+bool test(std::vector<Cell*> &cols, vector<vector<int>> &metadata, int nc) {
     for(int j=0; j<nc; j++) {
-        Cella *ref = cols[j];
+        Cell *ref = cols[j];
         int k=0;
-        for(int i=0; i<metadata[j].pos.size(); i++) {
-            while(k < metadata[j].pos[i]) {
+        for(int i=0; i<metadata[j].size(); i++) {
+            while(k < metadata[j][i]) {
                 ref = ref->down;
                 k++;
             }
 
             if( ref->value != 1) {
-                cout << "Error at row: " << metadata[j].pos[i] << " col: " << j << endl;
+                cout << "Error at row: " << metadata[j][i] << " col: " << j << endl;
                 return false;
             }
         }
@@ -128,11 +138,14 @@ int main() {
     string line;
     int nr, nc;
 
-    string file_name = "../data/rail507.txt";
-    string out_file = "../clean_data/rail507.txt";
+    // sostituire eventualmente il nome del file
+    // string orig_file = "rail516.txt"
+    string orig_file = "C:\\Users\\Elena\\Documents\\Tesi\\codice\\data\\rail516.txt";
+    //string clean_file = "clean_" + orig_file;
+    string clean_file = "C:\\Users\\Elena\\Documents\\Tesi\\codice\\clean_data\\rail516.txt";
 
-    trim_file(file_name, out_file);
-    file.open(out_file);
+    trim_file(orig_file, clean_file);
+    file.open(clean_file);
 
     cout << "Reading matrix ";
     getline(file, line);
@@ -142,17 +155,20 @@ int main() {
 
     cout << nr << "x" << nc << endl;
 
-    Cella* cols[nc];
-    Cella* rows[nr];
-    vector<ColMetadata> metadata;
-    int d_col[nc] = {0};
-    int d_row[nr] = {0};
-    int costs[nc] = {0};
+    std::vector<Cell*> cols(nc);
+    std::vector<Cell*> rows(nr);
+    std::vector<std::vector<int>> metadata;
+    std::vector<int> d_col (nc, 0);
+    std::vector<int> d_row(nc, 0);
+    std::vector<int> costs(nc,0);
+
 
     // leggi e salva i dati dal file
     for (int j = 0; j < nc; j++) {
         getline(file, line);
-        metadata.push_back(read_metadata(line, d_row, &d_col[j], &costs[j] ));
+
+        metadata.push_back(read_metadata(line, d_row, &d_col[j], &costs[j]));
+
     }
     file.close();
 
