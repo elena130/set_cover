@@ -2,6 +2,7 @@
 #include <fstream>
 #include <iostream>
 #include <string>
+#include <string.h>
 #include <vector>
 
 using namespace std;
@@ -16,20 +17,24 @@ public:
 
     Cell(int v) {
         value = v;
+        up = NULL;
+        right = NULL;
+        down = NULL;
+        left = NULL;
     }
 
     Cell() {
-        value = 0;
+        Cell(0);
     }
 };
 
-void create_cols(int nc, std::vector<Cell*> &cols, int nr) {
-    for (int j = 0; j < nc; j++) {
+void create_cols(unsigned int nc, std::vector<Cell*> &cols, unsigned int nr) {
+    for (unsigned int j = 0; j < nc; j++) {
         Cell* prec = new Cell();
         cols[j] = prec;
         Cell* next;
 
-        for(int i=1; i<nr; i++) {
+        for(unsigned int i=1; i<nr; i++) {
             next = new Cell();
             next->up = prec;
             prec->down = next;
@@ -41,16 +46,16 @@ void create_cols(int nc, std::vector<Cell*> &cols, int nr) {
     }
 }
 
-void create_rows(int nc, int nr, std::vector<Cell*> &cols, std::vector<Cell*> rows, vector<vector<int>> &metadata) {
-    Cell* ptr = cols[0];
-    for(int i=0; i<nr; i++) {
-        rows[i] = ptr;
-        ptr = ptr->down;
+void create_rows(unsigned int nc, unsigned int nr, std::vector<Cell*> &cols, std::vector<Cell*> rows, vector<vector<unsigned int>> &metadata) {
+    Cell* ptr_col = cols[0];
+    for(unsigned int i=0; i<nr; i++) {
+        rows[i] = ptr_col;
+        ptr_col = ptr_col->down;
     }
 
     // collego in orizzontale
-    for(int j=0; j<nc; j++) {
-        int ptr = 0;
+    for(unsigned int j=0; j<nc; j++) {
+        unsigned int idx = 0;
         Cell *left_ptr = cols[j];
         Cell *right_ptr;
         if( j+1 < nc) {
@@ -59,13 +64,13 @@ void create_rows(int nc, int nr, std::vector<Cell*> &cols, std::vector<Cell*> ro
             right_ptr = cols[0];
         }
 
-        for(int i=0; i<nr; i++) {
+        for(unsigned int i=0; i<nr; i++) {
             left_ptr->right = right_ptr;
             right_ptr->left = left_ptr;
 
-            if(ptr< metadata.at(j).size() && metadata.at(j)[ptr] == i) {
+            if(idx< metadata.at(j).size() && metadata.at(j)[idx] == i) {
                 left_ptr->value = 1;
-                ptr ++;
+                idx ++;
             }
 
             left_ptr = left_ptr->down;
@@ -87,8 +92,8 @@ void trim_file(string file_name, string out_file) {
     std::ofstream outfile (out_file);
 
     while (getline(file, line)) {
-        int begin = 0;
-        int end = line.length() - 1;
+        unsigned int begin = 0;
+        unsigned int end = line.length() - 1;
         while( line[begin] == ' '){ begin ++; }
         while( line[end] == ' '){end --;}
         outfile << line.substr(begin, end - begin + 1) << endl;
@@ -97,14 +102,15 @@ void trim_file(string file_name, string out_file) {
     outfile.close();
 }
 
-std::vector<int> read_metadata(string line, std::vector<int> &d_row, int *d_col, int *cost) {
-    vector<int> positions;
-    *cost = stoi(strtok(strdup(line.c_str()), " "));
-    *d_col = stoi(strtok(NULL, " "));
+std::vector<unsigned int> read_metadata(string line, std::vector<int> &d_row, int *d_col, int *cost) {
+    vector<unsigned int> positions;
+    char* c = NULL;
+    *cost = stoi(strtok_s(_strdup(line.c_str()), " ", &c));
+    *d_col = stoi(strtok_s(NULL, " ", &c));
 
     for (int k=0; k<*d_col; k++) {
         // nel file J={1,...,n} quindi sottraggo per allineare con indici nel codice
-        int row = stoi(strtok(NULL, " "))-1;
+        unsigned int row = stoul(strtok_s(NULL, " ", &c))-1;
         positions.push_back(row);
         d_row[row] ++;
     }
@@ -114,11 +120,11 @@ std::vector<int> read_metadata(string line, std::vector<int> &d_row, int *d_col,
 }
 
 
-bool test(std::vector<Cell*> &cols, vector<vector<int>> &metadata, int nc) {
-    for(int j=0; j<nc; j++) {
+bool test(std::vector<Cell*> &cols, vector<vector<unsigned int>> &metadata, unsigned int nc) {
+    for(unsigned int j=0; j<nc; j++) {
         Cell *ref = cols[j];
-        int k=0;
-        for(int i=0; i<metadata[j].size(); i++) {
+        unsigned int k=0;
+        for(unsigned int i=0; i<metadata[j].size(); i++) {
             while(k < metadata[j][i]) {
                 ref = ref->down;
                 k++;
@@ -136,7 +142,8 @@ bool test(std::vector<Cell*> &cols, vector<vector<int>> &metadata, int nc) {
 int main() {
     fstream file;
     string line;
-    int nr, nc;
+    unsigned int nr, nc;
+    char* c = NULL;
 
     // sostituire eventualmente il nome del file
     // string orig_file = "rail516.txt"
@@ -150,21 +157,21 @@ int main() {
     cout << "Reading matrix ";
     getline(file, line);
     string del = " ";
-    nr = stoi(strtok(strdup(line.c_str()), del.c_str()));
-    nc = stoi(strtok(NULL, " "));
+    nr = stoul(strtok_s(_strdup(line.c_str()), del.c_str(), &c));
+    nc = stoul(strtok_s(NULL, del.c_str(), &c));
 
     cout << nr << "x" << nc << endl;
 
     std::vector<Cell*> cols(nc);
     std::vector<Cell*> rows(nr);
-    std::vector<std::vector<int>> metadata;
+    std::vector<std::vector<unsigned int>> metadata;
     std::vector<int> d_col (nc, 0);
     std::vector<int> d_row(nc, 0);
     std::vector<int> costs(nc,0);
 
 
     // leggi e salva i dati dal file
-    for (int j = 0; j < nc; j++) {
+    for (unsigned int j = 0; j < nc; j++) {
         getline(file, line);
 
         metadata.push_back(read_metadata(line, d_row, &d_col[j], &costs[j]));
