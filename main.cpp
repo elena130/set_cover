@@ -7,6 +7,7 @@
 
 using namespace std;
 
+// TODO: mettere private 
 class Cell {
 public:
     int value;
@@ -46,7 +47,7 @@ void create_cols(unsigned int nc, std::vector<Cell*> &cols, unsigned int nr) {
     }
 }
 
-void create_rows(unsigned int nc, unsigned int nr, std::vector<Cell*> &cols, std::vector<Cell*> rows, vector<vector<unsigned int>> &metadata) {
+void create_rows(unsigned int nc, unsigned int nr, std::vector<Cell*> &cols, std::vector<Cell*> &rows, vector<vector<unsigned int>> &metadata) {
     Cell* ptr_col = cols[0];
     for(unsigned int i=0; i<nr; i++) {
         rows[i] = ptr_col;
@@ -80,14 +81,12 @@ void create_rows(unsigned int nc, unsigned int nr, std::vector<Cell*> &cols, std
 }
 
 void trim_file(string file_name, string out_file) {
-    struct stat buffer;
-
-    if( stat(file_name.c_str(), &buffer)) {
-        throw runtime_error("File "+ file_name +" does not exist");
+    ifstream file(file_name.c_str());
+    if (file.fail()) {
+        throw runtime_error("File " + file_name + " does not exist");
     }
 
-    fstream file;
-    file.open(file_name);
+    //file.open(file_name);
     string line;
     std::ofstream outfile (out_file);
 
@@ -100,23 +99,22 @@ void trim_file(string file_name, string out_file) {
     }
 
     outfile.close();
+    file.close();
 }
 
-std::vector<unsigned int> read_metadata(string line, std::vector<int> &d_row, int *d_col, int *cost) {
-    vector<unsigned int> positions;
+void read_metadata(string line, std::vector<int> &d_row, int *d_col, int *cost, vector<unsigned int> &positions) {
     char* c = NULL;
-    *cost = stoi(strtok_s(_strdup(line.c_str()), " ", &c));
-    *d_col = stoi(strtok_s(NULL, " ", &c));
+    *cost = stoi(strtok(_strdup(line.c_str()), " "));
+    *d_col = stoi(strtok(NULL, " "));
 
     for (int k=0; k<*d_col; k++) {
         // nel file J={1,...,n} quindi sottraggo per allineare con indici nel codice
-        unsigned int row = stoul(strtok_s(NULL, " ", &c))-1;
+        unsigned int row = stoul(strtok(NULL, " "))-1;
         positions.push_back(row);
         d_row[row] ++;
     }
     // le righe coperte non sono listate in ordine nel file
     std::sort(positions.begin(), positions.end());
-    return positions;
 }
 
 
@@ -143,13 +141,12 @@ int main() {
     fstream file;
     string line;
     unsigned int nr, nc;
-    char* c = NULL;
 
     // sostituire eventualmente il nome del file
     // string orig_file = "rail516.txt"
-    string orig_file = "C:\\Users\\Elena\\Documents\\Tesi\\codice\\data\\rail516.txt";
+    string orig_file = "C:\\Users\\Elena\\Documents\\Tesi\\codice\\data\\rail582.txt";
     //string clean_file = "clean_" + orig_file;
-    string clean_file = "C:\\Users\\Elena\\Documents\\Tesi\\codice\\clean_data\\rail516.txt";
+    string clean_file = "C:\\Users\\Elena\\Documents\\Tesi\\codice\\clean_data\\rail582.txt";
 
     trim_file(orig_file, clean_file);
     file.open(clean_file);
@@ -157,14 +154,14 @@ int main() {
     cout << "Reading matrix ";
     getline(file, line);
     string del = " ";
-    nr = stoul(strtok_s(_strdup(line.c_str()), del.c_str(), &c));
-    nc = stoul(strtok_s(NULL, del.c_str(), &c));
+    nr = stoul(strtok(_strdup(line.c_str()), del.c_str()));
+    nc = stoul(strtok(NULL, del.c_str()));
 
     cout << nr << "x" << nc << endl;
 
     std::vector<Cell*> cols(nc);
     std::vector<Cell*> rows(nr);
-    std::vector<std::vector<unsigned int>> metadata;
+    std::vector<std::vector<unsigned int>> metadata (nc);
     std::vector<int> d_col (nc, 0);
     std::vector<int> d_row(nc, 0);
     std::vector<int> costs(nc,0);
@@ -173,9 +170,7 @@ int main() {
     // leggi e salva i dati dal file
     for (unsigned int j = 0; j < nc; j++) {
         getline(file, line);
-
-        metadata.push_back(read_metadata(line, d_row, &d_col[j], &costs[j]));
-
+        read_metadata(line, d_row, &d_col[j], &costs[j],metadata[j]);
     }
     file.close();
 
