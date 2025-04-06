@@ -16,13 +16,7 @@ public:
     Cell* down;
     Cell* left;
 
-    Cell(int v) {
-        value = v;
-        up = NULL;
-        right = NULL;
-        down = NULL;
-        left = NULL;
-    }
+    Cell(int v) : value(v), up(), right(), down(), left() { }
 
     Cell() {
         Cell(0);
@@ -47,7 +41,8 @@ void create_cols(unsigned int nc, std::vector<Cell*> &cols, unsigned int nr) {
     }
 }
 
-void create_rows(unsigned int nc, unsigned int nr, std::vector<Cell*> &cols, std::vector<Cell*> &rows, vector<vector<unsigned int>> &metadata) {
+void create_rows(unsigned int nc, unsigned int nr, const std::vector<Cell*> &cols, std::vector<Cell*> &rows, 
+    const vector<vector<unsigned int>> &metadata) {
     Cell* ptr_col = cols[0];
     for(unsigned int i=0; i<nr; i++) {
         rows[i] = ptr_col;
@@ -86,7 +81,6 @@ void trim_file(string file_name, string out_file) {
         throw runtime_error("File " + file_name + " does not exist");
     }
 
-    //file.open(file_name);
     string line;
     std::ofstream outfile (out_file);
 
@@ -118,7 +112,7 @@ void read_metadata(string line, std::vector<int> &d_row, int *d_col, int *cost, 
 }
 
 
-bool test(std::vector<Cell*> &cols, vector<vector<unsigned int>> &metadata, unsigned int nc) {
+bool test(const std::vector<Cell*> &cols, const vector<vector<unsigned int>> &metadata, unsigned int nc) {
     for(unsigned int j=0; j<nc; j++) {
         Cell *ref = cols[j];
         unsigned int k=0;
@@ -144,18 +138,19 @@ int main() {
 
     // sostituire eventualmente il nome del file
     // string orig_file = "rail516.txt"
-    string orig_file = "C:\\Users\\Elena\\Documents\\Tesi\\codice\\data\\rail582.txt";
+    string orig_file = "C:\\Users\\Elena\\Documents\\Tesi\\codice\\data\\rail2536.txt";
     //string clean_file = "clean_" + orig_file;
-    string clean_file = "C:\\Users\\Elena\\Documents\\Tesi\\codice\\clean_data\\rail582.txt";
+    string clean_file = "C:\\Users\\Elena\\Documents\\Tesi\\codice\\clean_data\\rail2536.txt";
 
     trim_file(orig_file, clean_file);
     file.open(clean_file);
 
     cout << "Reading matrix ";
     getline(file, line);
-    string del = " ";
-    nr = stoul(strtok(_strdup(line.c_str()), del.c_str()));
-    nc = stoul(strtok(NULL, del.c_str()));
+
+    const char sep = ' ';
+    nr = stoul(strtok(&line[0], &sep));
+    nc = stoul(strtok(NULL, &sep));
 
     cout << nr << "x" << nc << endl;
 
@@ -170,7 +165,7 @@ int main() {
     // leggi e salva i dati dal file
     for (unsigned int j = 0; j < nc; j++) {
         getline(file, line);
-        read_metadata(line, d_row, &d_col[j], &costs[j],metadata[j]);
+        read_metadata(line, d_row, &d_col[j], &costs[j], metadata[j]);
     }
     file.close();
 
