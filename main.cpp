@@ -7,128 +7,152 @@
 
 using namespace std;
 
-// TODO: mettere private 
+class Reader {
+private:
+    ifstream file;
+    string line;
+    char* line_ptr;
+    const char* sep;
+public: 
+    Reader(const string file_name, const char* s)  {
+        sep = s;
+        line_ptr = NULL;
+        file.open(file_name);
+        if (file.fail()) {
+            cout << "Error while opening file" << endl;
+            return;
+        }
+        else {
+            advance_line();
+        }
+    }
+
+    void advance_line() {
+        getline(file, line);
+        line_ptr = &(line[0]);
+    }
+
+    int next_int() {
+        int val = stoul(strtok(line_ptr, sep));
+        line_ptr = NULL;
+        return val;
+    }
+
+    void close() {
+        file.close();
+    }
+};
+
 class Cell {
 public:
-    int value;
+    unsigned row, col;
     Cell* up;
     Cell* right;
     Cell* down;
     Cell* left;
 
-    Cell(int v) : value(v), up(), right(), down(), left() { }
+    Cell() : row(0), col(0), up(), right(), down(), left() { }
 
-    Cell() {
-        Cell(0);
+    Cell(const unsigned r, const unsigned c) : row(r), col(c) {
+        Cell();
     }
 };
 
-void create_cols(unsigned int nc, std::vector<Cell*> &cols, unsigned int nr) {
-    for (unsigned int j = 0; j < nc; j++) {
-        Cell* prec = new Cell();
-        cols[j] = prec;
-        Cell* next;
+class SetCover {
+private:
+    std::vector<Cell*> rows;
+    std::vector<Cell*> cols;
+    std::vector<int> costs;
+    std::vector<unsigned> row_density;
+    std::vector<unsigned> col_density;
 
-        for(unsigned int i=1; i<nr; i++) {
-            next = new Cell();
-            next->up = prec;
-            prec->down = next;
-            prec = next;
+public:
+    SetCover(int r, int c) : rows(r), cols(c), costs(c), row_density(r), col_density(c,0) {}
+
+    void insert_cell(const unsigned i, const unsigned j) {
+        Cell* c = new Cell(i,j);
+        Cell* tail = cols[j] == NULL ? NULL : cols[j]->up;
+        
+        if (tail == NULL) {
+            cols[j] = c;
+            cols[j]->down = cols[j];
+            cols[j]->up = cols[j];
+        }
+        else {
+            tail->down = c;
+            c->up = tail;
+            c->down = cols[j];
+            cols[j]->up = c;
         }
 
-        prec->down = cols[j];
-        cols[j]->up = prec;
-    }
-}
-
-void create_rows(unsigned int nc, unsigned int nr, const std::vector<Cell*> &cols, std::vector<Cell*> &rows, 
-    const vector<vector<unsigned int>> &metadata) {
-    Cell* ptr_col = cols[0];
-    for(unsigned int i=0; i<nr; i++) {
-        rows[i] = ptr_col;
-        ptr_col = ptr_col->down;
-    }
-
-    // collego in orizzontale
-    for(unsigned int j=0; j<nc; j++) {
-        unsigned int idx = 0;
-        Cell *left_ptr = cols[j];
-        Cell *right_ptr;
-        if( j+1 < nc) {
-            right_ptr = cols[j+1];
-        } else {
-            right_ptr = cols[0];
+        if (rows[i] == NULL) {
+            rows[i] = c;
+            c->right = c;
+            c->left = c;
         }
-
-        for(unsigned int i=0; i<nr; i++) {
-            left_ptr->right = right_ptr;
-            right_ptr->left = left_ptr;
-
-            if(idx< metadata.at(j).size() && metadata.at(j)[idx] == i) {
-                left_ptr->value = 1;
-                idx ++;
-            }
-
-            left_ptr = left_ptr->down;
-            right_ptr = right_ptr->down;
+        else {
+            Cell* prec = rows[i]->left;
+            prec->right = c;
+            c->left = prec;
+            c->right = rows[i];
+            rows[i]->left = c;
         }
-    }
-}
-
-void trim_file(string file_name, string out_file) {
-    ifstream file(file_name.c_str());
-    if (file.fail()) {
-        throw runtime_error("File " + file_name + " does not exist");
+        
     }
 
-    string line;
-    std::ofstream outfile (out_file);
+    void set_cost(const unsigned j,  const unsigned cost) {
+        costs[j] = cost;
+    }
 
-    while (getline(file, line)) {
-        unsigned int begin = 0;
-        unsigned int end = line.length() - 1;
-        while( line[begin] == ' '){ begin ++; }
-        while( line[end] == ' '){end --;}
-        outfile << line.substr(begin, end - begin + 1) << endl;
+    void inc_row_den(const unsigned i) {
+        row_density[i]++;
+    }
+
+    void set_col_den(const unsigned j, const unsigned den) {
+        col_density[j] = den;
+    }
+
+    unsigned get_col_den(const unsigned j) {
+        return col_density[j];
+    }
+};
+
+
+void trim_file(string file_name, string out_name) {
+    Reader p(file_name, " ");
+    std::ofstream outfile (out_name);
+
+    if (outfile.fail()) {
+        cout << "Error while opening file: " << out_name << endl;
+        return;
+    }
+
+    unsigned rows = p.next_int();
+    unsigned cols = p.next_int();
+    p.advance_line();
+
+    outfile << rows << " " << cols << endl;
+
+
+    for (unsigned j = 0; j < cols; ++j) {
+        unsigned cost = p.next_int();
+        outfile << cost << " ";
+        unsigned den = p.next_int();
+        outfile << den;
+        std::vector<unsigned> r(den, 0);
+        for (unsigned i = 0; i < den; ++i) {
+            r[i] = p.next_int() - 1;
+        }
+        std::sort(r.begin(), r.end());
+        for (unsigned i = 0; i < den; ++i) {
+            outfile << " " << r[i];
+        }
+        outfile << endl;
+        p.advance_line();
     }
 
     outfile.close();
-    file.close();
-}
-
-void read_metadata(string line, std::vector<int> &d_row, int *d_col, int *cost, vector<unsigned int> &positions) {
-    char* c = NULL;
-    *cost = stoi(strtok(_strdup(line.c_str()), " "));
-    *d_col = stoi(strtok(NULL, " "));
-
-    for (int k=0; k<*d_col; k++) {
-        // nel file J={1,...,n} quindi sottraggo per allineare con indici nel codice
-        unsigned int row = stoul(strtok(NULL, " "))-1;
-        positions.push_back(row);
-        d_row[row] ++;
-    }
-    // le righe coperte non sono listate in ordine nel file
-    std::sort(positions.begin(), positions.end());
-}
-
-
-bool test(const std::vector<Cell*> &cols, const vector<vector<unsigned int>> &metadata, unsigned int nc) {
-    for(unsigned int j=0; j<nc; j++) {
-        Cell *ref = cols[j];
-        unsigned int k=0;
-        for(unsigned int i=0; i<metadata[j].size(); i++) {
-            while(k < metadata[j][i]) {
-                ref = ref->down;
-                k++;
-            }
-
-            if( ref->value != 1) {
-                cout << "Error at row: " << metadata[j][i] << " col: " << j << endl;
-                return false;
-            }
-        }
-    }
-    return true;
+    p.close();
 }
 
 int main() {
@@ -136,47 +160,38 @@ int main() {
     string line;
     unsigned int nr, nc;
 
-    // sostituire eventualmente il nome del file
     // string orig_file = "rail516.txt"
-    string orig_file = "C:\\Users\\Elena\\Documents\\Tesi\\codice\\data\\rail2536.txt";
+    string orig_file = "C:\\Users\\Elena\\Documents\\Tesi\\codice\\data\\rail507.txt";
     //string clean_file = "clean_" + orig_file;
-    string clean_file = "C:\\Users\\Elena\\Documents\\Tesi\\codice\\clean_data\\rail2536.txt";
+    string clean_file = "C:\\Users\\Elena\\Documents\\Tesi\\codice\\clean_data\\rail507.txt";
 
     trim_file(orig_file, clean_file);
-    file.open(clean_file);
 
-    cout << "Reading matrix ";
-    getline(file, line);
+    cout << "Reading matrix" << endl;
+    Reader parser(clean_file, " ");
 
-    const char sep = ' ';
-    nr = stoul(strtok(&line[0], &sep));
-    nc = stoul(strtok(NULL, &sep));
-
+    nr = parser.next_int();
+    nc = parser.next_int();
+    parser.advance_line();
     cout << nr << "x" << nc << endl;
 
-    std::vector<Cell*> cols(nc);
-    std::vector<Cell*> rows(nr);
-    std::vector<std::vector<unsigned int>> metadata (nc);
-    std::vector<int> d_col (nc, 0);
-    std::vector<int> d_row(nc, 0);
-    std::vector<int> costs(nc,0);
+    SetCover sc(nr, nc);
 
-
-    // leggi e salva i dati dal file
-    for (unsigned int j = 0; j < nc; j++) {
-        getline(file, line);
-        read_metadata(line, d_row, &d_col[j], &costs[j], metadata[j]);
+    for (unsigned j = 0; j < nc; ++j) {
+        sc.set_cost(j, parser.next_int());
+        sc.set_col_den(j, parser.next_int());
+        for (unsigned k = 0; k < sc.get_col_den(j); ++k) {
+            unsigned i = parser.next_int();
+            sc.inc_row_den(i);
+            sc.insert_cell(i, j);
+        }
+        parser.advance_line();
+       if (j % 5000 == 0)
+           cout << j << " ";
     }
-    file.close();
+    cout << "Quasi finito, controlla";
 
-    create_cols(nc, cols, nr);
-    create_rows(nc, nr, cols, rows, metadata);
-
-    if(!test(cols, metadata, nc)) {
-        cout << "Error while building the structure" <<endl;
-    } else {
-        cout << "Structure built correctly" << endl;
-    }
+    parser.close();
 
     return 0;
 }

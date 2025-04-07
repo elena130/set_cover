@@ -1,0 +1,13 @@
+﻿################################################################################
+# This .gitignore file was automatically created by Microsoft(R) Visual Studio.
+################################################################################
+
+/.idea
+/.vs
+/cmake-build-debug
+/out/build/x64-Debug
+/Cella.h
+/Cella.cpp
+/main.obj
+/main.h
+/Cella.h
