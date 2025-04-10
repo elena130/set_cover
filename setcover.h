@@ -22,6 +22,12 @@ public:
 
     void operator=(const SetCover& s);
 
+    Cell* column_tail(const unsigned j);
+
+    Cell* get_col_head(const unsigned j);
+
+    Cell* get_row_head(const unsigned i);
+
     void insert_cell(const unsigned i, const unsigned j);
 
     void set_cost(const unsigned j, const unsigned cost);
@@ -29,6 +35,8 @@ public:
     void inc_row_den(const unsigned i);
 
     void set_col_den(const unsigned j, const unsigned den);
+
+    unsigned get_row_den(const unsigned i);
 
     unsigned get_col_den(const unsigned j);
 };

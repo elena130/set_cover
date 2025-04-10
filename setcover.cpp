@@ -41,22 +41,57 @@ SetCover::SetCover(const SetCover& s) : n_rows(s.n_rows), n_cols(s.n_cols) {
 void SetCover::operator=(const SetCover& s){
 }
 
+Cell* SetCover::column_tail(const unsigned j) {
+    if (cols[j] == NULL)
+       return NULL;
+    else 
+       return cols[j]->get_upper();
+}
+
+Cell* SetCover::get_col_head(const unsigned j)
+{
+    return cols[j];
+}
+
+Cell* SetCover::get_row_head(const unsigned i)
+{
+    return rows[i];
+}
+
 void SetCover::insert_cell(const unsigned i, const unsigned j) {
     Cell* c = new Cell(i,j);
-    Cell* tail = cols[j] == NULL ? NULL : cols[j]->get_upper();
+    Cell* ptr = column_tail(j);
     
-    if (tail == NULL) {
+    // insertion sort to set the upper and lower pointer 
+    if (ptr == NULL) {
         cols[j] = c;
         cols[j]->set_down(cols[j]);
         cols[j]->set_upper(cols[j]);
     }
     else {
-        tail->set_down(c);
-        c->set_upper(tail);
-        c->set_down(cols[j]);
-        cols[j]->set_upper(c);
+        while (ptr->get_row() > i && ptr != cols[j]) {
+            ptr = ptr->get_upper();
+        }
+
+        if (ptr == cols[j] && ptr->get_row() > i) {
+            Cell* prec = ptr->get_upper();
+            c->set_upper(prec);
+            prec->set_down(c);
+            ptr->set_upper(c);
+            c->set_down(ptr);
+            cols[j] = c;
+        }
+        else {
+            Cell* next = ptr->get_down();
+            ptr->set_down(c);
+            c->set_upper(ptr);
+            c->set_down(next);
+            next->set_upper(c);
+        }
+        
     }
 
+    // setting right and left pointer 
     if (rows[i] == NULL) {
         rows[i] = c;
         c->set_right(c);
@@ -82,6 +117,11 @@ void SetCover::inc_row_den(const unsigned i) {
 
 void SetCover::set_col_den(const unsigned j, const unsigned den) {
     col_density[j] = den;
+}
+
+unsigned SetCover::get_row_den(const unsigned i)
+{
+    return row_density[i];
 }
 
 unsigned SetCover::get_col_den(const unsigned j) {
