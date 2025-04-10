@@ -20,15 +20,19 @@ public:
 
     void operator=(const Cell& c);
 
-    Cell* get_up();
+    unsigned get_row();
 
-    Cell* get_rigth();
+    unsigned get_col();
+
+    Cell* get_upper();
+
+    Cell* get_right();
 
     Cell* get_down();
 
     Cell* get_left();
 
-    void set_up(Cell* c);
+    void set_upper(Cell* c);
 
     void set_right(Cell* c);
 

@@ -20,6 +20,8 @@ public:
 
     SetCover(const SetCover& s);
 
+    void operator=(const SetCover& s);
+
     void insert_cell(const unsigned i, const unsigned j);
 
     void set_cost(const unsigned j, const unsigned cost);

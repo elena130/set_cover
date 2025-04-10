@@ -10,7 +10,6 @@ int main() {
     std::string line;
     unsigned int nr, nc;
 
-    // string orig_file = "rail516.txt"
     std::string orig_file = "C:\\Users\\Elena\\Documents\\Tesi\\codice\\data\\rail4872.txt";
 
     std::cout << "Reading matrix" << std::endl;
@@ -39,6 +38,8 @@ int main() {
             sc.insert_cell(cov_rows[k] - 1, j);
         }
     }
+
+    std::cout << "Finished reading structure" << std::endl;
 
     return 0;
 }

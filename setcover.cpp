@@ -5,7 +5,7 @@ SetCover::SetCover(int r, int c) : n_rows(r), n_cols(c), rows(r), cols(c), costs
 
 SetCover::~SetCover() {
 
-    for (int j = 0; j < n_cols; ++j) {
+    for (unsigned j = 0; j < n_cols; ++j) {
         Cell* current = cols[j];
         Cell* next;
 
@@ -18,46 +18,43 @@ SetCover::~SetCover() {
 }
 
 SetCover::SetCover(const SetCover& s) : n_rows(s.n_rows), n_cols(s.n_cols) {
-    costs.resize(n_cols);
-    for (unsigned j = 0; j < n_cols; ++j) {
-        costs[j] = s.costs[j];
-    }
-
+    rows.resize(n_rows);
+    cols.resize(n_cols);
     row_density.resize(n_rows);
+    col_density.resize(n_cols);
+
     for (unsigned i = 0; i < n_rows; ++i) {
         row_density[i] = s.row_density[i];
+        rows[i] = new Cell(s.rows[i]->get_row(), s.rows[i]->get_col());
     }
 
-    col_density.resize(n_cols);
-    for (unsigned j = 0; j < n_cols; ++j) {
+    for (unsigned j = 0; j < n_cols; j++) {
         col_density[j] = s.col_density[j];
+        Cell* ptr = s.cols[j];
+        for (unsigned k = 0; k < col_density[j]; ++k) {
+            insert_cell(ptr->get_row(), j);
+            ptr = ptr->get_down();
+        }
     }
+}
 
-    for (unsigned i = 0; i < n_cols; ++i) {
-    }
-
-   
-
-    for (unsigned i = 1; i < n_rows; ++i) {
-        Cell* ptr = rows[i - 1];
-
-    }
+void SetCover::operator=(const SetCover& s){
 }
 
 void SetCover::insert_cell(const unsigned i, const unsigned j) {
     Cell* c = new Cell(i,j);
-    Cell* tail = cols[j] == NULL ? NULL : cols[j]->get_up();
+    Cell* tail = cols[j] == NULL ? NULL : cols[j]->get_upper();
     
     if (tail == NULL) {
         cols[j] = c;
         cols[j]->set_down(cols[j]);
-        cols[j]->set_up(cols[j]);
+        cols[j]->set_upper(cols[j]);
     }
     else {
         tail->set_down(c);
-        c->set_up(tail);
+        c->set_upper(tail);
         c->set_down(cols[j]);
-        cols[j]->set_up(c);
+        cols[j]->set_upper(c);
     }
 
     if (rows[i] == NULL) {
@@ -70,7 +67,7 @@ void SetCover::insert_cell(const unsigned i, const unsigned j) {
         prec->set_right(c);
         c->set_left(prec);
         c->set_right(rows[i]);
-        rows[i]->set_right(c);
+        rows[i]->set_left(c);
     }
     
 }
