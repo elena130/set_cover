@@ -10,7 +10,7 @@ SetCover::~SetCover() {
         Cell* next;
 
         for(unsigned k =0; k<col_density[j]; ++k){
-            next = current->get_down();
+            next = current->down;
             delete current;
             current = next;
         }
@@ -25,15 +25,17 @@ SetCover::SetCover(const SetCover& s) : n_rows(s.n_rows), n_cols(s.n_cols) {
 
     for (unsigned i = 0; i < n_rows; ++i) {
         row_density[i] = s.row_density[i];
-        rows[i] = new Cell(s.rows[i]->get_row(), s.rows[i]->get_col());
+        rows[i] =  new Cell();
+        rows[i]->row = s.rows[i]->row;
+        rows[i]->col = s.rows[i]->col;
     }
 
     for (unsigned j = 0; j < n_cols; j++) {
         col_density[j] = s.col_density[j];
         Cell* ptr = s.cols[j];
         for (unsigned k = 0; k < col_density[j]; ++k) {
-            insert_cell(ptr->get_row(), j);
-            ptr = ptr->get_down();
+            insert_cell(ptr->row, j);
+            ptr = ptr->down;
         }
     }
 }
@@ -45,7 +47,7 @@ Cell* SetCover::column_tail(const unsigned j) {
     if (cols[j] == NULL)
        return NULL;
     else 
-       return cols[j]->get_upper();
+       return cols[j]->up;
 }
 
 Cell* SetCover::get_col_head(const unsigned j)
@@ -59,34 +61,36 @@ Cell* SetCover::get_row_head(const unsigned i)
 }
 
 void SetCover::insert_cell(const unsigned i, const unsigned j) {
-    Cell* c = new Cell(i,j);
+    Cell* c = new Cell();
+    c->row = i;
+    c->col = j;
     Cell* ptr = column_tail(j);
     
     // insertion sort to set the upper and lower pointer 
     if (ptr == NULL) {
         cols[j] = c;
-        cols[j]->set_down(cols[j]);
-        cols[j]->set_upper(cols[j]);
+        cols[j]->down = cols[j];
+        cols[j]->up = cols[j];
     }
     else {
-        while (ptr->get_row() > i && ptr != cols[j]) {
-            ptr = ptr->get_upper();
+        while (ptr->row > i && ptr != cols[j]) {
+            ptr = ptr->up;
         }
 
-        if (ptr == cols[j] && ptr->get_row() > i) {
-            Cell* prec = ptr->get_upper();
-            c->set_upper(prec);
-            prec->set_down(c);
-            ptr->set_upper(c);
-            c->set_down(ptr);
+        if (ptr == cols[j] && ptr->row > i) {
+            Cell* prec = ptr->up;
+            c->up = prec;
+            prec->down = c;
+            ptr->up = c;
+            c->down = ptr;
             cols[j] = c;
         }
         else {
-            Cell* next = ptr->get_down();
-            ptr->set_down(c);
-            c->set_upper(ptr);
-            c->set_down(next);
-            next->set_upper(c);
+            Cell* next = ptr->down;
+            ptr->down = c;
+            c->up = ptr;
+            c->down = next;
+            next->up = c;
         }
         
     }
@@ -94,15 +98,15 @@ void SetCover::insert_cell(const unsigned i, const unsigned j) {
     // setting right and left pointer 
     if (rows[i] == NULL) {
         rows[i] = c;
-        c->set_right(c);
-        c->set_left(c);
+        c->right = c;
+        c->left = c;
     }
     else {
-        Cell* prec = rows[i]->get_left();
-        prec->set_right(c);
-        c->set_left(prec);
-        c->set_right(rows[i]);
-        rows[i]->set_left(c);
+        Cell* prec = rows[i]->left;
+        prec->right = c;
+        c->left = prec;
+        c->right = rows[i];
+        rows[i]->left = c;
     }
     
 }

@@ -1,8 +1,15 @@
 #include <vector>
-#include "cell.h"
 
 #ifndef SETCOVER_H
 #define SETCOVER_H
+
+struct Cell{
+    unsigned row, col;
+    Cell* up;
+    Cell* right;
+    Cell* down;
+    Cell* left;
+} ;
 
 class SetCover {
 private:
