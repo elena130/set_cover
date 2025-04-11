@@ -41,6 +41,7 @@ SetCover::SetCover(const SetCover& s) : n_rows(s.n_rows), n_cols(s.n_cols) {
 }
 
 void SetCover::operator=(const SetCover& s){
+    *this = SetCover(s);
 }
 
 Cell* SetCover::column_tail(const unsigned j) {
@@ -61,6 +62,9 @@ Cell* SetCover::get_row_head(const unsigned i)
 }
 
 void SetCover::insert_cell(const unsigned i, const unsigned j) {
+    ++row_density[i];
+    ++col_density[j];
+
     Cell* c = new Cell();
     c->row = i;
     c->col = j;
@@ -113,14 +117,6 @@ void SetCover::insert_cell(const unsigned i, const unsigned j) {
 
 void SetCover::set_cost(const unsigned j,  const unsigned cost) {
     costs[j] = cost;
-}
-
-void SetCover::inc_row_den(const unsigned i) {
-    row_density[i]++;
-}
-
-void SetCover::set_col_den(const unsigned j, const unsigned den) {
-    col_density[j] = den;
 }
 
 unsigned SetCover::get_row_den(const unsigned i)

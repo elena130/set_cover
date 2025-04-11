@@ -39,10 +39,6 @@ public:
 
     void set_cost(const unsigned j, const unsigned cost);
 
-    void inc_row_den(const unsigned i);
-
-    void set_col_den(const unsigned j, const unsigned den);
-
     unsigned get_row_den(const unsigned i);
 
     unsigned get_col_den(const unsigned j);

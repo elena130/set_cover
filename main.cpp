@@ -2,7 +2,6 @@
 #include <string>
 #include <algorithm>
 #include "parser.h"
-#include "cell.h"
 #include "setcover.h"
 
 int main() {
@@ -23,10 +22,9 @@ int main() {
 
     for (unsigned j = 0; j < nc; ++j) {
         sc.set_cost(j, input.next_int());
-        sc.set_col_den(j, input.next_int());
-        for (unsigned k = 0; k < sc.get_col_den(j); ++k) {
+        unsigned den = input.next_int();
+        for (unsigned k = 0; k < den; ++k) {
             unsigned i = input.next_int();
-            sc.inc_row_den(i-1);
             sc.insert_cell(i - 1, j);
         }
     }
