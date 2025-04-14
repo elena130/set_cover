@@ -4,15 +4,18 @@
 #include "parser.h"
 #include "setcover.h"
 
-int main() {
+int main(int argc, char* argv[]) {
     std::fstream file;
     std::string line;
     unsigned int nr, nc;
 
-    std::string orig_file = "rail4872.txt";
+    if (argc != 2) {
+        std::cout << "Error, path to input file is not specified. Terminating" << std::endl;
+        return 1;
+    } 
 
     std::cout << "Reading matrix" << std::endl;
-    Reader input(orig_file);
+    Reader input(argv[1]);
 
     nr = input.next_int();
     nc = input.next_int();
