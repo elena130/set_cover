@@ -1,7 +1,7 @@
 #include "setcover.h"
 #include <iostream>
 
-SetCover::SetCover(int r, int c) : n_rows(r), n_cols(c), rows(r), cols(c), costs(c), row_density(r,0), col_density(c) {}
+SetCover::SetCover(unsigned r, unsigned c) : n_rows(r), n_cols(c), rows(r), cols(c), costs(c), row_density(r,0), col_density(c) {}
 
 SetCover::~SetCover() {
 

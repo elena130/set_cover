@@ -21,7 +21,7 @@ private:
     std::vector<unsigned> col_density;
 
 public:
-    SetCover(int r, int c);
+    SetCover(unsigned r, unsigned c);
 
     ~SetCover();
 
