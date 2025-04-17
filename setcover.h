@@ -20,6 +20,10 @@ private:
     std::vector<unsigned> row_density;
     std::vector<unsigned> col_density;
 
+    void clear();
+
+    void copy(const SetCover & s);
+
 public:
     SetCover(unsigned r, unsigned c);
 

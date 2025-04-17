@@ -1,23 +1,38 @@
 #include "setcover.h"
 #include <iostream>
 
+
+
 SetCover::SetCover(unsigned r, unsigned c) : n_rows(r), n_cols(c), rows(r), cols(c), costs(c), row_density(r,0), col_density(c) {}
 
 SetCover::~SetCover() {
+    clear();
+}
 
+void SetCover::clear() {
     for (unsigned j = 0; j < n_cols; ++j) {
         Cell* current = cols[j];
         Cell* next;
 
-        for(unsigned k =0; k<col_density[j]; ++k){
+        for (unsigned k = 0; k < col_density[j]; ++k) {
             next = current->down;
             delete current;
             current = next;
         }
     }
+
+    n_rows = 0;
+    n_cols = 0;
+    rows.clear();
+    cols.clear();
+    costs.clear();
+    row_density.clear();
+    col_density.clear();
 }
 
-SetCover::SetCover(const SetCover& s) : n_rows(s.n_rows), n_cols(s.n_cols) {
+void SetCover::copy(const SetCover& s) {
+    n_rows = s.n_rows;
+    n_cols = s.n_cols;
     rows.resize(n_rows);
     cols.resize(n_cols);
     row_density.resize(n_rows);
@@ -25,7 +40,7 @@ SetCover::SetCover(const SetCover& s) : n_rows(s.n_rows), n_cols(s.n_cols) {
 
     for (unsigned i = 0; i < n_rows; ++i) {
         row_density[i] = s.row_density[i];
-        rows[i] =  new Cell();
+        rows[i] = new Cell();
         rows[i]->row = s.rows[i]->row;
         rows[i]->col = s.rows[i]->col;
     }
@@ -40,8 +55,13 @@ SetCover::SetCover(const SetCover& s) : n_rows(s.n_rows), n_cols(s.n_cols) {
     }
 }
 
+SetCover::SetCover(const SetCover& s) {
+    copy(s);
+}
+
 void SetCover::operator=(const SetCover& s){
-    *this = SetCover(s);
+    clear();
+    copy(s);
 }
 
 Cell* SetCover::column_tail(const unsigned j) {
