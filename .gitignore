@@ -19,3 +19,11 @@
 /.gitignore
 /CMakeSettings.json
 /test.txt
+/program/x64/Debug/program.tlog
+/program/x64/Debug
+/x64/Debug
+/program.sln
+/program.vcxproj
+/program.vcxproj.filters
+/program.vcxproj.user
+/.gitignore

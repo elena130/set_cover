@@ -1,6 +1,6 @@
 #include "setcover.h"
 #include <iostream>
-
+#include "limits.h"
 
 
 SetCover::SetCover(unsigned r, unsigned c) : n_rows(r), n_cols(c), rows(r), cols(c), costs(c), row_density(r,0), col_density(c) {}
@@ -133,6 +133,65 @@ void SetCover::insert_cell(const unsigned i, const unsigned j) {
         rows[i]->left = c;
     }
     
+}
+
+void SetCover::cancel_row(const unsigned i){
+    Cell* prec = rows[i]->up;
+    Cell* next = rows[i]->down;
+    Cell* ptr = rows[i];
+    Cell* delete_me;
+
+    for (unsigned k = 0; k < row_density[i]; ++k) {
+        prec->down = next;
+        next->up = prec;
+        delete_me = ptr;
+        --col_density[ptr->col];
+        ptr = ptr->right;
+        delete delete_me;
+
+        prec = ptr->up;
+        next = ptr->down;
+    }
+
+    row_density[i] = 0;
+    rows[i] = NULL;
+    costs[i] = UINT_MAX;
+    //NB: per lasciare la struttura dati coerente dovrei anche aggiornare il contatore delle righe,
+    // però sto lasciando la posizione del vettore a NULL, il che non riflette esattamente il numero 
+    // di righe decrementato. Non so bene come approcciarlo, perché in entrambi i casi mi sembra di rompere
+    // qualcosa però si potrebbe delegare tutto questo aggiornamento alla fine, visto che potrei compattare 
+    // il vettore e fare in modo che non contenga NULL alla fine. Non so se ne valga la pena 
+
+    // visto che la cancellazione comunque viene delegata alla fine potrei semplicemente fare una grande
+    // funzione che richiama questa e che poi si occupa alla fine di aggiornare il numero di righe e colonne 
+}
+
+bool SetCover::is_subset(const unsigned i, const unsigned k) {
+    if (row_density[i] > row_density[k]) 
+        return false;
+
+    Cell* ptr_i = rows[i];
+    Cell* ptr_k = rows[k];
+    unsigned counter_i = 0;
+    unsigned counter_k = 0;
+
+    while( counter_i < row_density[i] && counter_k < row_density[k]) {
+        if (ptr_i->col == ptr_k->col) {
+            ptr_i = ptr_i->right;
+            ptr_k = ptr_k->right;
+            ++counter_i;
+            ++counter_k;
+        }
+        else if (ptr_i->col > ptr_k->col) {
+            ptr_k = ptr_k->right;
+            ++counter_k;
+        }
+        else {
+            return false;
+        }
+    }
+
+    return counter_i == row_density[i];
 }
 
 void SetCover::set_cost(const unsigned j,  const unsigned cost) {

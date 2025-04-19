@@ -3,13 +3,13 @@
 #ifndef SETCOVER_H
 #define SETCOVER_H
 
-struct Cell{
+struct Cell {
     unsigned row, col;
     Cell* up;
     Cell* right;
     Cell* down;
     Cell* left;
-} ;
+};
 
 class SetCover {
 private:
@@ -22,7 +22,7 @@ private:
 
     void clear();
 
-    void copy(const SetCover & s);
+    void copy(const SetCover& s);
 
 public:
     SetCover(unsigned r, unsigned c);
@@ -40,6 +40,10 @@ public:
     Cell* get_row_head(const unsigned i);
 
     void insert_cell(const unsigned i, const unsigned j);
+
+    void cancel_row(const unsigned i);
+
+    bool is_subset(const unsigned i, const unsigned k);
 
     void set_cost(const unsigned j, const unsigned cost);
 
