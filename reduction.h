@@ -36,6 +36,8 @@ public:
 
     void fix_out_dominated_cols();
 
+    void fix_out_heuristic_dom_cols(const std::vector<int>& min_cost_col);
+
     Status get_row_status(const unsigned i);
 
     Status get_col_status(const unsigned j);

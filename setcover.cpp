@@ -190,6 +190,23 @@ bool SetCover::col_dominates(const unsigned j, const unsigned k){
     return count_k == col_density[k];
 }
 
+// check if a column is dominated, i.e. if there is a set of columns which cover the same rows 
+// but at a minor cost 
+bool SetCover::col_dom_heuristic(const unsigned j, const std::vector<int> & min_cost_col){
+    unsigned sum = 0;
+    Cell* ptr = cols[j];
+
+    if (col_density[j] <= 1)
+        return false;
+
+    for (unsigned k = 0; k < col_density[j]; ++k) {
+        unsigned row = ptr->row;
+        sum += costs[min_cost_col[row]];
+    }
+
+    return sum <= costs[j];
+}
+
 void SetCover::remove_row(const unsigned i) {
     Cell* ptr = rows[i];
     Cell* prec_cell = rows[i]->up;

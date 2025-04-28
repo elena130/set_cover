@@ -45,6 +45,8 @@ public:
 
     bool col_dominates(const unsigned j, const unsigned k);
 
+    bool col_dom_heuristic(const unsigned j, const std::vector<int> & min_cost_col);
+
     void remove_row(const unsigned i);
 
     void remove_col(const unsigned j);

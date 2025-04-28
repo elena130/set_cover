@@ -23,6 +23,8 @@ int main(int argc, char* argv[]) {
     std::cout << nr << "x" << nc << std::endl;
 
     SetCover sc(nr, nc);
+    // indice della colonna di minor costo che copre la riga 
+    std::vector<int> min_cost_col(nr, -1);
 
     for (unsigned j = 0; j < nc; ++j) {
         unsigned cost = input.next_int();
@@ -31,6 +33,10 @@ int main(int argc, char* argv[]) {
         for (unsigned k = 0; k < den; ++k) {
             unsigned i = input.next_int();
             sc.insert_cell(i - 1, j);
+
+            if (min_cost_col[i-1] == -1 || sc.get_cost(min_cost_col[i-1]) > cost ) {
+                min_cost_col[i-1] = j;
+            }
         }
     }
 
@@ -39,7 +45,7 @@ int main(int argc, char* argv[]) {
     Reduction reduction(sc, nr, nc);
     reduction.fix_essential_columns();
     reduction.fix_out_dominated_rows();
-    reduction.fix_out_dominated_cols();
+    reduction.fix_out_heuristic_dom_cols(min_cost_col);
     
     for (unsigned i = 0; i < nr; i++) {
         if (reduction.get_row_status(i) == FIX_OUT) {
