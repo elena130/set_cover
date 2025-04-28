@@ -41,11 +41,17 @@ public:
 
     void insert_cell(const unsigned i, const unsigned j);
 
-    void cancel_row(const unsigned i);
+    bool row_is_dominated(const unsigned i, const unsigned k);
 
-    bool is_subset(const unsigned i, const unsigned k);
+    bool col_dominates(const unsigned j, const unsigned k);
+
+    void remove_row(const unsigned i);
+
+    void remove_col(const unsigned j);
 
     void set_cost(const unsigned j, const unsigned cost);
+
+    unsigned get_cost(const unsigned j);
 
     unsigned get_row_den(const unsigned i);
 

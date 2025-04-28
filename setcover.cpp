@@ -35,20 +35,14 @@ void SetCover::copy(const SetCover& s) {
     n_cols = s.n_cols;
     rows.resize(n_rows);
     cols.resize(n_cols);
+    costs.resize(n_cols);
     row_density.resize(n_rows);
     col_density.resize(n_cols);
 
-    for (unsigned i = 0; i < n_rows; ++i) {
-        row_density[i] = s.row_density[i];
-        rows[i] = new Cell();
-        rows[i]->row = s.rows[i]->row;
-        rows[i]->col = s.rows[i]->col;
-    }
-
     for (unsigned j = 0; j < n_cols; j++) {
-        col_density[j] = s.col_density[j];
+        costs[j] = s.costs[j];
         Cell* ptr = s.cols[j];
-        for (unsigned k = 0; k < col_density[j]; ++k) {
+        for (unsigned k = 0; k < s.col_density[j]; ++k) {
             insert_cell(ptr->row, j);
             ptr = ptr->down;
         }
@@ -135,39 +129,13 @@ void SetCover::insert_cell(const unsigned i, const unsigned j) {
     
 }
 
-void SetCover::cancel_row(const unsigned i){
-    Cell* prec = rows[i]->up;
-    Cell* next = rows[i]->down;
-    Cell* ptr = rows[i];
-    Cell* delete_me;
-
-    for (unsigned k = 0; k < row_density[i]; ++k) {
-        prec->down = next;
-        next->up = prec;
-        delete_me = ptr;
-        --col_density[ptr->col];
-        ptr = ptr->right;
-        delete delete_me;
-
-        prec = ptr->up;
-        next = ptr->down;
-    }
-
-    row_density[i] = 0;
-    rows[i] = NULL;
-    costs[i] = UINT_MAX;
-    //NB: per lasciare la struttura dati coerente dovrei anche aggiornare il contatore delle righe,
-    // però sto lasciando la posizione del vettore a NULL, il che non riflette esattamente il numero 
-    // di righe decrementato. Non so bene come approcciarlo, perché in entrambi i casi mi sembra di rompere
-    // qualcosa però si potrebbe delegare tutto questo aggiornamento alla fine, visto che potrei compattare 
-    // il vettore e fare in modo che non contenga NULL alla fine. Non so se ne valga la pena 
-
-    // visto che la cancellazione comunque viene delegata alla fine potrei semplicemente fare una grande
-    // funzione che richiama questa e che poi si occupa alla fine di aggiornare il numero di righe e colonne 
-}
-
-bool SetCover::is_subset(const unsigned i, const unsigned k) {
+// check if row i is dominated by row k, i.e. the set of columns which cover i is a subset of the 
+// columns which cover the row k 
+bool SetCover::row_is_dominated(const unsigned i, const unsigned k) {
     if (row_density[i] > row_density[k]) 
+        return false;
+
+    if (rows[i]->up->col < rows[k]->col || rows[k]->up->col < rows[i]->col)
         return false;
 
     Cell* ptr_i = rows[i];
@@ -178,24 +146,120 @@ bool SetCover::is_subset(const unsigned i, const unsigned k) {
     while( counter_i < row_density[i] && counter_k < row_density[k]) {
         if (ptr_i->col == ptr_k->col) {
             ptr_i = ptr_i->right;
-            ptr_k = ptr_k->right;
             ++counter_i;
-            ++counter_k;
         }
-        else if (ptr_i->col > ptr_k->col) {
-            ptr_k = ptr_k->right;
-            ++counter_k;
-        }
-        else {
+        else if ( ptr_k->col > ptr_i->col){
             return false;
         }
+
+        ptr_k = ptr_k->right;
+        ++counter_k;
     }
 
     return counter_i == row_density[i];
 }
 
+// check if a column dominates another, i.e. when a column j covers the same rows as the 
+// column k or more and the cost of j is less than the cost of k 
+bool SetCover::col_dominates(const unsigned j, const unsigned k){
+    if (col_density[j] < col_density[k])
+        return false;
+
+    if (costs[j] > costs[k])
+        return false;
+
+    if (cols[j]->row > cols[k]->up->row || cols[k]->row > cols[j]->up->row)
+        return false;
+
+    Cell* ptr_j = cols[j];
+    Cell* ptr_k = cols[k];
+    unsigned count_j = 0;
+    unsigned count_k = 0;
+
+    while (count_k < col_density[k] && count_j < col_density[j]) {
+        if (ptr_j->row > ptr_k->row) {
+            return false;
+        } else if (ptr_k->row == ptr_j->row) {
+            ptr_k = ptr_k->down;
+            ++count_k;
+        }
+        
+        ptr_j = ptr_j->down;
+        ++count_j;
+    }
+    return count_k == col_density[k];
+}
+
+void SetCover::remove_row(const unsigned i) {
+    Cell* ptr = rows[i];
+    Cell* prec_cell = rows[i]->up;
+    Cell* next_cell = rows[i]->down;
+    Cell* old_ptr;
+
+    for (unsigned k = 0; k < row_density[i]; ++k) {
+        unsigned j = ptr->col;
+        prec_cell->down = next_cell;
+        next_cell->up = prec_cell;
+        --col_density[j];
+
+        if (col_density[j] == 0) {
+            cols[j] = NULL;
+            costs[j] = UINT_MAX;
+        } else if (ptr == get_col_head(j)) {
+            cols[j] = next_cell;
+        }
+
+        old_ptr = ptr;
+        ptr = ptr->right;
+
+        prec_cell = ptr->up;
+        next_cell = ptr->down;
+        delete old_ptr;
+    }
+
+    rows[i] = NULL;
+    row_density[i] = 0;
+}
+
+void SetCover::remove_col(const unsigned j){
+    Cell* ptr = cols[j];
+    Cell* prec_cell = ptr->left;
+    Cell* next_cell = ptr->right;
+    Cell* old_ptr;
+
+    for (unsigned k = 0; k < col_density[j]; ++k) {
+        unsigned i = ptr->row;
+        prec_cell->right = next_cell;
+        next_cell->left = prec_cell;
+
+        old_ptr = ptr;
+        --row_density[i];
+
+        if (row_density[i] == 0) {
+            cols[i] = NULL;
+        }
+        else if (ptr == get_row_head(i)) {
+            rows[i] = ptr->right;
+        }
+
+        ptr = ptr->down;
+        prec_cell = ptr->left;
+        next_cell = ptr->right;
+
+        delete old_ptr;
+    }
+
+    cols[j] = NULL;
+    costs[j] = UINT_MAX;
+    col_density[j] = 0;
+}
+
 void SetCover::set_cost(const unsigned j,  const unsigned cost) {
     costs[j] = cost;
+}
+
+unsigned SetCover::get_cost(const unsigned j) {
+    return costs[j];
 }
 
 unsigned SetCover::get_row_den(const unsigned i)

@@ -1,10 +1,9 @@
 #include <iostream>
 #include <string>
 #include <algorithm>
-#include <chrono>
 #include "parser.h"
 #include "setcover.h"
-#include "status.h"
+#include "reduction.h"
 
 int main(int argc, char* argv[]) {
     std::fstream file;
@@ -26,7 +25,8 @@ int main(int argc, char* argv[]) {
     SetCover sc(nr, nc);
 
     for (unsigned j = 0; j < nc; ++j) {
-        sc.set_cost(j, input.next_int());
+        unsigned cost = input.next_int();
+        sc.set_cost(j, cost);
         unsigned den = input.next_int();
         for (unsigned k = 0; k < den; ++k) {
             unsigned i = input.next_int();
@@ -36,35 +36,22 @@ int main(int argc, char* argv[]) {
 
     std::cout << "Finished building structure" << std::endl;
 
-    std::vector<Status> stat(nc, FREE); 
-    std::vector<Status> row_stat(nr, FREE);
-    unsigned fixed_cols = 0;
-
-    for (unsigned i = 0; i < nr; ++i) {
-        if (sc.get_row_den(i) == 1) {
-            stat[sc.get_row_head(i)->col] = FIX_IN;
-            ++fixed_cols;
+    Reduction reduction(sc, nr, nc);
+    reduction.fix_essential_columns();
+    reduction.fix_out_dominated_rows();
+    reduction.fix_out_dominated_cols();
+    
+    for (unsigned i = 0; i < nr; i++) {
+        if (reduction.get_row_status(i) == FIX_OUT) {
+            sc.remove_row(i);
         }
     }
 
-    std::cout << "Fixed columns: " << fixed_cols << std::endl;
-
-    auto start = std::chrono::high_resolution_clock::now();
-
-    for (unsigned i = 0; i < nr; ++i) {
-        for (unsigned k = 1; k < nr; ++k) {
-            bool res = sc.is_subset(i, k);
-            if (res) {
-                row_stat[k] = FIX_OUT;
-            }
-        }
-
-        if (i % 500 == 0) {
-            std::cout << i << "\t";
+    for (unsigned j = 0; j < nc; ++j) {
+        if (reduction.get_col_status(j) == FIX_OUT) {
+            sc.remove_col(j);
         }
     }
-    auto end = std::chrono::high_resolution_clock::now();
-    std::cout << "Found dominant rows in "<< std::chrono::duration_cast<std::chrono::seconds>(end - start).count() << std::endl;
 
     return 0;
 }
