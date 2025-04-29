@@ -3,7 +3,6 @@
 #include <algorithm>
 #include "parser.h"
 #include "setcover.h"
-#include "reduction.h"
 
 int main(int argc, char* argv[]) {
     std::fstream file;
@@ -42,19 +41,18 @@ int main(int argc, char* argv[]) {
 
     std::cout << "Finished building structure" << std::endl;
 
-    Reduction reduction(sc, nr, nc);
-    reduction.fix_essential_columns();
-    reduction.fix_out_dominated_rows();
-    reduction.fix_out_heuristic_dom_cols(min_cost_col);
+    sc.fix_essential_columns();
+    sc.fix_out_dominated_rows();
+    sc.fix_out_heuristic_dom_cols(min_cost_col);
     
     for (unsigned i = 0; i < nr; i++) {
-        if (reduction.get_row_status(i) == FIX_OUT) {
+        if (sc.get_row_status(i) == FIX_OUT) {
             sc.remove_row(i);
         }
     }
 
     for (unsigned j = 0; j < nc; ++j) {
-        if (reduction.get_col_status(j) == FIX_OUT) {
+        if (sc.get_col_status(j) == FIX_OUT) {
             sc.remove_col(j);
         }
     }

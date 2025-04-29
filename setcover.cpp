@@ -3,7 +3,8 @@
 #include "limits.h"
 
 
-SetCover::SetCover(unsigned r, unsigned c) : n_rows(r), n_cols(c), rows(r), cols(c), costs(c), row_density(r,0), col_density(c) {}
+SetCover::SetCover(unsigned r, unsigned c) : n_rows(r), n_cols(c), rows(r), cols(c), costs(c), 
+row_density(r,0), col_density(c), row_assignment(r, FREE), col_assignment(c, FREE) {}
 
 SetCover::~SetCover() {
     clear();
@@ -28,6 +29,8 @@ void SetCover::clear() {
     costs.clear();
     row_density.clear();
     col_density.clear();
+    row_assignment.clear();
+    col_assignment.clear();
 }
 
 void SetCover::copy(const SetCover& s) {
@@ -38,14 +41,21 @@ void SetCover::copy(const SetCover& s) {
     costs.resize(n_cols);
     row_density.resize(n_rows);
     col_density.resize(n_cols);
+    row_assignment.resize(n_rows);
+    col_assignment.resize(n_cols);
 
     for (unsigned j = 0; j < n_cols; j++) {
         costs[j] = s.costs[j];
+        col_assignment[j] = s.col_assignment[j];
         Cell* ptr = s.cols[j];
         for (unsigned k = 0; k < s.col_density[j]; ++k) {
             insert_cell(ptr->row, j);
             ptr = ptr->down;
         }
+    }
+
+    for (unsigned i = 0; i < n_rows; i++) {
+        row_assignment[i] = s.row_assignment[i];
     }
 }
 

@@ -11,6 +11,12 @@ struct Cell {
     Cell* left;
 };
 
+enum Status {
+    FREE = -1,
+    FIX_OUT = 0,
+    FIX_IN = 1
+};
+
 class SetCover {
 private:
     unsigned int n_rows, n_cols;
@@ -19,6 +25,8 @@ private:
     std::vector<unsigned> costs;
     std::vector<unsigned> row_density;
     std::vector<unsigned> col_density;
+    std::vector<Status> row_assignment;
+    std::vector<Status> col_assignment;
 
     void clear();
 
@@ -58,6 +66,18 @@ public:
     unsigned get_row_den(const unsigned i);
 
     unsigned get_col_den(const unsigned j);
+
+    void fix_essential_columns();
+
+    void fix_out_dominated_rows();
+
+    void fix_out_dominated_cols();
+
+    void fix_out_heuristic_dom_cols(const std::vector<int>& min_cost_col);
+
+    Status get_row_status(const unsigned i);
+
+    Status get_col_status(const unsigned j);
 };
 
 #endif
