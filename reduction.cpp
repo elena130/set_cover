@@ -8,6 +8,7 @@ void SetCover::fix_essential_columns() {
         if (row_density[i] == 1) {
             col_assignment[get_row_head(i)->col] = FIX_IN;
             ++fixed_cols;
+            row_assignment[i] = FIX_OUT;
         }
     }
 
