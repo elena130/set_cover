@@ -61,7 +61,7 @@ void SetCover::fix_out_dominated_cols() {
     std::cout << std::endl;
 }
 
-void SetCover::fix_out_heuristic_dom_cols(const std::vector<int>  & min_cost_col){
+void SetCover::fix_out_heuristic_dom_cols(){
     unsigned dominated_cols = 0;
     auto start = std::chrono::high_resolution_clock::now();
 
@@ -69,7 +69,7 @@ void SetCover::fix_out_heuristic_dom_cols(const std::vector<int>  & min_cost_col
         if (col_assignment[j] != FREE)
             continue;
 
-        if (col_dom_heuristic(j, min_cost_col)) {
+        if (col_dom_heuristic(j)) {
             col_assignment[j] = FIX_OUT;
             ++dominated_cols;
         }

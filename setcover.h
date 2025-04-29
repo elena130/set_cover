@@ -27,6 +27,8 @@ private:
     std::vector<unsigned> col_density;
     std::vector<Status> row_assignment;
     std::vector<Status> col_assignment;
+    // indice della colonna di minor costo che copre la riga 
+    std::vector<int> min_cost_col;
 
     void clear();
 
@@ -53,7 +55,7 @@ public:
 
     bool col_dominates(const unsigned j, const unsigned k);
 
-    bool col_dom_heuristic(const unsigned j, const std::vector<int> & min_cost_col);
+    bool col_dom_heuristic(const unsigned j);
 
     void remove_row(const unsigned i);
 
@@ -73,7 +75,7 @@ public:
 
     void fix_out_dominated_cols();
 
-    void fix_out_heuristic_dom_cols(const std::vector<int>& min_cost_col);
+    void fix_out_heuristic_dom_cols();
 
     Status get_row_status(const unsigned i);
 

@@ -4,7 +4,7 @@
 
 
 SetCover::SetCover(unsigned r, unsigned c) : n_rows(r), n_cols(c), rows(r), cols(c), costs(c), 
-row_density(r,0), col_density(c), row_assignment(r, FREE), col_assignment(c, FREE) {}
+row_density(r,0), col_density(c), row_assignment(r, FREE), col_assignment(c, FREE), min_cost_col(r, -1){}
 
 SetCover::~SetCover() {
     clear();
@@ -31,6 +31,7 @@ void SetCover::clear() {
     col_density.clear();
     row_assignment.clear();
     col_assignment.clear();
+    min_cost_col.clear();
 }
 
 void SetCover::copy(const SetCover& s) {
@@ -43,6 +44,7 @@ void SetCover::copy(const SetCover& s) {
     col_density.resize(n_cols);
     row_assignment.resize(n_rows);
     col_assignment.resize(n_cols);
+    min_cost_col.resize(n_rows);
 
     for (unsigned j = 0; j < n_cols; j++) {
         costs[j] = s.costs[j];
@@ -56,6 +58,7 @@ void SetCover::copy(const SetCover& s) {
 
     for (unsigned i = 0; i < n_rows; i++) {
         row_assignment[i] = s.row_assignment[i];
+        min_cost_col[i] = s.min_cost_col[i];
     }
 }
 
@@ -88,6 +91,10 @@ Cell* SetCover::get_row_head(const unsigned i)
 void SetCover::insert_cell(const unsigned i, const unsigned j) {
     ++row_density[i];
     ++col_density[j];
+
+    if (min_cost_col[i] == -1 || costs[min_cost_col[i]] > costs[j]) {
+        min_cost_col[i] = j;
+    }
 
     Cell* c = new Cell();
     c->row = i;
@@ -202,7 +209,7 @@ bool SetCover::col_dominates(const unsigned j, const unsigned k){
 
 // check if a column is dominated, i.e. if there is a set of columns which cover the same rows 
 // but at a minor cost 
-bool SetCover::col_dom_heuristic(const unsigned j, const std::vector<int> & min_cost_col){
+bool SetCover::col_dom_heuristic(const unsigned j){
     unsigned sum = 0;
     Cell* ptr = cols[j];
 
