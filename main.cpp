@@ -21,14 +21,14 @@ int main(int argc, char* argv[]) {
     nc = input.next_int();
     std::cout << nr << "x" << nc << std::endl;
 
-    SetCover sc(nr, nc);
+    SetCover original_sc(nr, nc);
 
     for (unsigned j = 0; j < nc; ++j) {
-        sc.set_cost(j, input.next_int());
+        original_sc.set_cost(j, input.next_int());
         unsigned den = input.next_int();
         for (unsigned k = 0; k < den; ++k) {
             unsigned i = input.next_int();
-            sc.insert_cell(i - 1, j);
+            original_sc.insert_cell(i - 1, j);
         }
     }
 
@@ -36,6 +36,7 @@ int main(int argc, char* argv[]) {
 
     // mettere tutto in un while e ripeti il tutto fino a quando non fai più riduzioni 
     // prova per prima cosa a mettere le cancellazioni dopo che fai i controlli per tutte e tre 
+    SetCover sc(original_sc);
     sc.fix_essential_columns();
     std::cout << "Righe dominate: " << sc.fix_out_dominated_rows() << std::endl;
     std::cout << "Colonne dominate: " << sc.fix_out_dominated_cols() << std::endl;
