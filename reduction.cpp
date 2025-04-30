@@ -2,7 +2,7 @@
 #include <chrono>
 #include "setcover.h"
 
-void SetCover::fix_essential_columns() {
+unsigned SetCover::fix_essential_columns() {
     unsigned fixed_cols = 0;
     for (unsigned i = 0; i < n_rows; ++i) {
         if (row_density[i] == 1) {
@@ -12,10 +12,11 @@ void SetCover::fix_essential_columns() {
         }
     }
 
-    std::cout << "Fixed columns: " << fixed_cols << std::endl;
+    return fixed_cols;
 }
 
-void SetCover::fix_out_dominated_rows() {
+/*
+unsigned SetCover::fix_out_dominated_rows() {
     unsigned dominated_rows = 0;
 
     for (unsigned i = 0; i < n_rows; ++i) {
@@ -30,27 +31,76 @@ void SetCover::fix_out_dominated_rows() {
             }
         }
     }
-
-    std::cout << "Dominated rows: " << dominated_rows << std::endl;
+    return dominated_rows;
 }
+*/
 
-void SetCover::fix_out_dominated_cols() {
-    auto start = std::chrono::high_resolution_clock::now();
+unsigned SetCover::fix_out_dominated_rows() {
+    unsigned dominated_rows = 0;
+    unsigned short_col;
 
-    for (unsigned j = 0; j < n_cols; ++j) {
-        for (unsigned k = j + 1; k < n_cols; ++k) {
-            if (col_assignment[j] != FREE || col_assignment[k] != FREE)
-                continue;
-
-            if (col_dominates(j, k)) {
-                col_assignment[k] = FIX_OUT;
+    for (unsigned i = 0; i < n_rows; ++i) {
+       
+        short_col = rows[i]->col;
+        Cell* ptr = rows[i];
+        for (unsigned k = 0; k < col_density[i]; ++k) {
+            if (col_density[ptr->col] < col_density[short_col]) {
+                short_col = ptr->col;
             }
-            else if (col_dominates(k, j)) {
-                col_assignment[j] = FIX_OUT;
+            ptr = ptr->right;
+        }
+
+        ptr = cols[short_col];
+        for (unsigned k = 0; k < col_density[short_col]; ++k) {
+            if (row_assignment[i] != FREE || row_assignment[ptr->row] != FREE)
+                continue; 
+
+            if (row_is_dominated(i, ptr->row)) {
+                if (i > ptr->row)  row_assignment[i] = FIX_OUT; else row_assignment[ptr->row] = FIX_OUT;
+                ++dominated_rows;
             }
         }
-        if (j % 1000 == 0) {
-            std::cout << j << "\t";
+    }
+    return dominated_rows;
+}
+
+
+unsigned SetCover::fix_out_dominated_cols() {
+    auto start = std::chrono::high_resolution_clock::now();
+    unsigned dominated = 0;
+
+    for (unsigned j = 0; j < n_cols; ++j) {
+        if (col_assignment[j] != FREE)
+            continue;
+
+        Cell* ptr = cols[j];
+        unsigned index = ptr->row;
+
+        // questa parte forse potrei farla nel pre processing 
+        for (unsigned k = 0; k < col_density[j]; ++k) {
+            if (row_density[ptr->row] < row_density[index]) {
+                index = ptr->row;
+            }
+            ptr = ptr->down;
+        }
+
+        ptr = rows[index];
+        for (unsigned k = 0; k < row_density[index]; ++k) {
+            if (col_assignment[k] != FREE || col_assignment[ptr->col] != FREE) {
+                continue;
+            }
+
+            if (j != ptr->col && col_is_dominated(j, ptr->col)) {
+                if (j < ptr->col) {
+                    col_assignment[ptr->col] = FIX_OUT;
+                }
+                else {
+                    col_assignment[j] = FIX_OUT;
+                }
+                ++dominated;
+            }
+           
+            ptr = ptr->right;
         }
     }
 
@@ -60,9 +110,10 @@ void SetCover::fix_out_dominated_cols() {
     auto time_elapsed = std::chrono::duration_cast<std::chrono::seconds>(end - start).count();
     std::cout << "Time elapsed for searching dominating columns: " << time_elapsed << " s";
     std::cout << std::endl;
+    return dominated;
 }
 
-void SetCover::fix_out_heuristic_dom_cols(){
+unsigned SetCover::fix_out_heuristic_dom_cols(){
     unsigned dominated_cols = 0;
     auto start = std::chrono::high_resolution_clock::now();
 
@@ -80,6 +131,7 @@ void SetCover::fix_out_heuristic_dom_cols(){
     auto time_elapsed = std::chrono::duration_cast<std::chrono::seconds>(end - start).count();
     std::cout << "Time elapsed for searching dominating columns: " << time_elapsed << " s" << std::endl;
     std::cout << "Dominated cols: " << dominated_cols << std::endl;
+    return dominated_cols;
 }
 
 

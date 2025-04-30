@@ -176,16 +176,13 @@ bool SetCover::row_is_dominated(const unsigned i, const unsigned k) {
     return counter_i == row_density[i];
 }
 
-// check if a column dominates another, i.e. when a column j covers the same rows as the 
-// column k or more and the cost of j is less than the cost of k 
-bool SetCover::col_dominates(const unsigned j, const unsigned k){
-    if (col_density[j] < col_density[k])
+// check if a column j is dominated by column k, i.e. when a column j covers a subset of the 
+// rows covered by k 
+bool SetCover::col_is_dominated(const unsigned j, const unsigned k){
+    if (col_density[j] > col_density[k])
         return false;
 
-    if (costs[j] > costs[k])
-        return false;
-
-    if (cols[j]->row > cols[k]->up->row || cols[k]->row > cols[j]->up->row)
+    if (costs[j] < costs[k])
         return false;
 
     Cell* ptr_j = cols[j];
@@ -194,17 +191,19 @@ bool SetCover::col_dominates(const unsigned j, const unsigned k){
     unsigned count_k = 0;
 
     while (count_k < col_density[k] && count_j < col_density[j]) {
-        if (ptr_j->row > ptr_k->row) {
+        if (ptr_k->row > ptr_j->row) {
+            return false;
+        }
+        else if (col_density[k] - count_k < col_density[j] - count_j) {
             return false;
         } else if (ptr_k->row == ptr_j->row) {
-            ptr_k = ptr_k->down;
-            ++count_k;
+            ptr_j = ptr_j->down;
+            ++count_j;
         }
-        
-        ptr_j = ptr_j->down;
-        ++count_j;
+        ptr_k = ptr_k->down;
+        ++count_k;
     }
-    return count_k == col_density[k];
+    return count_j == col_density[j];
 }
 
 // check if a column is dominated, i.e. if there is a set of columns which cover the same rows 

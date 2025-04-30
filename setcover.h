@@ -53,7 +53,7 @@ public:
 
     bool row_is_dominated(const unsigned i, const unsigned k);
 
-    bool col_dominates(const unsigned j, const unsigned k);
+    bool col_is_dominated(const unsigned j, const unsigned k);
 
     bool col_dom_heuristic(const unsigned j);
 
@@ -69,13 +69,13 @@ public:
 
     unsigned get_col_den(const unsigned j);
 
-    void fix_essential_columns();
+    unsigned fix_essential_columns();
 
-    void fix_out_dominated_rows();
+    unsigned fix_out_dominated_rows();
 
-    void fix_out_dominated_cols();
+    unsigned fix_out_dominated_cols();
 
-    void fix_out_heuristic_dom_cols();
+    unsigned fix_out_heuristic_dom_cols();
 
     Status get_row_status(const unsigned i);
 

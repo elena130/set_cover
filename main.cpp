@@ -34,9 +34,11 @@ int main(int argc, char* argv[]) {
 
     std::cout << "Finished building structure" << std::endl;
 
+    // mettere tutto in un while e ripeti il tutto fino a quando non fai più riduzioni 
+    // prova per prima cosa a mettere le cancellazioni dopo che fai i controlli per tutte e tre 
     sc.fix_essential_columns();
-    sc.fix_out_dominated_rows();
-    sc.fix_out_heuristic_dom_cols();
+    std::cout << "Righe dominate: " << sc.fix_out_dominated_rows() << std::endl;
+    std::cout << "Colonne dominate: " << sc.fix_out_dominated_cols() << std::endl;
     
     for (unsigned i = 0; i < nr; i++) {
         if (sc.get_row_status(i) == FIX_OUT) {
