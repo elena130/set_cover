@@ -1,4 +1,5 @@
 #include <vector>
+#include <set>
 
 #ifndef SETCOVER_H
 #define SETCOVER_H
@@ -29,6 +30,8 @@ private:
     std::vector<Status> col_assignment;
     // indice della colonna di minor costo che copre la riga 
     std::vector<int> min_cost_col;
+    std::set<unsigned> available_row;
+    std::set<unsigned> available_col;
 
     void clear();
 

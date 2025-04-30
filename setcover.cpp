@@ -4,7 +4,14 @@
 
 
 SetCover::SetCover(unsigned r, unsigned c) : n_rows(r), n_cols(c), rows(r), cols(c), costs(c), 
-row_density(r,0), col_density(c), row_assignment(r, FREE), col_assignment(c, FREE), min_cost_col(r, -1){}
+row_density(r,0), col_density(c), row_assignment(r, FREE), col_assignment(c, FREE), min_cost_col(r, -1){
+    for (unsigned i = 0; i < r; ++i) {
+        available_row.insert(available_row.end(), i);
+    }
+    for (unsigned j = 0; j < c; ++j) {
+        available_col.insert(available_col.end(), j);
+    }
+}
 
 SetCover::~SetCover() {
     clear();
@@ -32,6 +39,8 @@ void SetCover::clear() {
     row_assignment.clear();
     col_assignment.clear();
     min_cost_col.clear();
+    available_row.clear();
+    available_col.clear();
 }
 
 void SetCover::copy(const SetCover& s) {
@@ -45,6 +54,8 @@ void SetCover::copy(const SetCover& s) {
     row_assignment.resize(n_rows);
     col_assignment.resize(n_cols);
     min_cost_col.resize(n_rows);
+    available_row = s.available_row;
+    available_col = s.available_col;
 
     for (unsigned j = 0; j < n_cols; j++) {
         costs[j] = s.costs[j];
@@ -238,6 +249,7 @@ void SetCover::remove_row(const unsigned i) {
         if (col_density[j] == 0) {
             cols[j] = NULL;
             costs[j] = UINT_MAX;
+            available_col.erase(j);
         } else if (ptr == get_col_head(j)) {
             cols[j] = next_cell;
         }
@@ -252,6 +264,7 @@ void SetCover::remove_row(const unsigned i) {
 
     rows[i] = NULL;
     row_density[i] = 0;
+    available_row.erase(i);
 }
 
 void SetCover::remove_col(const unsigned j){
@@ -270,6 +283,7 @@ void SetCover::remove_col(const unsigned j){
 
         if (row_density[i] == 0) {
             cols[i] = NULL;
+            available_row.erase(i);
         }
         else if (ptr == get_row_head(i)) {
             rows[i] = ptr->right;
@@ -285,6 +299,7 @@ void SetCover::remove_col(const unsigned j){
     cols[j] = NULL;
     costs[j] = UINT_MAX;
     col_density[j] = 0;
+    available_col.erase(j);
 }
 
 void SetCover::set_cost(const unsigned j,  const unsigned cost) {
