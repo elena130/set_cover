@@ -37,21 +37,29 @@ int main(int argc, char* argv[]) {
     // mettere tutto in un while e ripeti il tutto fino a quando non fai più riduzioni 
     // prova per prima cosa a mettere le cancellazioni dopo che fai i controlli per tutte e tre 
     SetCover sc(original_sc);
-    sc.fix_essential_columns();
-    std::cout << "Righe dominate: " << sc.fix_out_dominated_rows() << std::endl;
-    std::cout << "Colonne dominate: " << sc.fix_out_dominated_cols() << std::endl;
-    
-    for (unsigned i = 0; i < nr; i++) {
-        if (sc.get_row_status(i) == FIX_OUT) {
-            sc.remove_row(i);
-        }
-    }
 
-    for (unsigned j = 0; j < nc; ++j) {
-        if (sc.get_col_status(j) == FIX_OUT) {
-            sc.remove_col(j);
-        }
-    }
+    unsigned deletion;
+    unsigned deleted_cols = 0;
+    unsigned deleted_rows = 0;
+
+    do {
+        deletion = 0;
+        unsigned d_cols = sc.fix_essential_columns();
+        unsigned d_rows = sc.fix_out_dominated_rows();
+        d_cols += sc.fix_out_dominated_cols();
+
+        deletion += d_rows;
+        deletion += d_cols;
+        deleted_cols += d_cols;
+        deleted_rows += d_rows;
+
+        sc.delete_fix_out_rows();
+        sc.delete_fix_out_cols();
+
+        std::cout << "Deleted " << deletion << " elements" << std::endl ; 
+    } while (deletion != 0);
+    
+
 
     return 0;
 }

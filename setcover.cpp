@@ -159,7 +159,7 @@ void SetCover::insert_cell(const unsigned i, const unsigned j) {
 
 // check if row i is dominated by row k, i.e. the set of columns which cover i is a subset of the 
 // columns which cover the row k 
-bool SetCover::row_is_dominated(const unsigned i, const unsigned k) {
+bool SetCover::row_is_subset_of(const unsigned i, const unsigned k) {
     if (row_density[i] > row_density[k]) 
         return false;
 
@@ -234,16 +234,21 @@ bool SetCover::col_dom_heuristic(const unsigned j){
     return sum <= costs[j];
 }
 
+/*
+// removes a row from the set cover, if present. Otherwise it doesn't modify the set cover. 
 void SetCover::remove_row(const unsigned i) {
+    if (rows[i] == NULL)
+        return;
+
     Cell* ptr = rows[i];
     Cell* prec_cell = rows[i]->up;
-    Cell* next_cell = rows[i]->down;
+    Cell* succ_cell = rows[i]->down;
     Cell* old_ptr;
 
     for (unsigned k = 0; k < row_density[i]; ++k) {
         unsigned j = ptr->col;
-        prec_cell->down = next_cell;
-        next_cell->up = prec_cell;
+        prec_cell->down = succ_cell;
+        succ_cell->up = prec_cell;
         --col_density[j];
 
         if (col_density[j] == 0) {
@@ -251,15 +256,59 @@ void SetCover::remove_row(const unsigned i) {
             costs[j] = UINT_MAX;
             available_col.erase(j);
         } else if (ptr == get_col_head(j)) {
-            cols[j] = next_cell;
+            cols[j] = succ_cell;
         }
 
         old_ptr = ptr;
         ptr = ptr->right;
 
         prec_cell = ptr->up;
-        next_cell = ptr->down;
+        succ_cell = ptr->down;
         delete old_ptr;
+    }
+
+    rows[i] = NULL;
+    row_density[i] = 0;
+    available_row.erase(i);
+}*/
+
+// removes a row from the set cover, if present. Otherwise it doesn't modify the set cover. 
+void SetCover::remove_row(const unsigned i) {
+    if (rows[i] == NULL)
+        return;
+
+    Cell* ptr = rows[i];
+    Cell* prec_cell = rows[i]->up;
+    Cell* succ_cell = rows[i]->down;
+    Cell* old_ptr;
+
+    // first thing: fix the pointers to deattach the row from the matrix 
+    for (unsigned k = 0; k < row_density[i]; ++k) {
+        prec_cell->down = succ_cell;
+        succ_cell->up = prec_cell;
+
+        if (ptr == get_col_head(ptr->col))
+            cols[ptr->col] = succ_cell;
+
+        ptr = ptr->right;
+        prec_cell = ptr->up;
+        succ_cell = ptr->down;
+    }
+
+    // second thing: delete the row and update the metdata to leave the structure consistent 
+    ptr = rows[i];
+    for (unsigned k = 0; k < row_density[i]; ++k) {
+        old_ptr = ptr;
+        unsigned j = ptr->col;
+        ptr = ptr->right;
+        delete old_ptr;
+
+        --col_density[j];
+        if (col_density[j] == 0) {
+            cols[j] = NULL;
+            costs[j] = UINT_MAX;
+            available_col.erase(j);
+        }
     }
 
     rows[i] = NULL;
@@ -267,7 +316,12 @@ void SetCover::remove_row(const unsigned i) {
     available_row.erase(i);
 }
 
+// removes col j from the set cover problem, if present. Otherwise it leaves the set cover
+// unchanged. 
 void SetCover::remove_col(const unsigned j){
+    if (cols[j] == NULL)
+        return;
+
     Cell* ptr = cols[j];
     Cell* prec_cell = ptr->left;
     Cell* next_cell = ptr->right;
@@ -286,7 +340,7 @@ void SetCover::remove_col(const unsigned j){
             available_row.erase(i);
         }
         else if (ptr == get_row_head(i)) {
-            rows[i] = ptr->right;
+            rows[i] = next_cell;
         }
 
         ptr = ptr->down;

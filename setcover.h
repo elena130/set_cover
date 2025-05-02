@@ -54,7 +54,7 @@ public:
 
     void insert_cell(const unsigned i, const unsigned j);
 
-    bool row_is_dominated(const unsigned i, const unsigned k);
+    bool row_is_subset_of(const unsigned i, const unsigned k);
 
     bool col_is_dominated(const unsigned j, const unsigned k);
 
@@ -83,6 +83,11 @@ public:
     Status get_row_status(const unsigned i);
 
     Status get_col_status(const unsigned j);
+
+    void delete_fix_out_rows();
+
+    void delete_fix_out_cols();
+
 };
 
 #endif
