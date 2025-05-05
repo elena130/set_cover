@@ -80,6 +80,9 @@ unsigned SetCover::fix_out_dominated_rows() {
 
 
 unsigned SetCover::fix_out_dominated_cols() {
+
+    std::cout << "fixing out dominated cols without heuristic: ";
+
     unsigned dominated = 0;
 
     for(std::set<unsigned>::iterator j = available_col.begin(); j != available_col.end(); ++j){
@@ -112,6 +115,7 @@ unsigned SetCover::fix_out_dominated_cols() {
                         col_assignment[ptr->col] = FIX_OUT;
                     }
                 }
+                
             }
             ptr = ptr->right;
         }
@@ -121,25 +125,10 @@ unsigned SetCover::fix_out_dominated_cols() {
         }
     }
 
+    std::cout << std::endl;
+
     return dominated;
 }
-
-unsigned SetCover::fix_out_heuristic_dom_cols(){
-    unsigned dominated_cols = 0;
-
-    for (unsigned j = 0; j < n_cols; ++j) {
-        if (col_assignment[j] != FREE)
-            continue;
-
-        if (col_dom_heuristic(j)) {
-            col_assignment[j] = FIX_OUT;
-            ++dominated_cols;
-        }
-    }
-
-    return dominated_cols;
-}
-
 
 Status SetCover::get_row_status(const unsigned i) {
     return row_assignment[i];
@@ -161,7 +150,14 @@ void SetCover::delete_fix_out_cols(){
         if(col_assignment[j] == FIX_OUT && cols[j] != NULL)
             remove_col(j);
     }
+}
 
-    std::cout << "Numero di righe rimanenti: " << available_row.size() << std::endl;
-    std::cout << "Numero di col rimanenti: " << available_col.size() << std::endl;
+unsigned SetCover::remaining_rows()
+{
+    return available_row.size();
+}
+
+unsigned SetCover::remaining_cols()
+{
+    return available_col.size();
 }

@@ -55,12 +55,11 @@ int main(int argc, char* argv[]) {
 
         sc.delete_fix_out_rows();
         sc.delete_fix_out_cols();
+        std::cout << "Remaining rows: " << sc.remaining_rows() << std::endl << "Remaining cols: " << sc.remaining_cols() << std::endl;
 
-        std::cout << "Deleted " << deletion << " elements" << std::endl ; 
+
     } while (deletion != 0);
     
-
-
     return 0;
 }
 

@@ -58,7 +58,7 @@ public:
 
     bool col_is_dominated(const unsigned j, const unsigned k);
 
-    bool col_dom_heuristic(const unsigned j);
+    bool is_col_dominated_heuristic(const unsigned j);
 
     void remove_row(const unsigned i);
 
@@ -78,8 +78,6 @@ public:
 
     unsigned fix_out_dominated_cols();
 
-    unsigned fix_out_heuristic_dom_cols();
-
     Status get_row_status(const unsigned i);
 
     Status get_col_status(const unsigned j);
@@ -87,6 +85,10 @@ public:
     void delete_fix_out_rows();
 
     void delete_fix_out_cols();
+
+    unsigned remaining_rows();
+
+    unsigned remaining_cols();
 
 };
 
