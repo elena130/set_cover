@@ -37,7 +37,7 @@ unsigned SetCover::fix_out_dominated_rows() {
             if (*i != ptr->row && row_assignment[*i] == FREE && row_assignment[ptr->row] == FREE) {
                 if (row_is_subset_of(*i, ptr->row)) {
                     dominated_rows++;
-                    if (row_density[*i] != row_density[ptr->row]) {
+                    if (row_density[*i] != row_density[ptr->row] || (row_density[*i] == row_density[ptr->row] && ptr->row > *i)) {
                         row_assignment[ptr->row] = FIX_OUT;
                     }
                     else if (*i < ptr->row) {
