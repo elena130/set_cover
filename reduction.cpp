@@ -17,26 +17,6 @@ unsigned SetCover::fix_essential_columns() {
     return fixed_cols;
 }
 
-/*
-unsigned SetCover::fix_out_dominated_rows() {
-    unsigned dominated_rows = 0;
-
-    for (unsigned i = 0; i < n_rows; ++i) {
-        for (unsigned k = i + 1; k < n_rows; ++k) {
-            if (row_is_dominated(i, k)) {
-                row_assignment[k] = FIX_OUT;
-                ++dominated_rows;
-            }
-            else if (row_is_dominated(k, i)) {
-                row_assignment[i] = FIX_OUT;
-                ++dominated_rows;
-            }
-        }
-    }
-    return dominated_rows;
-}
-*/
-
 unsigned SetCover::fix_out_dominated_rows() {
     unsigned dominated_rows = 0;
     unsigned shortest;
@@ -104,12 +84,13 @@ unsigned SetCover::fix_out_dominated_cols() {
 
         ptr = rows[smallest];
         for (unsigned k = 0; k < row_density[smallest]; ++k) {
-            if (*j != ptr->col && col_assignment[*j] != FIX_IN && col_assignment[ptr->col] != FIX_IN) {
+            if (*j != ptr->col && col_assignment[*j] == FREE && col_assignment[ptr->col] == FREE) {
                 if (col_is_dominated(*j, ptr->col)) {
                     ++dominated;
 
                     if (col_density[*j] < col_density[ptr->col] || (col_density[*j] == col_density[ptr->col] && *j > ptr->col)) {
                         col_assignment[*j] = FIX_OUT;
+                        break;
                     }
                     else {
                         col_assignment[ptr->col] = FIX_OUT;
@@ -128,14 +109,6 @@ unsigned SetCover::fix_out_dominated_cols() {
     std::cout << std::endl;
 
     return dominated;
-}
-
-Status SetCover::get_row_status(const unsigned i) {
-    return row_assignment[i];
-}
-
-Status SetCover::get_col_status(const unsigned j){
-    return col_assignment[j];
 }
 
 void SetCover::delete_fix_out_rows(){

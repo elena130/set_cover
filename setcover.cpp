@@ -260,44 +260,6 @@ bool SetCover::is_col_dominated_heuristic(const unsigned j){
     return sum <= costs[j];
 }
 
-/*
-// removes a row from the set cover, if present. Otherwise it doesn't modify the set cover. 
-void SetCover::remove_row(const unsigned i) {
-    if (rows[i] == NULL)
-        return;
-
-    Cell* ptr = rows[i];
-    Cell* prec_cell = rows[i]->up;
-    Cell* succ_cell = rows[i]->down;
-    Cell* old_ptr;
-
-    for (unsigned k = 0; k < row_density[i]; ++k) {
-        unsigned j = ptr->col;
-        prec_cell->down = succ_cell;
-        succ_cell->up = prec_cell;
-        --col_density[j];
-
-        if (col_density[j] == 0) {
-            cols[j] = NULL;
-            costs[j] = UINT_MAX;
-            available_col.erase(j);
-        } else if (ptr == get_col_head(j)) {
-            cols[j] = succ_cell;
-        }
-
-        old_ptr = ptr;
-        ptr = ptr->right;
-
-        prec_cell = ptr->up;
-        succ_cell = ptr->down;
-        delete old_ptr;
-    }
-
-    rows[i] = NULL;
-    row_density[i] = 0;
-    available_row.erase(i);
-}*/
-
 // removes a row from the set cover, if present. Otherwise it doesn't modify the set cover. 
 void SetCover::remove_row(const unsigned i) {
     if (rows[i] == NULL)
@@ -349,21 +311,21 @@ void SetCover::remove_col(const unsigned j){
         return;
 
     Cell* ptr = cols[j];
-    Cell* prec_cell = ptr->up;
-    Cell* succ_cell = ptr->down;
+    Cell* prec_cell = cols[j]->left;
+    Cell* succ_cell = cols[j]->right;
 
     // fixing the pointers to deattach the column from the matrix 
     for (unsigned k = 0; k < col_density[j]; ++k) {
-        prec_cell->down = succ_cell;
-        succ_cell->up = prec_cell;
+        prec_cell->right = succ_cell;
+        succ_cell->left = prec_cell;
 
         if (ptr == get_row_head(ptr->row)) {
             rows[ptr->row] = ptr->right;
         }
 
         ptr = ptr->down;
-        prec_cell = ptr->up;
-        succ_cell = ptr->down;
+        prec_cell = ptr->left;
+        succ_cell = ptr->right;
     }
 
     Cell* old_ptr;
@@ -372,7 +334,7 @@ void SetCover::remove_col(const unsigned j){
     for (unsigned k = 0; k < col_density[j]; ++k) {
         old_ptr = ptr;
         unsigned i = ptr->row;
-        ptr = ptr->right;
+        ptr = ptr->down;
 
         --row_density[i];
         if (row_density[i] == 0) {

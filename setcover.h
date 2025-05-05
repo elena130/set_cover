@@ -78,10 +78,6 @@ public:
 
     unsigned fix_out_dominated_cols();
 
-    Status get_row_status(const unsigned i);
-
-    Status get_col_status(const unsigned j);
-
     void delete_fix_out_rows();
 
     void delete_fix_out_cols();
