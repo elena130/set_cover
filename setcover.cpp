@@ -219,16 +219,42 @@ bool SetCover::col_is_dominated(const unsigned j, const unsigned k){
 
 // check if a column is dominated, i.e. if there is a set of columns which cover the same rows 
 // but at a minor cost 
-bool SetCover::col_dom_heuristic(const unsigned j){
+bool SetCover::is_col_dominated_heuristic(const unsigned j){
     unsigned sum = 0;
+    std::set<unsigned> added;
+    std::set<unsigned> not_covered;
+
     Cell* ptr = cols[j];
 
-    if (col_density[j] <= 1)
-        return false;
+    for (unsigned k = 0; k < col_density[j]; ++k) {
+        not_covered.insert(ptr->row);
+        ptr = ptr->down;
+    }
+
+    ptr = cols[j];
+    Cell* to_add;
 
     for (unsigned k = 0; k < col_density[j]; ++k) {
         unsigned row = ptr->row;
-        sum += costs[min_cost_col[row]];
+        if (col_assignment[min_cost_col[row]] != FIX_OUT && added.find(min_cost_col[row]) == added.end()) {
+            sum += costs[min_cost_col[row]];
+
+            if (sum > costs[j]) {
+                return false;
+            }
+
+            added.insert(min_cost_col[row]);
+            to_add = cols[min_cost_col[row]];
+            for (unsigned h = 0; h < col_density[min_cost_col[row]]; ++h) {
+                not_covered.erase(to_add->row);
+                to_add = to_add->down;
+            }
+        }
+        
+        if (not_covered.empty()) {
+            return true;
+        }
+        ptr = ptr->down;
     }
 
     return sum <= costs[j];
@@ -288,7 +314,7 @@ void SetCover::remove_row(const unsigned i) {
         succ_cell->up = prec_cell;
 
         if (ptr == get_col_head(ptr->col))
-            cols[ptr->col] = succ_cell;
+            cols[ptr->col] = ptr->down;
 
         ptr = ptr->right;
         prec_cell = ptr->up;
@@ -323,37 +349,44 @@ void SetCover::remove_col(const unsigned j){
         return;
 
     Cell* ptr = cols[j];
-    Cell* prec_cell = ptr->left;
-    Cell* next_cell = ptr->right;
-    Cell* old_ptr;
+    Cell* prec_cell = ptr->up;
+    Cell* succ_cell = ptr->down;
 
+    // fixing the pointers to deattach the column from the matrix 
     for (unsigned k = 0; k < col_density[j]; ++k) {
-        unsigned i = ptr->row;
-        prec_cell->right = next_cell;
-        next_cell->left = prec_cell;
+        prec_cell->down = succ_cell;
+        succ_cell->up = prec_cell;
 
-        old_ptr = ptr;
-        --row_density[i];
-
-        if (row_density[i] == 0) {
-            cols[i] = NULL;
-            available_row.erase(i);
-        }
-        else if (ptr == get_row_head(i)) {
-            rows[i] = next_cell;
+        if (ptr == get_row_head(ptr->row)) {
+            rows[ptr->row] = ptr->right;
         }
 
         ptr = ptr->down;
-        prec_cell = ptr->left;
-        next_cell = ptr->right;
+        prec_cell = ptr->up;
+        succ_cell = ptr->down;
+    }
+
+    Cell* old_ptr;
+    ptr = cols[j];
+
+    for (unsigned k = 0; k < col_density[j]; ++k) {
+        old_ptr = ptr;
+        unsigned i = ptr->row;
+        ptr = ptr->right;
+
+        --row_density[i];
+        if (row_density[i] == 0) {
+            rows[i] = NULL;
+            available_row.erase(i);
+        }
 
         delete old_ptr;
     }
 
     cols[j] = NULL;
-    costs[j] = UINT_MAX;
     col_density[j] = 0;
     available_col.erase(j);
+    costs[j] = UINT_MAX;
 }
 
 void SetCover::set_cost(const unsigned j,  const unsigned cost) {
