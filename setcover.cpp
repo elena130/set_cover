@@ -2,9 +2,8 @@
 #include <iostream>
 #include "limits.h"
 
-
 SetCover::SetCover(unsigned r, unsigned c) : n_rows(r), n_cols(c), rows(r), cols(c), costs(c), 
-row_density(r,0), col_density(c), row_assignment(r, FREE), col_assignment(c, FREE), min_cost_col(r, -1){
+row_density(r,0), col_density(c), row_assignment(r, FREE), col_assignment(c, FREE){
     for (unsigned i = 0; i < r; ++i) {
         available_row.insert(available_row.end(), i);
     }
@@ -38,7 +37,6 @@ void SetCover::clear() {
     col_density.clear();
     row_assignment.clear();
     col_assignment.clear();
-    min_cost_col.clear();
     available_row.clear();
     available_col.clear();
 }
@@ -53,7 +51,6 @@ void SetCover::copy(const SetCover& s) {
     col_density.resize(n_cols);
     row_assignment.resize(n_rows);
     col_assignment.resize(n_cols);
-    min_cost_col.resize(n_rows);
     available_row = s.available_row;
     available_col = s.available_col;
 
@@ -69,7 +66,6 @@ void SetCover::copy(const SetCover& s) {
 
     for (unsigned i = 0; i < n_rows; i++) {
         row_assignment[i] = s.row_assignment[i];
-        min_cost_col[i] = s.min_cost_col[i];
     }
 }
 
@@ -102,10 +98,6 @@ Cell* SetCover::get_row_head(const unsigned i)
 void SetCover::insert_cell(const unsigned i, const unsigned j) {
     ++row_density[i];
     ++col_density[j];
-
-    if (min_cost_col[i] == -1 || costs[min_cost_col[i]] > costs[j]) {
-        min_cost_col[i] = j;
-    }
 
     Cell* c = new Cell();
     c->row = i;
@@ -215,49 +207,6 @@ bool SetCover::col_is_dominated(const unsigned j, const unsigned k){
         ++count_k;
     }
     return count_j == col_density[j];
-}
-
-// check if a column is dominated, i.e. if there is a set of columns which cover the same rows 
-// but at a minor cost 
-bool SetCover::is_col_dominated_heuristic(const unsigned j){
-    unsigned sum = 0;
-    std::set<unsigned> added;
-    std::set<unsigned> not_covered;
-
-    Cell* ptr = cols[j];
-
-    for (unsigned k = 0; k < col_density[j]; ++k) {
-        not_covered.insert(ptr->row);
-        ptr = ptr->down;
-    }
-
-    ptr = cols[j];
-    Cell* to_add;
-
-    for (unsigned k = 0; k < col_density[j]; ++k) {
-        unsigned row = ptr->row;
-        if (col_assignment[min_cost_col[row]] != FIX_OUT && added.find(min_cost_col[row]) == added.end()) {
-            sum += costs[min_cost_col[row]];
-
-            if (sum > costs[j]) {
-                return false;
-            }
-
-            added.insert(min_cost_col[row]);
-            to_add = cols[min_cost_col[row]];
-            for (unsigned h = 0; h < col_density[min_cost_col[row]]; ++h) {
-                not_covered.erase(to_add->row);
-                to_add = to_add->down;
-            }
-        }
-        
-        if (not_covered.empty()) {
-            return true;
-        }
-        ptr = ptr->down;
-    }
-
-    return sum <= costs[j];
 }
 
 // removes a row from the set cover, if present. Otherwise it doesn't modify the set cover. 

@@ -28,8 +28,6 @@ private:
     std::vector<unsigned> col_density;
     std::vector<Status> row_assignment;
     std::vector<Status> col_assignment;
-    // indice della colonna di minor costo che copre la riga 
-    std::vector<int> min_cost_col;
     std::set<unsigned> available_row;
     std::set<unsigned> available_col;
 
@@ -57,8 +55,6 @@ public:
     bool row_is_subset_of(const unsigned i, const unsigned k);
 
     bool col_is_dominated(const unsigned j, const unsigned k);
-
-    bool is_col_dominated_heuristic(const unsigned j);
 
     void remove_row(const unsigned i);
 
