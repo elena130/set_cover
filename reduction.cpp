@@ -165,6 +165,8 @@ void SetCover::chvtal(const SetCover original) {
         remove_col(min_col);
     }
 
+    std::cout << "Solution cost before Chvatal reduction: " << solution_value(original) << std::endl;
+
     // last reduction 
     std::set<std::pair<unsigned, unsigned>> expensive;
     for (unsigned j = 0; j < n_cols; ++j) {
@@ -173,7 +175,6 @@ void SetCover::chvtal(const SetCover original) {
         }
     }
 
-    auto iter = expensive.begin();
     std::vector<std::pair<unsigned, unsigned>> ordered(expensive.begin(), expensive.end());
 
     for (unsigned j = 0; j < ordered.size()-1; ++j) {
@@ -205,41 +206,8 @@ void SetCover::chvtal(const SetCover original) {
 
         if (cur_index == original.col_density[current]) {
             col_assignment[current] = FIX_OUT;
-            std::cout << "ESclusa colonna da Chvatal soluzione" << std::endl;
+            std::cout << "ESclusa colonna " << current <<" da Chvatal soluzione" << std::endl;
         }
-    }
-
-    while (iter != expensive.end()) {
-
-        unsigned current = iter->second;
-        ++iter;
-        unsigned next = iter->second;
-
-        Cell* curr_ptr = original.cols[current];
-        unsigned curr_index = 0;
-        Cell* next_ptr = original.cols[next];
-        unsigned next_index = 0;
-
-        while (next_index < original.col_density[next] ) {
-            if (curr_ptr->row == next_ptr->row) {
-                curr_ptr = curr_ptr->down;
-                ++curr_index;
-            }
-
-            if (next_ptr->row > curr_ptr->row) {
-                break;
-            }
-
-            next_ptr = next_ptr->down;
-            ++next_index;
-        }
-
-        if (curr_index == original.col_density[current]) {
-            col_assignment[curr_index] = FIX_OUT;
-            std::cout << "Eliminato colonna costosa" << std::endl;
-        }
-
-        ++iter;
     }
 }
 
