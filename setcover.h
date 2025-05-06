@@ -82,6 +82,11 @@ public:
 
     unsigned remaining_cols();
 
+    void chvtal();
+
+    bool solution_is_correct(const SetCover original);
+
+    unsigned solution(const SetCover original);
 };
 
 #endif

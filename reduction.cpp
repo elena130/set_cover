@@ -1,5 +1,6 @@
 #include <iostream>
 #include <chrono>
+#include "limits.h"
 #include "setcover.h"
 
 unsigned SetCover::fix_essential_columns() {
@@ -9,8 +10,14 @@ unsigned SetCover::fix_essential_columns() {
             unsigned col = get_row_head(*i)->col;
             if (col_assignment[col] == FREE) {
                 col_assignment[col] = FIX_IN;
-                row_assignment[*i] = FIX_OUT;
                 ++fixed_cols;
+
+                // delete all the rows which are covered by the fixed column 
+                Cell* ptr = cols[col];
+                for (unsigned k = 0; k < col_density[col]; ++k) {
+                    row_assignment[ptr->row] = FIX_OUT;
+                    ptr = ptr->down;
+                }
             }
         }
 
@@ -40,16 +47,11 @@ unsigned SetCover::fix_out_dominated_rows() {
                     if (row_density[*i] != row_density[ptr->row] || (row_density[*i] == row_density[ptr->row] && ptr->row > *i)) {
                         row_assignment[ptr->row] = FIX_OUT;
                     }
-                    else if (*i < ptr->row) {
-                        row_assignment[ptr->row] = FIX_OUT;
-                    }
                     else {
                         row_assignment[*i] = FIX_OUT;
                         break;
                     }
-                    
                 }
-               
             }
 
             ptr = ptr->down;
@@ -113,14 +115,14 @@ unsigned SetCover::fix_out_dominated_cols() {
 
 void SetCover::delete_fix_out_rows(){
     for (unsigned i = 0; i < n_rows; ++i) {
-        if(row_assignment[i] == FIX_OUT && rows[i] != NULL)
+        if(row_assignment[i] == FIX_OUT)
             remove_row(i);
     }
 }
 
 void SetCover::delete_fix_out_cols(){
     for(unsigned j=0; j< n_cols; ++j){
-        if(col_assignment[j] == FIX_OUT && cols[j] != NULL)
+        if(col_assignment[j] == FIX_OUT)
             remove_col(j);
     }
 }
@@ -133,4 +135,69 @@ unsigned SetCover::remaining_rows()
 unsigned SetCover::remaining_cols()
 {
     return available_col.size();
+}
+
+void SetCover::chvtal(){
+
+    while (!available_row.empty()) {
+        float min_score = UINT_MAX;
+        unsigned min_col = 0;
+
+        for (auto j = available_col.begin(); j != available_col.end(); ++j) {
+            if (col_density[*j] == 0)
+                continue; 
+
+            float score = float(costs[*j]) / float(col_density[*j]);
+            if (score < min_score) {
+                min_score = score;
+                min_col = *j;
+            }
+        }
+
+        col_assignment[min_col] = FIX_IN;
+        available_col.erase(min_col);
+
+        Cell* ptr = cols[min_col];
+        for (unsigned k = 0; k < col_density[min_col]; ++k) {
+            Cell* old_ptr = ptr;
+            ptr = ptr->down;
+
+            remove_row(old_ptr->row);
+        }
+
+        remove_col(min_col);
+    }
+}
+
+bool SetCover::solution_is_correct(const SetCover original) {
+    Cell* ptr;
+    bool ok = true;
+
+    for (unsigned i = 0; i < n_rows; ++i) {
+        ptr = original.rows[i];
+        unsigned counter = 0;
+
+        while (counter < original.row_density[i] && col_assignment[ptr->col] != FIX_IN) {
+            ++counter;
+            ptr = ptr->right;
+        }
+
+        if (col_assignment[ptr->col] != FIX_IN) {
+            ok = false;
+            break;
+        }
+    }
+
+    return ok;
+}
+
+unsigned SetCover::solution(const SetCover original){
+    unsigned solution_cost = 0;
+
+    for (unsigned j = 0; j < n_cols; ++j) {
+        if (col_assignment[j] == FIX_IN)
+            solution_cost += original.costs[j];
+    }
+
+    return solution_cost;
 }

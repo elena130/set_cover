@@ -34,8 +34,6 @@ int main(int argc, char* argv[]) {
 
     std::cout << "Finished building structure" << std::endl;
 
-    // mettere tutto in un while e ripeti il tutto fino a quando non fai più riduzioni 
-    // prova per prima cosa a mettere le cancellazioni dopo che fai i controlli per tutte e tre 
     SetCover sc(original_sc);
 
     unsigned deletion;
@@ -59,6 +57,15 @@ int main(int argc, char* argv[]) {
 
 
     } while (deletion != 0);
+
+    sc.chvtal();
+
+    if (sc.solution_is_correct(original_sc)) 
+        std::cout << "Soluzione corretta";
+    else 
+        std::cout << "soluzione errata";
+
+    std::cout << "Solution cost: " << sc.solution(original_sc) << std::endl;
     
     return 0;
 }
