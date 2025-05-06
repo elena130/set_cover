@@ -82,7 +82,7 @@ public:
 
     unsigned remaining_cols();
 
-    void chvtal();
+    void chvtal(const SetCover original);
 
     bool solution_is_correct(const SetCover original);
 

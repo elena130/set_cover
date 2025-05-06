@@ -1,5 +1,6 @@
 #include <iostream>
 #include <chrono>
+#include <utility>
 #include "limits.h"
 #include "setcover.h"
 
@@ -133,7 +134,7 @@ unsigned SetCover::remaining_cols() {
     return available_col.size();
 }
 
-void SetCover::chvtal() {
+void SetCover::chvtal(const SetCover original) {
 
     while (!available_row.empty()) {
         float min_score = UINT_MAX;
@@ -162,6 +163,83 @@ void SetCover::chvtal() {
         }
 
         remove_col(min_col);
+    }
+
+    // last reduction 
+    std::set<std::pair<unsigned, unsigned>> expensive;
+    for (unsigned j = 0; j < n_cols; ++j) {
+        if (col_assignment[j] == FIX_IN) {
+            expensive.insert(std::make_pair(costs[j], j));
+        }
+    }
+
+    auto iter = expensive.begin();
+    std::vector<std::pair<unsigned, unsigned>> ordered(expensive.begin(), expensive.end());
+
+    for (unsigned j = 0; j < ordered.size()-1; ++j) {
+        unsigned current = ordered[j].second;
+        Cell* cur_ptr = original.cols[current];
+        unsigned cur_index = 0;
+        Cell* next_ptr = original.cols[ordered[j+1].second];
+        unsigned next_index = 0;
+
+        for (unsigned k = j + 1; k < ordered.size()-1; ++k) {
+            if (cur_index == original.col_density[current] || next_index == original.col_density[next_ptr->col]) {
+                break;
+            }
+            if (cur_ptr->row < next_ptr->row) {
+                next_ptr = original.cols[ordered[k + 1].second];
+                next_index = 0;
+                continue;
+            }
+            if (cur_ptr->row == next_ptr->row) {
+                cur_ptr = cur_ptr->down;
+                ++cur_index;
+            }
+
+            next_ptr = next_ptr->down;
+            next_index++;
+
+
+        }
+
+        if (cur_index == original.col_density[current]) {
+            col_assignment[current] = FIX_OUT;
+            std::cout << "ESclusa colonna da Chvatal soluzione" << std::endl;
+        }
+    }
+
+    while (iter != expensive.end()) {
+
+        unsigned current = iter->second;
+        ++iter;
+        unsigned next = iter->second;
+
+        Cell* curr_ptr = original.cols[current];
+        unsigned curr_index = 0;
+        Cell* next_ptr = original.cols[next];
+        unsigned next_index = 0;
+
+        while (next_index < original.col_density[next] ) {
+            if (curr_ptr->row == next_ptr->row) {
+                curr_ptr = curr_ptr->down;
+                ++curr_index;
+            }
+
+            if (next_ptr->row > curr_ptr->row) {
+                break;
+            }
+
+            next_ptr = next_ptr->down;
+            ++next_index;
+        }
+
+        if (curr_index == original.col_density[current]) {
+            col_assignment[curr_index] = FIX_OUT;
+            std::cout << "Eliminato colonna costosa" << std::endl;
+        }
+
+        ++iter;
     }
 }
 
