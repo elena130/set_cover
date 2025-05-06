@@ -12,7 +12,7 @@ unsigned SetCover::fix_essential_columns() {
                 col_assignment[col] = FIX_IN;
                 ++fixed_cols;
 
-                // delete all the rows which are covered by the fixed column 
+                // fix out all the rows which are covered by the fixed column 
                 Cell* ptr = cols[col];
                 for (unsigned k = 0; k < col_density[col]; ++k) {
                     row_assignment[ptr->row] = FIX_OUT;
@@ -76,7 +76,6 @@ unsigned SetCover::fix_out_dominated_cols() {
         Cell* ptr = cols[*j];
         unsigned smallest = ptr->row;
 
-        // questa parte forse potrei farla nel pre processing 
         for (unsigned k = 0; k < col_density[*j]; ++k) {
             if (row_density[ptr->row] < row_density[smallest]) {
                 smallest = ptr->row;
@@ -98,7 +97,6 @@ unsigned SetCover::fix_out_dominated_cols() {
                         col_assignment[ptr->col] = FIX_OUT;
                     }
                 }
-                
             }
             ptr = ptr->right;
         }
@@ -113,31 +111,29 @@ unsigned SetCover::fix_out_dominated_cols() {
     return dominated;
 }
 
-void SetCover::delete_fix_out_rows(){
+void SetCover::delete_fix_out_rows() {
     for (unsigned i = 0; i < n_rows; ++i) {
         if(row_assignment[i] == FIX_OUT)
             remove_row(i);
     }
 }
 
-void SetCover::delete_fix_out_cols(){
+void SetCover::delete_fix_out_cols() {
     for(unsigned j=0; j< n_cols; ++j){
         if(col_assignment[j] == FIX_OUT)
             remove_col(j);
     }
 }
 
-unsigned SetCover::remaining_rows()
-{
+unsigned SetCover::remaining_rows() {
     return available_row.size();
 }
 
-unsigned SetCover::remaining_cols()
-{
+unsigned SetCover::remaining_cols() {
     return available_col.size();
 }
 
-void SetCover::chvtal(){
+void SetCover::chvtal() {
 
     while (!available_row.empty()) {
         float min_score = UINT_MAX;
@@ -191,7 +187,7 @@ bool SetCover::solution_is_correct(const SetCover original) {
     return ok;
 }
 
-unsigned SetCover::solution(const SetCover original){
+unsigned SetCover::solution_value(const SetCover original){
     unsigned solution_cost = 0;
 
     for (unsigned j = 0; j < n_cols; ++j) {

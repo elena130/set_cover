@@ -86,7 +86,7 @@ public:
 
     bool solution_is_correct(const SetCover original);
 
-    unsigned solution(const SetCover original);
+    unsigned solution_value(const SetCover original);
 };
 
 #endif

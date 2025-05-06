@@ -65,7 +65,7 @@ int main(int argc, char* argv[]) {
     else 
         std::cout << "soluzione errata";
 
-    std::cout << "Solution cost: " << sc.solution(original_sc) << std::endl;
+    std::cout << "Solution cost: " << sc.solution_value(original_sc) << std::endl;
     
     return 0;
 }
