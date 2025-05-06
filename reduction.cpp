@@ -31,6 +31,7 @@ unsigned SetCover::fix_out_dominated_rows() {
 
     for(std::set<unsigned>::iterator i = available_row.begin(); i!=available_row.end(); ++i){
        
+        // find the shortest column which covers the row
         shortest = rows[*i]->col;
         Cell* ptr = rows[*i];
         for (unsigned k = 0; k < col_density[*i]; ++k) {
@@ -64,7 +65,7 @@ unsigned SetCover::fix_out_dominated_rows() {
 
 unsigned SetCover::fix_out_dominated_cols() {
 
-    std::cout << "fixing out dominated cols without heuristic: ";
+    std::cout << "Fixing out dominated cols counter: ";
 
     unsigned dominated = 0;
 
@@ -74,18 +75,19 @@ unsigned SetCover::fix_out_dominated_cols() {
             continue; 
         }
 
+        // find the shortes row that is covered by the column
         Cell* ptr = cols[*j];
-        unsigned smallest = ptr->row;
+        unsigned shortest = ptr->row;
 
         for (unsigned k = 0; k < col_density[*j]; ++k) {
-            if (row_density[ptr->row] < row_density[smallest]) {
-                smallest = ptr->row;
+            if (row_density[ptr->row] < row_density[shortest]) {
+                shortest = ptr->row;
             }
             ptr = ptr->down;
         }
 
-        ptr = rows[smallest];
-        for (unsigned k = 0; k < row_density[smallest]; ++k) {
+        ptr = rows[shortest];
+        for (unsigned k = 0; k < row_density[shortest]; ++k) {
             if (*j != ptr->col && col_assignment[*j] == FREE && col_assignment[ptr->col] == FREE) {
                 if (col_is_dominated(*j, ptr->col)) {
                     ++dominated;
@@ -132,114 +134,4 @@ unsigned SetCover::remaining_rows() {
 
 unsigned SetCover::remaining_cols() {
     return available_col.size();
-}
-
-void SetCover::chvtal(const SetCover original) {
-
-    while (!available_row.empty()) {
-        float min_score = UINT_MAX;
-        unsigned min_col = 0;
-
-        for (auto j = available_col.begin(); j != available_col.end(); ++j) {
-            if (col_density[*j] == 0)
-                continue; 
-
-            float score = float(costs[*j]) / float(col_density[*j]);
-            if (score < min_score) {
-                min_score = score;
-                min_col = *j;
-            }
-        }
-
-        col_assignment[min_col] = FIX_IN;
-        available_col.erase(min_col);
-
-        Cell* ptr = cols[min_col];
-        for (unsigned k = 0; k < col_density[min_col]; ++k) {
-            Cell* old_ptr = ptr;
-            ptr = ptr->down;
-
-            remove_row(old_ptr->row);
-        }
-
-        remove_col(min_col);
-    }
-
-    std::cout << "Solution cost before Chvatal reduction: " << solution_value(original) << std::endl;
-
-    // last reduction 
-    std::set<std::pair<unsigned, unsigned>> expensive;
-    for (unsigned j = 0; j < n_cols; ++j) {
-        if (col_assignment[j] == FIX_IN) {
-            expensive.insert(std::make_pair(costs[j], j));
-        }
-    }
-
-    std::vector<std::pair<unsigned, unsigned>> ordered(expensive.begin(), expensive.end());
-
-    for (unsigned j = 0; j < ordered.size()-1; ++j) {
-        unsigned current = ordered[j].second;
-        Cell* cur_ptr = original.cols[current];
-        unsigned cur_index = 0;
-        Cell* next_ptr = original.cols[ordered[j+1].second];
-        unsigned next_index = 0;
-
-        for (unsigned k = j + 1; k < ordered.size()-1; ++k) {
-            if (cur_index == original.col_density[current] || next_index == original.col_density[next_ptr->col]) {
-                break;
-            }
-            if (cur_ptr->row < next_ptr->row) {
-                next_ptr = original.cols[ordered[k + 1].second];
-                next_index = 0;
-                continue;
-            }
-            if (cur_ptr->row == next_ptr->row) {
-                cur_ptr = cur_ptr->down;
-                ++cur_index;
-            }
-
-            next_ptr = next_ptr->down;
-            next_index++;
-
-
-        }
-
-        if (cur_index == original.col_density[current]) {
-            col_assignment[current] = FIX_OUT;
-            std::cout << "ESclusa colonna " << current <<" da Chvatal soluzione" << std::endl;
-        }
-    }
-}
-
-bool SetCover::solution_is_correct(const SetCover original) {
-    Cell* ptr;
-    bool ok = true;
-
-    for (unsigned i = 0; i < n_rows; ++i) {
-        ptr = original.rows[i];
-        unsigned counter = 0;
-
-        while (counter < original.row_density[i] && col_assignment[ptr->col] != FIX_IN) {
-            ++counter;
-            ptr = ptr->right;
-        }
-
-        if (col_assignment[ptr->col] != FIX_IN) {
-            ok = false;
-            break;
-        }
-    }
-
-    return ok;
-}
-
-unsigned SetCover::solution_value(const SetCover original){
-    unsigned solution_cost = 0;
-
-    for (unsigned j = 0; j < n_cols; ++j) {
-        if (col_assignment[j] == FIX_IN)
-            solution_cost += original.costs[j];
-    }
-
-    return solution_cost;
 }

@@ -14,7 +14,7 @@ int main(int argc, char* argv[]) {
         return 1;
     } 
 
-    std::cout << "Reading matrix" << std::endl;
+    std::cout << "READING matrix" << std::endl;
     Reader input(argv[1]);
 
     nr = input.next_int();
@@ -32,38 +32,33 @@ int main(int argc, char* argv[]) {
         }
     }
 
-    std::cout << "Finished building structure" << std::endl;
+    std::cout << "Finished building structure" << std::endl << std::endl;
+    std::cout << "REDUCTIONS" << std::endl;
 
     SetCover reduced_sc(original_sc);
 
-    unsigned deletion;
-    unsigned deleted_cols = 0;
-    unsigned deleted_rows = 0;
+    unsigned deleted_elements;
 
     do {
-        deletion = 0;
-        unsigned d_cols = reduced_sc.fix_essential_columns();
-        unsigned d_rows = reduced_sc.fix_out_dominated_rows();
-        d_cols += reduced_sc.fix_out_dominated_cols();
-
-        deletion += d_rows;
-        deletion += d_cols;
-        deleted_cols += d_cols;
-        deleted_rows += d_rows;
+        deleted_elements = 0;
+        deleted_elements += reduced_sc.fix_essential_columns();
+        deleted_elements += reduced_sc.fix_out_dominated_rows();
+        deleted_elements += reduced_sc.fix_out_dominated_cols();
 
         reduced_sc.delete_fix_out_rows();
         reduced_sc.delete_fix_out_cols();
         std::cout << "Remaining rows: " << reduced_sc.remaining_rows() << std::endl << "Remaining cols: " << reduced_sc.remaining_cols() << std::endl;
+        
 
+    } while (deleted_elements != 0);
 
-    } while (deletion != 0);
-
+    std::cout<< std::endl << "CHVATAL" << std::endl;
     reduced_sc.chvtal(original_sc);
 
     if (reduced_sc.solution_is_correct(original_sc)) 
-        std::cout << "Soluzione corretta";
+        std::cout << "Solution is correct" << std::endl;
     else 
-        std::cout << "soluzione errata";
+        std::cout << "Solution is wrong, check your code" << std::endl;
 
     std::cout << "Solution cost: " << reduced_sc.solution_value(original_sc) << std::endl;
     

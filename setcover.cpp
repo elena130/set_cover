@@ -1,5 +1,6 @@
 #include "setcover.h"
 #include <iostream>
+#include <algorithm>
 #include "limits.h"
 
 SetCover::SetCover(unsigned r, unsigned c) : n_rows(r), n_cols(c), rows(r), cols(c), costs(c), 
@@ -315,4 +316,134 @@ unsigned SetCover::get_row_den(const unsigned i)
 
 unsigned SetCover::get_col_den(const unsigned j) {
     return col_density[j];
+}
+
+bool dec_cmp(const std::pair<unsigned, unsigned> a, const std::pair<unsigned, unsigned> b) {
+    if (a.first > b.first) {
+        return true;
+    }
+    else if (a.first == b.first && a.second > b.second) {
+        return true;
+    }
+    else {
+        return false;
+    }
+}
+
+void SetCover::chvtal(const SetCover original) {
+
+    while (!available_row.empty()) {
+        
+        // calculating scores 
+        float min_score = UINT_MAX;
+        unsigned min_col = 0;
+
+        for (auto j = available_col.begin(); j != available_col.end(); ++j) {
+            if (col_density[*j] == 0)
+                continue;
+
+            float score = float(costs[*j]) / float(col_density[*j]);
+            if (score < min_score) {
+                min_score = score;
+                min_col = *j;
+            }
+        }
+
+        // deleting the column and the rows that it covers from the problem 
+        col_assignment[min_col] = FIX_IN;
+        available_col.erase(min_col);
+
+        Cell* ptr = cols[min_col];
+        for (unsigned k = 0; k < col_density[min_col]; ++k) {
+            Cell* old_ptr = ptr;
+            ptr = ptr->down;
+
+            remove_row(old_ptr->row);
+        }
+
+        remove_col(min_col);
+    }
+
+    std::cout << "Solution cost before Chvatal reduction: " << solution_value(original) << std::endl;
+
+    // last reduction 
+    std::vector<std::pair<unsigned, unsigned>> ordered;
+    for (unsigned j = 0; j < n_cols; ++j) {
+        if (col_assignment[j] == FIX_IN) {
+            ordered.insert(ordered.begin(), std::make_pair(original.costs[j], j));
+        }
+    }
+
+    std::sort(ordered.begin(), ordered.end(), dec_cmp);
+    std::cout << "Excluded columns: ";
+
+    // keeping j as reference, I'm checking if all its rows are covered by at least one column cheaper than j
+    // When I notice that a column k doesn't contain a row in j I move on to the next column (k+1) to check 
+    // if the remaining rows in j are covered. 
+    for (unsigned j = 0; j < ordered.size() - 1; ++j) {
+        unsigned ref = ordered[j].second;
+        Cell* ref_ptr = original.cols[ref];
+        unsigned ref_counter = 0;
+
+        Cell* cmp_ptr = original.cols[ordered[j + 1].second];
+        unsigned cmp_counter = 0;
+
+        for (unsigned k = j + 1; k < ordered.size() - 1; ++k) {
+            if (ref_counter == original.col_density[ref]  ) {
+                break;
+            }
+            if (ref_ptr->row < cmp_ptr->row || cmp_counter == original.col_density[cmp_ptr->col]) {
+                cmp_ptr = original.cols[ordered[k + 1].second];
+                cmp_counter = 0;
+                continue;
+            }
+            if (ref_ptr->row == cmp_ptr->row) {
+                ref_ptr = ref_ptr->down;
+                ++ref_counter;
+            }
+
+            cmp_ptr = cmp_ptr->down;
+            cmp_counter++;
+        }
+
+        if (ref_counter == original.col_density[ref]) {
+            col_assignment[ref] = FIX_OUT;
+            std::cout << ref << "\t";
+        }
+    }
+
+    std::cout << std::endl;
+}
+
+bool SetCover::solution_is_correct(const SetCover original) {
+    Cell* ptr;
+    bool ok = true;
+
+    for (unsigned i = 0; i < n_rows; ++i) {
+        ptr = original.rows[i];
+        unsigned counter = 0;
+
+        while (counter < original.row_density[i] && col_assignment[ptr->col] != FIX_IN) {
+            ++counter;
+            ptr = ptr->right;
+        }
+
+        if (col_assignment[ptr->col] != FIX_IN) {
+            ok = false;
+            break;
+        }
+    }
+
+    return ok;
+}
+
+unsigned SetCover::solution_value(const SetCover original) {
+    unsigned solution_cost = 0;
+
+    for (unsigned j = 0; j < n_cols; ++j) {
+        if (col_assignment[j] == FIX_IN)
+            solution_cost += original.costs[j];
+    }
+
+    return solution_cost;
 }
