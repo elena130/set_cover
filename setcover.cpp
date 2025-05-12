@@ -381,15 +381,15 @@ void SetCover::chvtal(const SetCover original) {
     // When I notice that a column k doesn't contain a row in j I move on to the next column (k+1) to check 
     // if the remaining rows in j are covered. 
     for (unsigned j = 0; j < ordered.size() - 1; ++j) {
-        unsigned ref = ordered[j].second;
-        Cell* ref_ptr = original.cols[ref];
+        unsigned ref_col = ordered[j].second;
+        Cell* ref_ptr = original.cols[ref_col];
         unsigned ref_counter = 0;
 
         Cell* cmp_ptr = original.cols[ordered[j + 1].second];
         unsigned cmp_counter = 0;
 
         for (unsigned k = j + 1; k < ordered.size() - 1; ++k) {
-            if (ref_counter == original.col_density[ref]  ) {
+            if (ref_counter == original.col_density[ref_col]  ) {
                 break;
             }
             if (ref_ptr->row < cmp_ptr->row || cmp_counter == original.col_density[cmp_ptr->col]) {
@@ -406,9 +406,9 @@ void SetCover::chvtal(const SetCover original) {
             cmp_counter++;
         }
 
-        if (ref_counter == original.col_density[ref]) {
-            col_assignment[ref] = FIX_OUT;
-            std::cout << ref << "\t";
+        if (ref_counter == original.col_density[ref_col]) {
+            col_assignment[ref_col] = FIX_OUT;
+            std::cout << ref_col << "\t";
         }
     }
 
