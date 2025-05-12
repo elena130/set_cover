@@ -114,6 +114,95 @@ unsigned SetCover::fix_out_dominated_cols() {
     return dominated;
 }
 
+unsigned SetCover::fix_out_dominated_cols_set() {
+
+    std::cout << "Fixing out cols dominated by a group of cols. Counter: ";
+
+    unsigned dominated = 0;
+
+    for (std::set<unsigned>::iterator j = available_col.begin(); j != available_col.end(); ++j) {
+
+        if (col_assignment[*j] != FREE) {
+            continue;
+        }
+
+        // find the shortes row that is covered by the column
+        Cell* ptr = cols[*j];
+        unsigned short_row = ptr->row;
+
+        for (unsigned k = 0; k < col_density[*j]; ++k) {
+            if (row_density[ptr->row] < row_density[short_row]) {
+                short_row = ptr->row;
+            }
+            ptr = ptr->down;
+        }
+
+        // puntatore alla colonna di cui devo controllare se è dominata
+        Cell* j_ptr = cols[*j];
+        unsigned j_counter = 0;
+        // puntatore alla riga più corta coperta da j
+        Cell* short_row_ptr = rows[short_row];
+        unsigned shortest_counter = 0;
+
+        bool added = false;
+        // quante colonne sono necessarie per coprire j
+        unsigned set_cost = 0;
+
+        // scorro la riga più corta
+        for (unsigned k = 0; k < row_density[short_row]; ++k) {
+            if (*j != short_row_ptr->col && col_assignment[short_row_ptr->col] != FIX_OUT) {
+                Cell* ptr = cols[short_row_ptr->col];
+                unsigned counter = 0;
+
+                while (j_counter != col_density[*j] && shortest_counter != col_density[short_row] ) {
+                   
+                    if (j_ptr->row < ptr->row || counter == col_density[ptr->col]) {
+                        short_row_ptr = short_row_ptr->right;
+                        ptr = cols[short_row_ptr->col];
+                        counter = 0;
+                        added = false;
+                        continue;
+                    }
+                    if (j_ptr->row == ptr->row) {
+                        j_ptr = j_ptr->down;
+                        ++j_counter;
+                        if (!added) {
+                            set_cost+= costs[ptr->col];
+                        }
+                        added = true;
+                    }
+
+                    if (set_cost > costs[*j]) {
+                        break;
+                    }
+
+                    ptr = ptr->down;
+                    counter++;
+                }
+            }
+            else {
+                short_row_ptr = short_row_ptr->right;
+            }
+
+            
+        }
+
+        if (j_counter == col_density[*j] && set_cost <= costs[*j]) {
+            col_assignment[*j] = FIX_OUT;
+            dominated++;
+            continue;
+        }
+
+        if (*j % 50000 == 0) {
+            std::cout << *j << "\t";
+        }
+    }
+
+    std::cout << std::endl;
+
+    return dominated;
+}
+
 void SetCover::delete_fix_out_rows() {
     for (unsigned i = 0; i < n_rows; ++i) {
         if(row_assignment[i] == FIX_OUT)

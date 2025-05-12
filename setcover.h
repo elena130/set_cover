@@ -74,6 +74,8 @@ public:
 
     unsigned fix_out_dominated_cols();
 
+    unsigned fix_out_dominated_cols_set();
+
     void delete_fix_out_rows();
 
     void delete_fix_out_cols();

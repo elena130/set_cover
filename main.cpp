@@ -44,12 +44,23 @@ int main(int argc, char* argv[]) {
         deleted_elements += reduced_sc.fix_essential_columns();
         deleted_elements += reduced_sc.fix_out_dominated_rows();
         deleted_elements += reduced_sc.fix_out_dominated_cols();
+        
 
         reduced_sc.delete_fix_out_rows();
         reduced_sc.delete_fix_out_cols();
         std::cout << "Remaining rows: " << reduced_sc.remaining_rows() << std::endl << "Remaining cols: " << reduced_sc.remaining_cols() << std::endl;
         
 
+    } while (deleted_elements != 0);
+
+    do {
+        deleted_elements = 0;
+        deleted_elements += reduced_sc.fix_out_dominated_cols_set();
+        std::cout << "nuovo test: " << deleted_elements << std::endl;
+
+        reduced_sc.delete_fix_out_rows();
+        reduced_sc.delete_fix_out_cols();
+        
     } while (deleted_elements != 0);
 
     std::cout<< std::endl << "CHVATAL" << std::endl;
