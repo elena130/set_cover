@@ -6,7 +6,7 @@
 SetCover::SetCover(unsigned r, unsigned c) : n_rows(r), n_cols(c), rows(r), cols(c), costs(c), 
 row_density(r,0), col_density(c), row_assignment(r, FREE), col_assignment(c, FREE){
     for (unsigned i = 0; i < r; ++i) {
-        available_row.insert(available_row.end(), i);
+        uncovered_rows.insert(uncovered_rows.end(), i);
     }
     for (unsigned j = 0; j < c; ++j) {
         available_col.insert(available_col.end(), j);
@@ -38,7 +38,7 @@ void SetCover::clear() {
     col_density.clear();
     row_assignment.clear();
     col_assignment.clear();
-    available_row.clear();
+    uncovered_rows.clear();
     available_col.clear();
 }
 
@@ -52,7 +52,7 @@ void SetCover::copy(const SetCover& s) {
     col_density.resize(n_cols);
     row_assignment.resize(n_rows);
     col_assignment.resize(n_cols);
-    available_row = s.available_row;
+    uncovered_rows = s.uncovered_rows;
     available_col = s.available_col;
 
     for (unsigned j = 0; j < n_cols; j++) {
@@ -251,7 +251,7 @@ void SetCover::remove_row(const unsigned i) {
 
     rows[i] = NULL;
     row_density[i] = 0;
-    available_row.erase(i);
+    uncovered_rows.erase(i);
 }
 
 // removes col j from the set cover problem, if present. Otherwise it leaves the set cover
@@ -289,7 +289,7 @@ void SetCover::remove_col(const unsigned j){
         --row_density[i];
         if (row_density[i] == 0) {
             rows[i] = NULL;
-            available_row.erase(i);
+            uncovered_rows.erase(i);
         }
 
         delete old_ptr;
@@ -318,6 +318,11 @@ unsigned SetCover::get_col_den(const unsigned j) {
     return col_density[j];
 }
 
+const std::vector<Status> SetCover::get_col_assignment()
+{
+    return col_assignment;
+}
+
 bool dec_cmp(const std::pair<unsigned, unsigned> a, const std::pair<unsigned, unsigned> b) {
     if (a.first > b.first) {
         return true;
@@ -330,18 +335,15 @@ bool dec_cmp(const std::pair<unsigned, unsigned> a, const std::pair<unsigned, un
     }
 }
 
-void SetCover::chvtal(const SetCover original) {
+void SetCover::chvtal(SetCover original) {
 
-    while (!available_row.empty()) {
+    while (!uncovered_rows.empty()) {
         
-        // calculating scores 
+        // calculating scores (costs[j] / #new covered rows) 
         float min_score = UINT_MAX;
         unsigned min_col = 0;
 
         for (auto j = available_col.begin(); j != available_col.end(); ++j) {
-            if (col_density[*j] == 0)
-                continue;
-
             float score = float(costs[*j]) / float(col_density[*j]);
             if (score < min_score) {
                 min_score = score;
@@ -358,6 +360,7 @@ void SetCover::chvtal(const SetCover original) {
             Cell* old_ptr = ptr;
             ptr = ptr->down;
 
+            col_assignment[old_ptr->row] = FIX_OUT;
             remove_row(old_ptr->row);
         }
 
@@ -376,39 +379,74 @@ void SetCover::chvtal(const SetCover original) {
 
     std::sort(ordered.begin(), ordered.end(), dec_cmp);
     std::cout << "Excluded columns: ";
+    unsigned ridondanti ;
+
+    do {
+        ridondanti = 0;
+        for (unsigned j = 0; j < ordered.size(); ++j) {
+            if (original.column_is_set_dominated(ordered[j].second, col_assignment)) {
+                col_assignment[ordered[j].second] = FIX_OUT;
+                ++ridondanti;
+            }
+        }
+
+        delete_fix_out_cols();
+
+    } while (ridondanti != 0);
 
     // keeping j as reference, I'm checking if all its rows are covered by at least one column cheaper than j
     // When I notice that a column k doesn't contain a row in j I move on to the next column (k+1) to check 
-    // if the remaining rows in j are covered. 
-    for (unsigned j = 0; j < ordered.size() - 1; ++j) {
-        unsigned ref_col = ordered[j].second;
-        Cell* ref_ptr = original.cols[ref_col];
-        unsigned ref_counter = 0;
+    // if the remaining rows in j are covered.
+    /*
+    unsigned ridondanti; 
+    do {
+        ridondanti = 0;
+        for (unsigned j = 0; j < ordered.size() - 1; ++j) {
+            unsigned ref_col = ordered[j].second;
+            Cell* ref_ptr = original.cols[ref_col];
+            unsigned ref_counter = 0;
 
-        Cell* cmp_ptr = original.cols[ordered[j + 1].second];
-        unsigned cmp_counter = 0;
+            Cell* cmp_ptr = original.cols[ordered[j + 1].second];
+            unsigned cmp_counter = 0;
 
-        for (unsigned k = j + 1; k < ordered.size() - 1; ++k) {
-            if (ref_counter == original.col_density[ref_col]  ) {
-                break;
-            }
-            if (ref_ptr->row < cmp_ptr->row || cmp_counter == original.col_density[cmp_ptr->col]) {
-                cmp_ptr = original.cols[ordered[k + 1].second];
-                cmp_counter = 0;
-                continue;
-            }
-            if (ref_ptr->row == cmp_ptr->row) {
-                ref_ptr = ref_ptr->down;
-                ++ref_counter;
+            for (unsigned k = j + 1; k < ordered.size() - 1; ++k) {
+                if (ref_counter == original.col_density[ref_col]) {
+                    break;
+                }
+                if (ref_ptr->row < cmp_ptr->row || cmp_counter == original.col_density[cmp_ptr->col]) {
+                    cmp_ptr = original.cols[ordered[k + 1].second];
+                    cmp_counter = 0;
+                    continue;
+                }
+                if (ref_ptr->row == cmp_ptr->row) {
+                    ref_ptr = ref_ptr->down;
+                    ++ref_counter;
+                }
+
+                cmp_ptr = cmp_ptr->down;
+                cmp_counter++;
             }
 
-            cmp_ptr = cmp_ptr->down;
-            cmp_counter++;
+            if (ref_counter == original.col_density[ref_col]) {
+                col_assignment[ref_col] = FIX_OUT;
+                std::cout << ref_col << "\t";
+                ridondanti++;
+            }
         }
 
-        if (ref_counter == original.col_density[ref_col]) {
-            col_assignment[ref_col] = FIX_OUT;
-            std::cout << ref_col << "\t";
+        delete_fix_out_cols();
+        delete_fix_out_rows();
+
+    } while (ridondanti != 0);
+
+    */
+
+    std::cout << std::endl;
+
+    std::cout << "Soluzione finale baby ";
+    for (unsigned j = 0; j < n_cols; ++j) {
+        if (col_assignment[j] == FIX_IN) {
+            std::cout << j << "\t";
         }
     }
 
@@ -446,4 +484,20 @@ unsigned SetCover::solution_value(const SetCover original) {
     }
 
     return solution_cost;
+}
+
+void SetCover::print_solution( std::vector<Status> assignment){
+    
+    for (unsigned j = 0; j < n_cols; ++j) {
+        if (assignment[j] == FIX_IN) {
+            std::cout << "Riga: " << j << "\t";
+
+            Cell* cell = cols[j];
+            for (unsigned k = 0; k < col_density[j]; ++k) {
+                std::cout << cell->row << ";\t";
+                cell = cell->down;
+            }
+            std::cout << std::endl;
+        }
+    }
 }

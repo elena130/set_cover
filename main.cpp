@@ -53,25 +53,22 @@ int main(int argc, char* argv[]) {
 
     } while (deleted_elements != 0);
 
-    do {
-        deleted_elements = 0;
-        deleted_elements += reduced_sc.fix_out_dominated_cols_set();
-        std::cout << "nuovo test: " << deleted_elements << std::endl;
-
-        reduced_sc.delete_fix_out_rows();
-        reduced_sc.delete_fix_out_cols();
-        
-    } while (deleted_elements != 0);
-
     std::cout<< std::endl << "CHVATAL" << std::endl;
-    reduced_sc.chvtal(original_sc);
+    SetCover sc_chvatal(reduced_sc);
+    sc_chvatal.chvtal(reduced_sc);
 
-    if (reduced_sc.solution_is_correct(original_sc)) 
+
+
+    if (sc_chvatal.solution_is_correct(reduced_sc)) 
         std::cout << "Solution is correct" << std::endl;
     else 
         std::cout << "Solution is wrong, check your code" << std::endl;
 
-    std::cout << "Solution cost: " << reduced_sc.solution_value(original_sc) << std::endl;
+    std::cout << "Solution cost: " << sc_chvatal.solution_value(original_sc) << std::endl;
+
+    reduced_sc.print_solution(sc_chvatal.get_col_assignment());
+    
+    std::cout << std::endl;
     
     return 0;
 }

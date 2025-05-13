@@ -28,7 +28,7 @@ private:
     std::vector<unsigned> col_density;
     std::vector<Status> row_assignment;
     std::vector<Status> col_assignment;
-    std::set<unsigned> available_row;
+    std::set<unsigned> uncovered_rows;
     std::set<unsigned> available_col;
 
     void clear();
@@ -68,6 +68,8 @@ public:
 
     unsigned get_col_den(const unsigned j);
 
+    const std::vector<Status> get_col_assignment();
+
     unsigned fix_essential_columns();
 
     unsigned fix_out_dominated_rows();
@@ -75,6 +77,8 @@ public:
     unsigned fix_out_dominated_cols();
 
     unsigned fix_out_dominated_cols_set();
+
+    bool column_is_set_dominated(const unsigned j, const std::vector<Status> assegnamento);
 
     void delete_fix_out_rows();
 
@@ -89,6 +93,8 @@ public:
     bool solution_is_correct(const SetCover original);
 
     unsigned solution_value(const SetCover original);
+
+    void print_solution(std::vector<Status> assignment);
 };
 
 #endif

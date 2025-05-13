@@ -6,7 +6,7 @@
 
 unsigned SetCover::fix_essential_columns() {
     unsigned fixed_cols = 0;
-    for(std::set<unsigned>::iterator i = available_row.begin(); i!=available_row.end(); ++i )
+    for(std::set<unsigned>::iterator i = uncovered_rows.begin(); i!=uncovered_rows.end(); ++i )
         if (row_density[*i] == 1) {
             unsigned col = get_row_head(*i)->col;
             if (col_assignment[col] == FREE) {
@@ -29,12 +29,12 @@ unsigned SetCover::fix_out_dominated_rows() {
     unsigned dominated_rows = 0;
     unsigned shortest;
 
-    for(std::set<unsigned>::iterator i = available_row.begin(); i!=available_row.end(); ++i){
+    for(std::set<unsigned>::iterator i = uncovered_rows.begin(); i!=uncovered_rows.end(); ++i){
        
         // find the shortest column which covers the row
         shortest = rows[*i]->col;
         Cell* ptr = rows[*i];
-        for (unsigned k = 0; k < col_density[*i]; ++k) {
+        for (unsigned k = 0; k < row_density[*i]; ++k) {
             if (col_density[ptr->col] < col_density[shortest]) {
                 shortest = ptr->col;
             }
@@ -94,10 +94,12 @@ unsigned SetCover::fix_out_dominated_cols() {
 
                     if (col_density[*j] < col_density[ptr->col] || (col_density[*j] == col_density[ptr->col] && *j > ptr->col)) {
                         col_assignment[*j] = FIX_OUT;
+                        //std::cout << "Colonna " << *j << " dominata da " << ptr->col << std::endl;
                         break;
                     }
                     else {
                         col_assignment[ptr->col] = FIX_OUT;
+                        //std::cout << "Colonna " << ptr->col << " dominata da " << *j << std::endl;
                     }
                 }
             }
@@ -126,81 +128,68 @@ unsigned SetCover::fix_out_dominated_cols_set() {
             continue;
         }
 
-        // find the shortes row that is covered by the column
-        Cell* ptr = cols[*j];
-        unsigned short_row = ptr->row;
-
-        for (unsigned k = 0; k < col_density[*j]; ++k) {
-            if (row_density[ptr->row] < row_density[short_row]) {
-                short_row = ptr->row;
-            }
-            ptr = ptr->down;
-        }
-
-        // puntatore alla colonna di cui devo controllare se è dominata
-        Cell* j_ptr = cols[*j];
-        unsigned j_counter = 0;
-        // puntatore alla riga più corta coperta da j
-        Cell* short_row_ptr = rows[short_row];
-        unsigned shortest_counter = 0;
-
-        bool added = false;
-        // quante colonne sono necessarie per coprire j
-        unsigned set_cost = 0;
-
-        // scorro la riga più corta
-        for (unsigned k = 0; k < row_density[short_row]; ++k) {
-            if (*j != short_row_ptr->col && col_assignment[short_row_ptr->col] != FIX_OUT) {
-                Cell* ptr = cols[short_row_ptr->col];
-                unsigned counter = 0;
-
-                while (j_counter != col_density[*j] && shortest_counter != col_density[short_row] ) {
-                   
-                    if (j_ptr->row < ptr->row || counter == col_density[ptr->col]) {
-                        short_row_ptr = short_row_ptr->right;
-                        ptr = cols[short_row_ptr->col];
-                        counter = 0;
-                        added = false;
-                        continue;
-                    }
-                    if (j_ptr->row == ptr->row) {
-                        j_ptr = j_ptr->down;
-                        ++j_counter;
-                        if (!added) {
-                            set_cost+= costs[ptr->col];
-                        }
-                        added = true;
-                    }
-
-                    if (set_cost > costs[*j]) {
-                        break;
-                    }
-
-                    ptr = ptr->down;
-                    counter++;
-                }
-            }
-            else {
-                short_row_ptr = short_row_ptr->right;
-            }
-
-            
-        }
-
-        if (j_counter == col_density[*j] && set_cost <= costs[*j]) {
+        if (column_is_set_dominated(*j, col_assignment)) {
             col_assignment[*j] = FIX_OUT;
-            dominated++;
-            continue;
-        }
-
-        if (*j % 50000 == 0) {
-            std::cout << *j << "\t";
+            std::cout << std::endl << "SET R" << * j << " is dominated by a set" << std::endl;
+            ++dominated;
         }
     }
 
     std::cout << std::endl;
 
     return dominated;
+}
+
+bool SetCover::column_is_set_dominated(const unsigned j, const std::vector<Status> assegnamento) {
+    unsigned set_cost = 0;
+    bool added = false;
+    std::set<unsigned> covered_rows;
+
+    for (unsigned k = 0; k < n_cols; ++k) {
+        if (assegnamento[k] != FIX_IN)
+            continue;
+
+        if (k == j)
+            continue;
+
+        Cell* j_cell = cols[j];
+        unsigned j_counter = 0;
+        Cell* other_cel = cols[k];
+        unsigned other_counter = 0;
+        added = false;
+
+        while (other_counter != col_density[k] && j_counter != col_density[j]) {
+            
+            if (j_cell->row < other_cel->row) {
+                j_cell = j_cell->down;
+                ++j_counter;
+            } else if (j_cell->row == other_cel->row) {
+                j_cell = j_cell->down;
+                ++j_counter;
+                if (!added) {
+                    set_cost += costs[other_cel->col];
+                }
+
+                covered_rows.insert(j_cell->row);
+                added = true;
+                other_cel = other_cel->down;
+                ++other_counter;
+
+            }else if (j_cell->row > other_cel->row) {
+                other_cel = other_cel->down;
+                ++other_counter;
+            }
+        }
+
+        if (covered_rows.size() == col_density[j]) {
+            break;
+        }
+    }
+
+    if (set_cost > costs[j] || covered_rows.size() != col_density[j])
+        return false;
+    else if (covered_rows.size() == col_density[j])
+        return true;
 }
 
 void SetCover::delete_fix_out_rows() {
@@ -218,7 +207,7 @@ void SetCover::delete_fix_out_cols() {
 }
 
 unsigned SetCover::remaining_rows() {
-    return available_row.size();
+    return uncovered_rows.size();
 }
 
 unsigned SetCover::remaining_cols() {
