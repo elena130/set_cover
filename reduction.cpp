@@ -5,9 +5,9 @@
 
 unsigned SetCover::fix_essential_columns() {
     unsigned fixed_cols = 0;
-    for(std::set<unsigned>::iterator i = available_row.begin(); i!=available_row.end(); ++i )
-        if (row_density[*i] == 1) {
-            unsigned col = get_row_head(*i)->col;
+    for(unsigned i : available_row )
+        if (row_density[i] == 1) {
+            unsigned col = get_row_head(i)->col;
             if (col_assignment[col] == FREE) {
                 col_assignment[col] = FIX_IN;
                 ++fixed_cols;
@@ -28,11 +28,11 @@ unsigned SetCover::fix_out_dominated_rows() {
     unsigned dominated_rows = 0;
     unsigned shortest;
 
-    for(std::set<unsigned>::iterator i = available_row.begin(); i!=available_row.end(); ++i){
+    for(unsigned i : available_row ){
        
-        shortest = rows[*i]->col;
-        Cell* ptr = rows[*i];
-        for (unsigned k = 0; k < col_density[*i]; ++k) {
+        shortest = rows[i]->col;
+        Cell* ptr = rows[i];
+        for (unsigned k = 0; k < col_density[i]; ++k) {
             if (col_density[ptr->col] < col_density[shortest]) {
                 shortest = ptr->col;
             }
@@ -41,14 +41,14 @@ unsigned SetCover::fix_out_dominated_rows() {
 
         ptr = cols[shortest];
         for (unsigned k = 0; k < col_density[shortest]; ++k) {
-            if (*i != ptr->row && row_assignment[*i] == FREE && row_assignment[ptr->row] == FREE) {
-                if (row_is_subset_of(*i, ptr->row)) {
+            if (i != ptr->row && row_assignment[i] == FREE && row_assignment[ptr->row] == FREE) {
+                if (row_is_subset_of(i, ptr->row)) {
                     dominated_rows++;
-                    if (row_density[*i] != row_density[ptr->row] || (row_density[*i] == row_density[ptr->row] && ptr->row > *i)) {
+                    if (row_density[i] != row_density[ptr->row] || (row_density[i] == row_density[ptr->row] && ptr->row > i)) {
                         row_assignment[ptr->row] = FIX_OUT;
                     }
                     else {
-                        row_assignment[*i] = FIX_OUT;
+                        row_assignment[i] = FIX_OUT;
                         break;
                     }
                 }
@@ -67,16 +67,16 @@ unsigned SetCover::fix_out_dominated_cols() {
 
     unsigned dominated = 0;
 
-    for(std::set<unsigned>::iterator j = available_col.begin(); j != available_col.end(); ++j){
+    for(unsigned j : available_col){
 
-        if (col_assignment[*j] == FIX_IN) {
+        if (col_assignment[j] == FIX_IN) {
             continue; 
         }
 
-        Cell* ptr = cols[*j];
+        Cell* ptr = cols[j];
         unsigned smallest = ptr->row;
 
-        for (unsigned k = 0; k < col_density[*j]; ++k) {
+        for (unsigned k = 0; k < col_density[j]; ++k) {
             if (row_density[ptr->row] < row_density[smallest]) {
                 smallest = ptr->row;
             }
@@ -85,12 +85,12 @@ unsigned SetCover::fix_out_dominated_cols() {
 
         ptr = rows[smallest];
         for (unsigned k = 0; k < row_density[smallest]; ++k) {
-            if (*j != ptr->col && col_assignment[*j] == FREE && col_assignment[ptr->col] == FREE) {
-                if (col_is_dominated(*j, ptr->col)) {
+            if (j != ptr->col && col_assignment[j] == FREE && col_assignment[ptr->col] == FREE) {
+                if (col_is_dominated(j, ptr->col)) {
                     ++dominated;
 
-                    if (col_density[*j] < col_density[ptr->col] || (col_density[*j] == col_density[ptr->col] && *j > ptr->col)) {
-                        col_assignment[*j] = FIX_OUT;
+                    if (col_density[j] < col_density[ptr->col] || (col_density[j] == col_density[ptr->col] && j > ptr->col)) {
+                        col_assignment[j] = FIX_OUT;
                         break;
                     }
                     else {
@@ -101,8 +101,8 @@ unsigned SetCover::fix_out_dominated_cols() {
             ptr = ptr->right;
         }
 
-        if (*j % 50000 == 0) {
-            std::cout << *j << "\t";
+        if (j % 50000 == 0) {
+            std::cout << j << "\t";
         }
     }
 
@@ -147,14 +147,14 @@ void SetCover::chvtal() {
         float min_score = UINT_MAX;
         unsigned min_col = 0;
 
-        for (auto j = cols_to_select.begin(); j != cols_to_select.end(); ++j) {
-            if (covered_rows[*j] == 0)
+        for (unsigned j : cols_to_select) {
+            if (covered_rows[j] == 0)
                 continue; 
 
-            float score = float(costs[*j]) / float(covered_rows[*j]);
+            float score = float(costs[j]) / float(covered_rows[j]);
             if (score < min_score) {
                 min_score = score;
-                min_col = *j;
+                min_col = j;
             }
         }
 
