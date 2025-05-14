@@ -135,15 +135,23 @@ unsigned SetCover::remaining_cols() {
 
 void SetCover::chvtal() {
 
-    while (!available_row.empty()) {
+    std::vector<unsigned> covered_rows(n_cols, 0);
+    std::set<unsigned> uncovered_rows(available_row);
+    std::set<unsigned> cols_to_select(available_col);
+
+    for (unsigned j = 0; j < n_cols; ++j) {
+        covered_rows[j] = col_density[j];
+    }
+
+    while (!uncovered_rows.empty()) {
         float min_score = UINT_MAX;
         unsigned min_col = 0;
 
-        for (auto j = available_col.begin(); j != available_col.end(); ++j) {
-            if (col_density[*j] == 0)
+        for (auto j = cols_to_select.begin(); j != cols_to_select.end(); ++j) {
+            if (covered_rows[*j] == 0)
                 continue; 
 
-            float score = float(costs[*j]) / float(col_density[*j]);
+            float score = float(costs[*j]) / float(covered_rows[*j]);
             if (score < min_score) {
                 min_score = score;
                 min_col = *j;
@@ -151,17 +159,21 @@ void SetCover::chvtal() {
         }
 
         col_assignment[min_col] = FIX_IN;
-        available_col.erase(min_col);
+        cols_to_select.erase(min_col);
 
-        Cell* ptr = cols[min_col];
+        Cell* col_ptr = cols[min_col];
         for (unsigned k = 0; k < col_density[min_col]; ++k) {
-            Cell* old_ptr = ptr;
-            ptr = ptr->down;
+            Cell* row_ptr = rows[col_ptr->row];
+            
+            for (unsigned i = 0; i < row_density[row_ptr->row]; ++i) {
+                if(uncovered_rows.find(row_ptr->row) != uncovered_rows.end() && covered_rows[row_ptr->col] > 0)
+                    --covered_rows[row_ptr->col];
 
-            remove_row(old_ptr->row);
+                row_ptr = row_ptr->right;
+            }
+            uncovered_rows.erase(col_ptr->row);
+            col_ptr = col_ptr->down;
         }
-
-        remove_col(min_col);
     }
 }
 
