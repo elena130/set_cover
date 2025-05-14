@@ -298,6 +298,83 @@ void SetCover::remove_col(const unsigned j){
     costs[j] = UINT_MAX;
 }
 
+void SetCover::chvtal() {
+
+    std::vector<unsigned> covered_rows(n_cols, 0);
+    std::set<unsigned> uncovered_rows(available_row);
+    std::set<unsigned> cols_to_select(available_col);
+
+    for (unsigned j = 0; j < n_cols; ++j) {
+        covered_rows[j] = col_density[j];
+    }
+
+    while (!uncovered_rows.empty()) {
+        float min_score = UINT_MAX;
+        unsigned min_col = 0;
+
+        for (unsigned j : cols_to_select) {
+            if (covered_rows[j] == 0)
+                continue;
+
+            float score = float(costs[j]) / float(covered_rows[j]);
+            if (score < min_score) {
+                min_score = score;
+                min_col = j;
+            }
+        }
+
+        col_assignment[min_col] = FIX_IN;
+        cols_to_select.erase(min_col);
+
+        Cell* col_ptr = cols[min_col];
+        for (unsigned k = 0; k < col_density[min_col]; ++k) {
+            Cell* row_ptr = rows[col_ptr->row];
+
+            for (unsigned i = 0; i < row_density[row_ptr->row]; ++i) {
+                if (uncovered_rows.find(row_ptr->row) != uncovered_rows.end() && covered_rows[row_ptr->col] > 0)
+                    --covered_rows[row_ptr->col];
+
+                row_ptr = row_ptr->right;
+            }
+            uncovered_rows.erase(col_ptr->row);
+            col_ptr = col_ptr->down;
+        }
+    }
+}
+
+bool SetCover::solution_is_correct(const SetCover original) {
+    Cell* ptr;
+    bool ok = true;
+
+    for (unsigned i = 0; i < n_rows; ++i) {
+        ptr = original.rows[i];
+        unsigned counter = 0;
+
+        while (counter < original.row_density[i] && col_assignment[ptr->col] != FIX_IN) {
+            ++counter;
+            ptr = ptr->right;
+        }
+
+        if (col_assignment[ptr->col] != FIX_IN) {
+            ok = false;
+            break;
+        }
+    }
+
+    return ok;
+}
+
+unsigned SetCover::solution_value(const SetCover original) {
+    unsigned solution_cost = 0;
+
+    for (unsigned j = 0; j < n_cols; ++j) {
+        if (col_assignment[j] == FIX_IN)
+            solution_cost += original.costs[j];
+    }
+
+    return solution_cost;
+}
+
 void SetCover::set_cost(const unsigned j,  const unsigned cost) {
     costs[j] = cost;
 }
