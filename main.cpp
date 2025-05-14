@@ -8,6 +8,7 @@ int main(int argc, char* argv[]) {
     std::fstream file;
     std::string line;
     unsigned int nr, nc;
+    Assignment assignment;
 
     if (argc != 2) {
         std::cout << "Error, path to input file is not specified. Terminating" << std::endl;
@@ -22,6 +23,8 @@ int main(int argc, char* argv[]) {
     std::cout << nr << "x" << nc << std::endl;
 
     SetCover original_sc(nr, nc);
+    assignment.rows.resize(nr, FREE);
+    assignment.cols.resize(nc, FREE);
 
     for (unsigned j = 0; j < nc; ++j) {
         original_sc.set_cost(j, input.next_int());
@@ -41,13 +44,13 @@ int main(int argc, char* argv[]) {
 
     do {
         deleted_elements = 0;
-        deleted_elements += reduced_sc.fix_essential_columns();
-        deleted_elements += reduced_sc.fix_out_dominated_rows();
-        deleted_elements += reduced_sc.fix_out_dominated_cols();
+        deleted_elements += reduced_sc.fix_essential_columns(assignment);
+        deleted_elements += reduced_sc.fix_out_dominated_rows(assignment);
+        deleted_elements += reduced_sc.fix_out_dominated_cols(assignment);
         
 
-        reduced_sc.delete_fix_out_rows();
-        reduced_sc.delete_fix_out_cols();
+        reduced_sc.delete_fix_out_rows(assignment);
+        reduced_sc.delete_fix_out_cols(assignment);
         std::cout << "Remaining rows: " << reduced_sc.remaining_rows() << std::endl << "Remaining cols: " << reduced_sc.remaining_cols() << std::endl;
         
 
@@ -55,18 +58,19 @@ int main(int argc, char* argv[]) {
 
     std::cout<< std::endl << "CHVATAL" << std::endl;
     SetCover sc_chvatal(reduced_sc);
-    sc_chvatal.chvtal(reduced_sc);
+    sc_chvatal.solution_by_score(assignment);
+    std::cout << "Solution cost before Chvatal reduction: " << original_sc.solution_value(assignment) << std::endl;
+    reduced_sc.chvatal_solution_red(assignment);
+    std::cout << "Solution cost after Chvatal reduction: " << original_sc.solution_value(assignment) << std::endl;
 
-
-
-    if (sc_chvatal.solution_is_correct(reduced_sc)) 
+    if (original_sc.solution_is_correct(assignment))
         std::cout << "Solution is correct" << std::endl;
     else 
         std::cout << "Solution is wrong, check your code" << std::endl;
 
-    std::cout << "Solution cost: " << sc_chvatal.solution_value(original_sc) << std::endl;
+    std::cout << "Solution cost: " << original_sc.solution_value(assignment) << std::endl;
 
-    reduced_sc.print_solution(sc_chvatal.get_col_assignment());
+    //reduced_sc.print_solution(assignment.cols);
     
     std::cout << std::endl;
     

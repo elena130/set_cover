@@ -18,6 +18,11 @@ enum Status {
     FIX_IN = 1
 };
 
+struct Assignment {
+    std::vector<Status> rows;
+    std::vector<Status> cols;
+};
+
 class SetCover {
 private:
     unsigned int n_rows, n_cols;
@@ -26,8 +31,6 @@ private:
     std::vector<unsigned> costs;
     std::vector<unsigned> row_density;
     std::vector<unsigned> col_density;
-    std::vector<Status> row_assignment;
-    std::vector<Status> col_assignment;
     std::set<unsigned> uncovered_rows;
     std::set<unsigned> available_col;
 
@@ -68,21 +71,19 @@ public:
 
     unsigned get_col_den(const unsigned j);
 
-    const std::vector<Status> get_col_assignment();
+    unsigned fix_essential_columns(Assignment& assignment);
 
-    unsigned fix_essential_columns();
+    unsigned fix_out_dominated_rows(Assignment& assignment);
 
-    unsigned fix_out_dominated_rows();
+    unsigned fix_out_dominated_cols(Assignment & assignment);
 
-    unsigned fix_out_dominated_cols();
-
-    unsigned fix_out_dominated_cols_set();
+    unsigned fix_out_dominated_cols_set(Assignment & assignment);
 
     bool column_is_set_dominated(const unsigned j, const std::vector<Status> assegnamento);
 
-    void delete_fix_out_rows();
+    void delete_fix_out_rows(Assignment & assignment);
 
-    void delete_fix_out_cols();
+    void delete_fix_out_cols(Assignment & assignment);
 
     unsigned remaining_rows();
 
@@ -90,9 +91,13 @@ public:
 
     void chvtal(const SetCover original);
 
-    bool solution_is_correct(const SetCover original);
+    void solution_by_score(Assignment & assignment);
 
-    unsigned solution_value(const SetCover original);
+    void chvatal_solution_red(Assignment & assignment);
+
+    bool solution_is_correct(const Assignment assignment);
+
+    unsigned solution_value(const Assignment assignment);
 
     void print_solution(std::vector<Status> assignment);
 };
