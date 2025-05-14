@@ -61,9 +61,11 @@ int main(int argc, char* argv[]) {
     sc.chvtal();
 
     if (sc.solution_is_correct(original_sc)) 
-        std::cout << "Soluzione corretta";
+        std::cout << "Solution is correct";
     else 
-        std::cout << "soluzione errata";
+        std::cout << "Solution is wrong, check your code";
+
+    std::cout << std::endl;
 
     std::cout << "Solution cost: " << sc.solution_value(original_sc) << std::endl;
     

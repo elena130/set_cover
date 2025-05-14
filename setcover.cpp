@@ -73,7 +73,7 @@ SetCover::SetCover(const SetCover& s) {
     copy(s);
 }
 
-void SetCover::operator=(const SetCover& s){
+void SetCover::operator=(const SetCover& s) {
     clear();
     copy(s);
 }
@@ -85,13 +85,11 @@ Cell* SetCover::column_tail(const unsigned j) {
        return cols[j]->up;
 }
 
-Cell* SetCover::get_col_head(const unsigned j)
-{
+Cell* SetCover::get_col_head(const unsigned j) {
     return cols[j];
 }
 
-Cell* SetCover::get_row_head(const unsigned i)
-{
+Cell* SetCover::get_row_head(const unsigned i) {
     return rows[i];
 }
 
@@ -308,8 +306,7 @@ unsigned SetCover::get_cost(const unsigned j) {
     return costs[j];
 }
 
-unsigned SetCover::get_row_den(const unsigned i)
-{
+unsigned SetCover::get_row_den(const unsigned i){
     return row_density[i];
 }
 
