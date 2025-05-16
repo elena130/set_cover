@@ -147,14 +147,15 @@ void SetCover::insert_cell(const unsigned i, const unsigned j) {
     
 }
 
-// check if row i is dominated by row k, i.e. the set of columns which cover i is a subset of the 
-// columns which cover the row k 
+// check if the set of columns that cover row i is a subset of the columns that cover 
+// the row k. 
 bool SetCover::row_is_subset_of(const unsigned i, const unsigned k) {
     if (row_density[i] > row_density[k]) 
         return false;
 
-    if (rows[i]->up->col < rows[k]->col || rows[k]->up->col < rows[i]->col)
+    if(rows[k]->col > rows[i]->col || rows[k]->left->col < rows[i]->left->col) {
         return false;
+    }
 
     Cell* ptr_i = rows[i];
     Cell* ptr_k = rows[k];

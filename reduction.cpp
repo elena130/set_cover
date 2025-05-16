@@ -44,7 +44,7 @@ unsigned SetCover::fix_out_dominated_rows() {
             if (i != ptr->row && row_assignment[i] == FREE && row_assignment[ptr->row] == FREE) {
                 if (row_is_subset_of(i, ptr->row)) {
                     dominated_rows++;
-                    if (row_density[i] != row_density[ptr->row] || (row_density[i] == row_density[ptr->row] && ptr->row > i)) {
+                    if (row_density[i] != row_density[ptr->row] || ptr->row > i) {
                         row_assignment[ptr->row] = FIX_OUT;
                     }
                     else {
@@ -89,7 +89,7 @@ unsigned SetCover::fix_out_dominated_cols() {
                 if (col_is_dominated(j, ptr->col)) {
                     ++dominated;
 
-                    if (col_density[j] < col_density[ptr->col] || (col_density[j] == col_density[ptr->col] && j > ptr->col)) {
+                    if (col_density[j] != col_density[ptr->col] || col_density[j] < col_density[ptr->col] ) {
                         col_assignment[j] = FIX_OUT;
                         break;
                     }
