@@ -131,14 +131,14 @@ void SetCover::insert_cell(const unsigned i, const unsigned j) {
         
     }
 
-    // setting right and left pointer 
+    // insertion sort to set right and left pointer 
     if (rows[i] == NULL) {
         rows[i] = c;
         c->right = c;
         c->left = c;
     }
     else {
-        Cell* ptr = rows[i]->left;
+        ptr = rows[i]->left;
 
         while (ptr->col > j && ptr != rows[i]) {
             ptr = ptr->left;
