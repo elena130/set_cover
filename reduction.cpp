@@ -63,7 +63,7 @@ unsigned SetCover::fix_out_dominated_rows() {
 
 unsigned SetCover::fix_out_dominated_cols() {
 
-    std::cout << "fixing out dominated cols without heuristic: ";
+    std::cout << "Fixing out dominated cols counter: ";
 
     unsigned dominated = 0;
 

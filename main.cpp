@@ -16,7 +16,7 @@ int main(int argc, char* argv[]) {
         return 1;
     } 
 
-    std::cout << "Reading matrix" << std::endl;
+    std::cout << "READING MATRIX" << std::endl;
     Reader input(argv[1]);
 
     nr = input.next_int();
@@ -49,7 +49,8 @@ int main(int argc, char* argv[]) {
         }
     }
 
-    std::cout << "Finished building structure" << std::endl;
+    std::cout << "Finished building structure" << std::endl << std::endl;
+    std::cout << "REDUCTIONS" << std::endl;
 
     SetCover sc(original_sc);
 
@@ -75,6 +76,8 @@ int main(int argc, char* argv[]) {
 
     } while (deletion != 0);
 
+    std::cout << std::endl;
+    std::cout << "CHVATAL" << std::endl;
     sc.chvtal();
 
     if (sc.solution_is_correct(original_sc)) 
