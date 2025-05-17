@@ -32,7 +32,7 @@ unsigned SetCover::fix_out_dominated_rows() {
        
         shortest = rows[i]->col;
         Cell* ptr = rows[i];
-        for (unsigned k = 0; k < col_density[i]; ++k) {
+        for (unsigned k = 0; k < row_density[i]; ++k) {
             if (col_density[ptr->col] < col_density[shortest]) {
                 shortest = ptr->col;
             }
