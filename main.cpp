@@ -78,7 +78,11 @@ int main(int argc, char* argv[]) {
 
     std::cout << std::endl;
     std::cout << "CHVATAL" << std::endl;
-    auto selected = sc.chvtal();
+    std::vector<unsigned> selected;
+    selected = sc.chvtal();
+    unsigned red = sc.chvatal_reduction(selected);
+
+    std::cout << "Eliminazioni: " << red << std::endl;
 
     if (sc.solution_is_correct(original_sc)) 
         std::cout << "Solution is correct";

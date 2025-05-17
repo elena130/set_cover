@@ -84,9 +84,9 @@ public:
 
     unsigned remaining_cols();
 
-    std::set<unsigned> chvtal();
+    std::vector<unsigned> chvtal();
 
-    unsigned chvatal_reduction(const std::set<unsigned> selected_cols);
+    unsigned chvatal_reduction(const std::vector<unsigned> & selected_cols);
 
     bool solution_is_correct(const SetCover original);
 
