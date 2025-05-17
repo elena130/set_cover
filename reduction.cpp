@@ -29,7 +29,6 @@ unsigned SetCover::fix_out_dominated_rows() {
     unsigned shortest;
 
     for(unsigned i : available_row ){
-       
         shortest = rows[i]->col;
         Cell* ptr = rows[i];
         for (unsigned k = 0; k < row_density[i]; ++k) {
@@ -53,7 +52,6 @@ unsigned SetCover::fix_out_dominated_rows() {
                     }
                 }
             }
-
             ptr = ptr->down;
         }
     }
@@ -109,6 +107,62 @@ unsigned SetCover::fix_out_dominated_cols() {
     std::cout << std::endl;
 
     return dominated;
+}
+
+unsigned SetCover::fix_out_cols_dom_set() {
+    std::vector<int> min_cost_col(n_rows, -1);
+    std::set<unsigned> added;
+    unsigned cost;
+    unsigned fixed_out = 0;
+
+    // for each row find out the minimum cost columns which covers it
+    for (unsigned i = 0; i < n_rows; i++) {
+        Cell* cell = rows[i];
+        unsigned min = UINT_MAX;
+        for (unsigned k = 0; k < row_density[i]; ++k) {
+            if (min_cost_col[i] == -1 || costs[cell->col] < min) {
+                min_cost_col[i] = cell->col;
+                min = costs[cell->col];
+            }
+            cell = cell->right;
+        }
+    }
+    
+    std::set<unsigned> to_cover;
+
+    // consider ordering the available columns by their cost and iterate by decreasing cost
+    for (auto j = available_col.crbegin(); j != available_col.crend(); ++j) {
+        unsigned idx = *j;
+        Cell* c = cols[idx];
+        to_cover.clear();
+        added.clear(); 
+        cost = 0;
+
+        for (unsigned k = 0; k < col_density[idx]; ++k) {
+            to_cover.insert(c->row);
+            c = c->down;
+        }
+
+        c = cols[idx];
+        while (to_cover.size() != 0) {
+            if (added.find(min_cost_col[c->row]) == added.end()) {
+                cost += costs[min_cost_col[c->row]];
+                if (cost > costs[idx]) {
+                    break;
+                }
+            }
+            added.insert(min_cost_col[c->row]);
+            to_cover.erase(c->row);
+            c = c->down;
+        }
+
+        if (costs[idx] > cost && to_cover.size() == 0 ) {
+            col_assignment[idx] = FIX_OUT;
+            fixed_out++;
+        }
+    }
+
+    return fixed_out;
 }
 
 void SetCover::delete_fix_out_rows() {

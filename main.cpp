@@ -26,14 +26,14 @@ int main(int argc, char* argv[]) {
     SetCover original_sc(nr, nc);
 
     if (input.get_file_name().find("rail") != std::string::npos ) {
-    for (unsigned j = 0; j < nc; ++j) {
-        original_sc.set_cost(j, input.next_int());
-        unsigned den = input.next_int();
-        for (unsigned k = 0; k < den; ++k) {
-            unsigned i = input.next_int();
-            original_sc.insert_cell(i - 1, j);
+        for (unsigned j = 0; j < nc; ++j) {
+            original_sc.set_cost(j, input.next_int());
+            unsigned den = input.next_int();
+            for (unsigned k = 0; k < den; ++k) {
+                unsigned i = input.next_int();
+                original_sc.insert_cell(i - 1, j);
+            }
         }
-    }
     }
     else {
         for (unsigned j = 0; j < nc; ++j) {
@@ -53,7 +53,6 @@ int main(int argc, char* argv[]) {
     std::cout << "REDUCTIONS" << std::endl;
 
     SetCover sc(original_sc);
-
     unsigned deletion;
     unsigned deleted_cols = 0;
     unsigned deleted_rows = 0;
@@ -63,6 +62,7 @@ int main(int argc, char* argv[]) {
         unsigned d_cols = sc.fix_essential_columns();
         unsigned d_rows = sc.fix_out_dominated_rows();
         d_cols += sc.fix_out_dominated_cols();
+        d_cols += sc.fix_out_cols_dom_set();
 
         deletion += d_rows;
         deletion += d_cols;
@@ -96,7 +96,7 @@ int main(int argc, char* argv[]) {
     
     std::cout << nr << "\t" << nc << "\t";
     std::cout << sc.remaining_rows() << "\t" << sc.remaining_cols() << "\t" << sol_val << "\t" << 0 << "\t" << time;
-    
+
     return 0;
 }
 
