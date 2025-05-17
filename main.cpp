@@ -78,7 +78,7 @@ int main(int argc, char* argv[]) {
 
     std::cout << std::endl;
     std::cout << "CHVATAL" << std::endl;
-    sc.chvtal();
+    auto selected = sc.chvtal();
 
     if (sc.solution_is_correct(original_sc)) 
         std::cout << "Solution is correct";

@@ -147,7 +147,7 @@ void SetCover::insert_cell(const unsigned i, const unsigned j) {
         if (ptr == rows[i] && ptr->col > j) {
             Cell* prec = ptr->left;
             c->left = prec;
-        prec->right = c;
+            prec->right = c;
             ptr->left = c;
             c->right = ptr;
             cols[j] = c;
@@ -315,11 +315,12 @@ void SetCover::remove_col(const unsigned j){
     costs[j] = UINT_MAX;
 }
 
-void SetCover::chvtal() {
+std::set<unsigned> SetCover::chvtal() {
 
     std::vector<unsigned> covered_rows(n_cols, 0);
     std::set<unsigned> uncovered_rows(available_row);
     std::set<unsigned> cols_to_select(available_col);
+    std::set<unsigned> selected_cols;
 
     for (unsigned j = 0; j < n_cols; ++j) {
         covered_rows[j] = col_density[j];
@@ -342,6 +343,7 @@ void SetCover::chvtal() {
 
         col_assignment[min_col] = FIX_IN;
         cols_to_select.erase(min_col);
+        selected_cols.insert(min_col);
 
         Cell* col_ptr = cols[min_col];
         for (unsigned k = 0; k < col_density[min_col]; ++k) {
@@ -357,6 +359,67 @@ void SetCover::chvtal() {
             col_ptr = col_ptr->down;
         }
     }
+    return selected_cols;
+}
+
+unsigned SetCover::chvatal_reduction(const std::set<unsigned> selected_cols) {
+    std::vector<unsigned> min_cost_col(n_rows, n_rows+1);
+    std::set<unsigned> added;
+    std::set<unsigned> to_cover;
+    unsigned cost = 0;
+    unsigned fixed_out = 0;
+
+    Cell* c;
+    for (unsigned i = 0; i < n_rows; ++i) {
+        c = rows[i];
+        for (unsigned k = 0; k < row_density[i]; ++k) {
+            if (min_cost_col[i] == (n_rows+1) || costs[c->col] < costs[min_cost_col[i]]) {
+                if (selected_cols.find(c->col) != selected_cols.end()) {
+                    min_cost_col[i] = c->col;
+                }
+            }
+            c = c->right;
+        }
+    }
+
+    for (unsigned j : selected_cols) {
+        added.clear();
+        to_cover.clear();
+        cost = 0;
+        
+        c = cols[j];
+        for (unsigned k = 0; k < col_density[j]; ++k) {
+            to_cover.insert(c->row);
+            c = c->down;
+        }
+
+        c = cols[j];
+        for (unsigned k = 0; k < col_density[j]; ++k) {
+            if (min_cost_col[c->row] == j) {
+                continue;
+            }
+            if (added.find(min_cost_col[c->row]) == added.end()) {
+                cost += costs[min_cost_col[c->row]];
+                added.insert(min_cost_col[c->row]);
+            }
+
+            to_cover.erase(c->row);
+            c = c->down;
+        }
+
+        if (to_cover.size() == 0 && cost <= costs[j]) {
+            col_assignment[j] = FIX_OUT;
+            fixed_out++;
+
+            std::cout << "Cancello: " << j << " coperta da: ";
+            for (unsigned k : added) {
+                std::cout << k << "\t";
+            }
+            std::cout << std::endl;
+        }
+    }
+
+    return fixed_out;
 }
 
 bool SetCover::solution_is_correct(const SetCover original) {
@@ -374,6 +437,7 @@ bool SetCover::solution_is_correct(const SetCover original) {
 
         if (col_assignment[ptr->col] != FIX_IN) {
             ok = false;
+            std::cout << "Riga: " << ptr->col << "non coperta" << std::endl;
             break;
         }
     }

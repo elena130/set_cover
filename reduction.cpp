@@ -11,7 +11,7 @@ unsigned SetCover::fix_essential_columns() {
             if (col_assignment[col] == FREE) {
                 col_assignment[col] = FIX_IN;
                 ++fixed_cols;
-
+                
                 // fix out all the rows which are covered by the fixed column 
                 Cell* ptr = cols[col];
                 for (unsigned k = 0; k < col_density[col]; ++k) {
