@@ -138,11 +138,27 @@ void SetCover::insert_cell(const unsigned i, const unsigned j) {
         c->left = c;
     }
     else {
-        Cell* prec = rows[i]->left;
+        Cell* ptr = rows[i]->left;
+
+        while (ptr->col > j && ptr != rows[i]) {
+            ptr = ptr->left;
+        }
+
+        if (ptr == rows[i] && ptr->col > j) {
+            Cell* prec = ptr->left;
+            c->left = prec;
         prec->right = c;
-        c->left = prec;
-        c->right = rows[i];
-        rows[i]->left = c;
+            ptr->left = c;
+            c->right = ptr;
+            cols[j] = c;
+        }
+        else {
+            Cell* next = ptr->right;
+            ptr->right = c;
+            c->left = ptr;
+            c->right = next;
+            next->left = c;
+        }
     }
     
 }

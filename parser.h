@@ -21,6 +21,7 @@ public:
 
     int next_int();
 
+    const std::string get_file_name();
 };
 
 #endif

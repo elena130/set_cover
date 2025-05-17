@@ -25,12 +25,27 @@ int main(int argc, char* argv[]) {
 
     SetCover original_sc(nr, nc);
 
+    if (input.get_file_name().find("rail") != std::string::npos ) {
     for (unsigned j = 0; j < nc; ++j) {
         original_sc.set_cost(j, input.next_int());
         unsigned den = input.next_int();
         for (unsigned k = 0; k < den; ++k) {
             unsigned i = input.next_int();
             original_sc.insert_cell(i - 1, j);
+        }
+    }
+    }
+    else {
+        for (unsigned j = 0; j < nc; ++j) {
+            original_sc.set_cost(j, input.next_int());
+        }
+
+        for (unsigned i = 0; i < nr; ++i) {
+            unsigned den = input.next_int();
+            for (unsigned k = 0; k < den; k++) {
+                unsigned j = input.next_int();
+                original_sc.insert_cell(i, j - 1);
+            }
         }
     }
 
@@ -69,10 +84,15 @@ int main(int argc, char* argv[]) {
 
     std::cout << std::endl;
 
-    std::cout << "Solution cost: " << sc.solution_value(original_sc) << std::endl;
+    unsigned sol_val = sc.solution_value(original_sc);
+    std::cout << "Solution cost: " << sol_val << std::endl;
 
     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
-    std::cout << "Time difference = " << std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count() << "[ms]" << std::endl;
+    auto time = std::chrono::duration_cast<std::chrono::seconds>(end - begin).count();
+    std::cout << "Time difference = " << time << "[ms]" << std::endl;
+    
+    std::cout << nr << "\t" << nc << "\t";
+    std::cout << sc.remaining_rows() << "\t" << sc.remaining_cols() << "\t" << sol_val << "\t" << 0 << "\t" << time;
     
     return 0;
 }

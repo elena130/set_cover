@@ -36,3 +36,8 @@ int Reader::next_int() {
     return val;
 }
 
+const std::string Reader::get_file_name()
+{
+    return file_name;
+}
+
