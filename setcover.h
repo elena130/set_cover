@@ -91,6 +91,12 @@ public:
     bool solution_is_correct(const SetCover original);
 
     unsigned solution_value(const SetCover original);
+
+    void surrogate_heuristic();
+
+    void find_j_star(LagrangeanVar lv, std::vector<std::pair<double, unsigned>>& scores);
+
+    void calculate_scores(LagrangeanVar lv, std::vector<std::pair<double, unsigned>>& scores);
 };
 
 #endif

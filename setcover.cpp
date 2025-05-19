@@ -364,7 +364,7 @@ std::vector<unsigned> SetCover::chvtal() {
     return selected_cols;
 }
 
-bool cmp_pair(const std::pair<unsigned, unsigned> a, const std::pair<unsigned, unsigned> b) {
+bool cmp_dec(const std::pair<unsigned, unsigned> a, const std::pair<unsigned, unsigned> b) {
     if (a.first > b.first) {
         return true;
     }
@@ -385,7 +385,7 @@ unsigned SetCover::chvatal_reduction(const std::vector<unsigned>& selected_cols)
         ordered[j] = std::make_pair(costs[selected_cols[j]], selected_cols[j]);
     }
 
-    std::sort(ordered.begin(), ordered.end(), cmp_pair);
+    std::sort(ordered.begin(), ordered.end(), cmp_dec);
 
     for (std::pair<unsigned, unsigned> p : ordered) {
         unsigned j = p.second;

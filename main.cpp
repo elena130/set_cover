@@ -94,10 +94,12 @@ int main(int argc, char* argv[]) {
     unsigned sol_val = sc.solution_value(original_sc);
     std::cout << "Solution cost: " << sol_val << std::endl;
 
+    sc.surrogate_heuristic();
+
     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
     auto time = std::chrono::duration_cast<std::chrono::seconds>(end - begin).count();
     std::cout << "Time difference = " << time << "[ms]" << std::endl;
-    
+
     std::cout << nr << "\t" << nc << "\t";
     std::cout << sc.remaining_rows() << "\t" << sc.remaining_cols() << "\t" << sol_val << "\t" << 0 << "\t" << time;
 
