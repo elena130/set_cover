@@ -169,14 +169,14 @@ void SetCover::delete_fix_out_rows() {
     for (unsigned i = 0; i < n_rows; ++i) {
         if(row_assignment[i] == FIX_OUT)
             remove_row(i);
+        }
     }
-}
 
 void SetCover::delete_fix_out_cols() {
     for(unsigned j=0; j< n_cols; ++j){
         if(col_assignment[j] == FIX_OUT)
             remove_col(j);
-    }
+        }
 }
 
 unsigned SetCover::remaining_rows() {

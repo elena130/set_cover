@@ -31,13 +31,6 @@ int main(int argc, char* argv[]) {
             original_sc.set_cost(j, costo);
             unsigned den = input.next_int();
 
-            if (j == 25780) {
-                std::cout << "colonna=" << j << " costo=" << costo << " coperte=" << den << std::endl;
-            }
-            if (j == 62298) {
-                std::cout << "colonna=" << j << " costo=" << costo << " coperte=" << den << std::endl;
-            }
-
             for (unsigned k = 0; k < den; ++k) {
                 unsigned i = input.next_int();
                 original_sc.insert_cell(i - 1, j);
