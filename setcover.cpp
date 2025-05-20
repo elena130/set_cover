@@ -2,6 +2,7 @@
 #include <iostream>
 #include <utility>
 #include <algorithm>
+#include <unordered_map>
 #include "limits.h"
 
 SetCover::SetCover(unsigned r, unsigned c) : n_rows(r), n_cols(c), rows(r), cols(c), costs(c), 
@@ -319,13 +320,13 @@ void SetCover::remove_col(const unsigned j){
 
 std::vector<unsigned> SetCover::chvtal() {
 
-    std::vector<unsigned> covered_rows(n_cols, 0);
+    std::unordered_map<unsigned, unsigned> covered_rows;
     std::set<unsigned> uncovered_rows(available_row);
     std::set<unsigned> cols_to_select(available_col);
     std::vector<unsigned> selected_cols;
 
     for (unsigned j = 0; j < n_cols; ++j) {
-        covered_rows[j] = col_density[j];
+        covered_rows.insert(std::make_pair(j,col_density[j]));
     }
 
     while (!uncovered_rows.empty()) {
@@ -360,7 +361,7 @@ std::vector<unsigned> SetCover::chvtal() {
             col_ptr = col_ptr->down;
         }
 
-        chvatal_reduction(selected_cols, covered_rows, uncovered_rows);
+        chvatal_reduction(selected_cols, uncovered_rows);
     }
     return selected_cols;
 }
@@ -379,20 +380,12 @@ bool cmp_pair(const std::pair<unsigned, unsigned> a, const std::pair<unsigned, u
 
 // se metti la riduzione qua devi assicurarti però di aggiornare il contatore delle nuove righe coperte
 // quando elimini una colonna ridondante 
-unsigned SetCover::chvatal_reduction(const std::vector<unsigned>& selected_cols, std::vector<unsigned> & covered_rows,
-    std::set<unsigned> & uncovered_rows) {
+unsigned SetCover::chvatal_reduction(const std::vector<unsigned>& selected_cols,
+    std::set<unsigned>& uncovered_rows) {
     unsigned fixed_out = 0;
     std::set<unsigned> covered;
-    std::vector<std::pair<unsigned, unsigned>> ordered(selected_cols.size());
 
-    for (unsigned j = 0; j < selected_cols.size(); ++j) {
-        ordered[j] = std::make_pair(costs[selected_cols[j]], selected_cols[j]);
-    }
-
-    std::sort(ordered.begin(), ordered.end(), cmp_pair);
-
-    for (std::pair<unsigned, unsigned> p : ordered) {
-        unsigned j = p.second;
+    for (unsigned j : selected_cols) {
         covered.clear();
         Cell* c = cols[j];
 
@@ -400,11 +393,8 @@ unsigned SetCover::chvatal_reduction(const std::vector<unsigned>& selected_cols,
             covered.insert(c->row);
             c = c->down;
         }
-
         
-        for (std::pair<unsigned, unsigned> p2 : ordered) {
-            unsigned k = p2.second;
-
+        for (unsigned k : selected_cols) {
             if (j == k)
                 continue;
 
@@ -433,23 +423,8 @@ unsigned SetCover::chvatal_reduction(const std::vector<unsigned>& selected_cols,
         if (covered.size() == 0) {
             col_assignment[j] = FIX_OUT;
             fixed_out++;
-
-            Cell* col_ptr = cols[j];
-            for (unsigned k = 0; k < col_density[j]; ++k) {
-                Cell* row_ptr = rows[col_ptr->row];
-
-                for (unsigned i = 0; i < row_density[row_ptr->row]; ++i) {
-                    if (uncovered_rows.find(row_ptr->row) != uncovered_rows.end() && covered_rows[row_ptr->col] > 0)
-                        --covered_rows[row_ptr->col];
-
-                    row_ptr = row_ptr->right;
-                }
-                uncovered_rows.erase(col_ptr->row);
-                col_ptr = col_ptr->down;
-            }
         }
     }
-    
 
     return fixed_out;
 }

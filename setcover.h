@@ -35,6 +35,8 @@ private:
 
     void copy(const SetCover& s);
 
+    unsigned chvatal_reduction(const std::vector<unsigned>& selected_cols, std::set<unsigned>& uncovered_rows);
+
 public:
     SetCover(unsigned r, unsigned c);
 
@@ -85,8 +87,6 @@ public:
     unsigned remaining_cols();
 
     std::vector<unsigned> chvtal();
-
-    unsigned chvatal_reduction(const std::vector<unsigned> & selected_cols, std::vector<unsigned>& covered_rows, std::set<unsigned>& uncovered_rows);
 
     bool solution_is_correct(const SetCover original);
 
