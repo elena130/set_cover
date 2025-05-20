@@ -342,7 +342,6 @@ std::vector<unsigned> SetCover::chvtal() {
                 min_col = j;
             }
         }
-
         col_assignment[min_col] = FIX_IN;
         cols_to_select.erase(min_col);
         selected_cols.push_back(min_col);
@@ -360,6 +359,8 @@ std::vector<unsigned> SetCover::chvtal() {
             uncovered_rows.erase(col_ptr->row);
             col_ptr = col_ptr->down;
         }
+
+        chvatal_reduction(selected_cols, covered_rows, uncovered_rows);
     }
     return selected_cols;
 }
@@ -376,7 +377,10 @@ bool cmp_pair(const std::pair<unsigned, unsigned> a, const std::pair<unsigned, u
     }
 }
 
-unsigned SetCover::chvatal_reduction(const std::vector<unsigned>& selected_cols) {
+// se metti la riduzione qua devi assicurarti però di aggiornare il contatore delle nuove righe coperte
+// quando elimini una colonna ridondante 
+unsigned SetCover::chvatal_reduction(const std::vector<unsigned>& selected_cols, std::vector<unsigned> & covered_rows,
+    std::set<unsigned> & uncovered_rows) {
     unsigned fixed_out = 0;
     std::set<unsigned> covered;
     std::vector<std::pair<unsigned, unsigned>> ordered(selected_cols.size());
@@ -429,6 +433,20 @@ unsigned SetCover::chvatal_reduction(const std::vector<unsigned>& selected_cols)
         if (covered.size() == 0) {
             col_assignment[j] = FIX_OUT;
             fixed_out++;
+
+            Cell* col_ptr = cols[j];
+            for (unsigned k = 0; k < col_density[j]; ++k) {
+                Cell* row_ptr = rows[col_ptr->row];
+
+                for (unsigned i = 0; i < row_density[row_ptr->row]; ++i) {
+                    if (uncovered_rows.find(row_ptr->row) != uncovered_rows.end() && covered_rows[row_ptr->col] > 0)
+                        --covered_rows[row_ptr->col];
+
+                    row_ptr = row_ptr->right;
+                }
+                uncovered_rows.erase(col_ptr->row);
+                col_ptr = col_ptr->down;
+            }
         }
     }
     
@@ -468,6 +486,16 @@ unsigned SetCover::solution_value(const SetCover original) {
     }
 
     return solution_cost;
+}
+
+void SetCover::print_solution() {
+    std::cout << "Columns in solution: ";
+    for (unsigned j = 0; j < n_cols; ++j) {
+        if (col_assignment[j] == FIX_IN) {
+            std::cout << j << "\t";
+        }
+    }
+    std::cout << std::endl;
 }
 
 void SetCover::set_cost(const unsigned j,  const unsigned cost) {

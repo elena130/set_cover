@@ -86,11 +86,13 @@ public:
 
     std::vector<unsigned> chvtal();
 
-    unsigned chvatal_reduction(const std::vector<unsigned> & selected_cols);
+    unsigned chvatal_reduction(const std::vector<unsigned> & selected_cols, std::vector<unsigned>& covered_rows, std::set<unsigned>& uncovered_rows);
 
     bool solution_is_correct(const SetCover original);
 
     unsigned solution_value(const SetCover original);
+    
+    void print_solution();
 };
 
 #endif
