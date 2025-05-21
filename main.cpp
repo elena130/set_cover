@@ -89,10 +89,6 @@ int main(int argc, char* argv[]) {
     auto time = std::chrono::duration_cast<std::chrono::seconds>(end - begin).count();
     std::cout << "Time difference = " << time << "[s]" << std::endl;
     
-
-    for (unsigned k = 0; k < selected.size(); ++k) {
-        std::cout << selected[k] << "\t";
-    }
     std::cout << std::endl;
     std::cout << nr << "\t" << nc << "\t";
     std::cout << sc.remaining_rows() << "\t" << sc.remaining_cols() << "\t" << sol_val << "\t" << 0 << "\t" << time;
