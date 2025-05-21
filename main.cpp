@@ -25,6 +25,7 @@ int main(int argc, char* argv[]) {
 
     SetCover original_sc(nr, nc);
 
+    // loading structure from rail.txt files
     if (input.get_file_name().find("rail") != std::string::npos ) {
         for (unsigned j = 0; j < nc; ++j) {
             unsigned costo = input.next_int();
@@ -37,6 +38,7 @@ int main(int argc, char* argv[]) {
             }
         }
     }
+    // building structure from any other file 
     else {
         for (unsigned j = 0; j < nc; ++j) {
             original_sc.set_cost(j, input.next_int());
@@ -72,8 +74,8 @@ int main(int argc, char* argv[]) {
 
     std::cout << std::endl;
     std::cout << "CHVATAL" << std::endl;
-    std::vector<unsigned> selected;
-    selected = sc.chvtal();
+    std::set<unsigned> selected;
+    sc.chvtal();
 
     if (sc.solution_is_correct(original_sc)) 
         std::cout << "Solution is correct";
