@@ -2,6 +2,7 @@
 #include <string>
 #include <algorithm>
 #include <chrono>
+#include "string.h"
 #include "parser.h"
 #include "setcover.h"
 
@@ -10,18 +11,24 @@ int main(int argc, char* argv[]) {
     std::fstream file;
     std::string line;
     unsigned int nr, nc;
+    bool show_prints = false;
 
-    if (argc != 2) {
+    if (argc < 2) {
         std::cout << "Error, path to input file is not specified. Terminating" << std::endl;
         return 1;
     } 
 
-    std::cout << "READING MATRIX" << std::endl;
+    if (argc == 3)
+        show_prints = strcmp(argv[2],"p") == 0;
+
+    if (show_prints) { std::cout << "READING MATRIX" << std::endl; }
     Reader input(argv[1]);
 
     nr = input.next_int();
     nc = input.next_int();
-    std::cout << nr << "x" << nc << std::endl;
+    if (show_prints) {
+        std::cout << nr << "x" << nc << std::endl;
+    }
 
     SetCover original_sc(nr, nc);
 
@@ -53,8 +60,10 @@ int main(int argc, char* argv[]) {
         }
     }
 
-    std::cout << "Finished building structure" << std::endl << std::endl;
-    std::cout << "REDUCTIONS" << std::endl;
+    if (show_prints) {
+        std::cout << "Finished building structure" << std::endl << std::endl;
+        std::cout << "REDUCTIONS" << std::endl;
+    }
 
     SetCover sc(original_sc);
     std::vector<bool> modified_cols(nc, false);
@@ -67,37 +76,43 @@ int main(int argc, char* argv[]) {
         deleted += sc.fix_essential_columns(first_reduction, modified_rows);
         deleted += sc.fix_out_dominated_rows(first_reduction, modified_rows);
         deleted += sc.fix_out_cols_dom_set(first_reduction, modified_cols);
-        deleted += sc.fix_out_dominated_cols(first_reduction, modified_cols);
+        deleted += sc.fix_out_dominated_cols(first_reduction, modified_cols, show_prints);
 
         modified_cols = std::vector<bool>(nc, false);
         modified_rows = std::vector<bool>(nr, false);
         sc.delete_fix_out_rows(modified_cols);
         sc.delete_fix_out_cols(modified_rows);
         first_reduction = false;
-        std::cout << "Remaining rows: " << sc.remaining_rows() << std::endl << "Remaining cols: " << sc.remaining_cols() << std::endl;
-
+        if (show_prints) {
+            std::cout << "Remaining rows: " << sc.remaining_rows() << std::endl << "Remaining cols: " << sc.remaining_cols() << std::endl;
+        }
     } while (deleted != 0);
 
-    std::cout << std::endl;
-    std::cout << "CHVATAL" << std::endl;
+    if (show_prints) {
+        std::cout << std::endl;
+        std::cout << "CHVATAL" << std::endl;
+    }
     std::set<unsigned> selected;
     sc.chvtal();
 
-    if (sc.solution_is_correct(original_sc)) 
-        std::cout << "Solution is correct";
-    else 
-        std::cout << "Solution is wrong, check your code";
-
-    std::cout << std::endl;
+    if (sc.solution_is_correct(original_sc)) {
+        if (show_prints) { std::cout << "Solution is correct" << std::endl; }
+    }
+    else {
+        std::cout << "Solution is wrong, check your code" << std::endl;
+    }
 
     unsigned sol_val = sc.solution_value(original_sc);
-    std::cout << "Solution cost: " << sol_val << std::endl;
+    if (show_prints) {
+        std::cout << "Solution cost: " << sol_val << std::endl;
+    }
 
     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
     auto time = std::chrono::duration_cast<std::chrono::seconds>(end - begin).count();
-    std::cout << "Time difference = " << time << "[s]" << std::endl;
+    if (show_prints) {
+        std::cout << "Time difference = " << time << "[s]" << std::endl;
+    }
     
-    std::cout << std::endl;
     std::cout << nr << "\t" << nc << "\t";
     std::cout << sc.remaining_rows() << "\t" << sc.remaining_cols() << "\t" << sol_val << "\t" << 0 << "\t" << time;
 

@@ -74,7 +74,7 @@ public:
 
     unsigned fix_out_dominated_rows(const bool first_red, const std::vector<bool>& modified_rows);
 
-    unsigned fix_out_dominated_cols(const bool first_red, std::vector<bool> modified);
+    unsigned fix_out_dominated_cols(const bool first_red, std::vector<bool> modified, const bool show_prints);
 
     unsigned fix_out_cols_dom_set(const bool first_red, const std::vector<bool> & modified);
 

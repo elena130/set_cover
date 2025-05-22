@@ -63,9 +63,11 @@ unsigned SetCover::fix_out_dominated_rows(const bool first_red, const std::vecto
 }
 
 
-unsigned SetCover::fix_out_dominated_cols(const bool first_red, std::vector<bool> modified) {
+unsigned SetCover::fix_out_dominated_cols(const bool first_red, std::vector<bool> modified, const bool show_prints) {
 
-    std::cout << "Fixing out dominated cols counter: ";
+    if (show_prints) {
+        std::cout << "Fixing out dominated cols counter: ";
+    }
 
     unsigned dominated = 0;
 
@@ -106,12 +108,16 @@ unsigned SetCover::fix_out_dominated_cols(const bool first_red, std::vector<bool
             ptr = ptr->right;
         }
 
-        if (j % 50000 == 0) {
-            std::cout << j << "\t";
+        if (show_prints) {
+            if (j % 50000 == 0) {
+                std::cout << j << "\t";
+            }
         }
     }
 
-    std::cout << std::endl;
+    if (show_prints) {
+        std::cout << std::endl;
+    }
 
     return dominated;
 }
