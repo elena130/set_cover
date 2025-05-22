@@ -375,7 +375,6 @@ void SetCover::chvtal() {
 
 void SetCover::chvatal_reduction(std::set<unsigned>& selected_cols, std::vector<unsigned>& coperte) {
     std::vector<unsigned> ordered_cols(selected_cols.begin(), selected_cols.end());
-    unsigned redundant = 0;
     Cell* ptr;
     bool remove_col;
 
