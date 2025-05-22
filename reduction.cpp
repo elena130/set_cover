@@ -156,6 +156,10 @@ unsigned SetCover::fix_out_cols_dom_set(const bool first_red, const std::vector<
 
         c = cols[idx];
         while (to_cover.size() != 0) {
+            if (min_cost_col[c->row] == idx) {
+                cost = UINT_MAX;
+                break;
+            }
             if (added.find(min_cost_col[c->row]) == added.end()) {
                 cost += costs[min_cost_col[c->row]];
                 if (cost > costs[idx]) {
@@ -167,7 +171,7 @@ unsigned SetCover::fix_out_cols_dom_set(const bool first_red, const std::vector<
             c = c->down;
         }
 
-        if (costs[idx] > cost && to_cover.size() == 0 ) {
+        if (costs[idx] >= cost && to_cover.size() == 0 ) {
             col_assignment[idx] = FIX_OUT;
             fixed_out++;
         }
