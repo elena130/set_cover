@@ -3,20 +3,22 @@
 #include "limits.h"
 #include "setcover.h"
 
-unsigned SetCover::fix_essential_columns() {
+unsigned SetCover::fix_essential_columns(const bool first_red, std::vector<bool> modified_rows) {
     unsigned fixed_cols = 0;
     for(unsigned i : available_row )
         if (row_density[i] == 1) {
             unsigned col = get_row_head(i)->col;
             if (col_assignment[col] == FREE) {
-                col_assignment[col] = FIX_IN;
-                ++fixed_cols;
+                if (first_red || modified_rows[i]) {
+                    col_assignment[col] = FIX_IN;
+                    ++fixed_cols;
                 
-                // fix out all the rows which are covered by the fixed column 
-                Cell* ptr = cols[col];
-                for (unsigned k = 0; k < col_density[col]; ++k) {
-                    row_assignment[ptr->row] = FIX_OUT;
-                    ptr = ptr->down;
+                    // fix out all the rows which are covered by the fixed column 
+                    Cell* ptr = cols[col];
+                    for (unsigned k = 0; k < col_density[col]; ++k) {
+                        row_assignment[ptr->row] = FIX_OUT;
+                        ptr = ptr->down;
+                    }
                 }
             }
         }
@@ -24,7 +26,7 @@ unsigned SetCover::fix_essential_columns() {
     return fixed_cols;
 }
 
-unsigned SetCover::fix_out_dominated_rows() {
+unsigned SetCover::fix_out_dominated_rows(const bool first_red, const std::vector<bool> & modified_rows) {
     unsigned dominated_rows = 0;
     unsigned shortest;
 
@@ -41,14 +43,16 @@ unsigned SetCover::fix_out_dominated_rows() {
         ptr = cols[shortest];
         for (unsigned k = 0; k < col_density[shortest]; ++k) {
             if (i != ptr->row && row_assignment[i] == FREE && row_assignment[ptr->row] == FREE) {
-                if (row_is_subset_of(i, ptr->row)) {
-                    dominated_rows++;
-                    if (row_density[i] != row_density[ptr->row] || ptr->row > i) {
-                        row_assignment[ptr->row] = FIX_OUT;
-                    }
-                    else {
-                        row_assignment[i] = FIX_OUT;
-                        break;
+                if (first_red || modified_rows[i]) {
+                    if (row_is_subset_of(i, ptr->row)) {
+                        dominated_rows++;
+                        if (row_density[i] != row_density[ptr->row] || ptr->row > i) {
+                            row_assignment[ptr->row] = FIX_OUT;
+                        }
+                        else {
+                            row_assignment[i] = FIX_OUT;
+                            break;
+                        }
                     }
                 }
             }
@@ -179,10 +183,10 @@ void SetCover::delete_fix_out_rows(std::vector<bool>& modified_cols) {
     }
 }
 
-void SetCover::delete_fix_out_cols() {
+void SetCover::delete_fix_out_cols(std::vector<bool>& modified_rows) {
     for(unsigned j=0; j< n_cols; ++j){
         if(col_assignment[j] == FIX_OUT)
-            remove_col(j);
+            remove_col(j, modified_rows);
     }
 }
 

@@ -60,7 +60,7 @@ public:
 
     void remove_row(const unsigned i, std::vector<bool>& modified_cols);
 
-    void remove_col(const unsigned j);
+    void remove_col(const unsigned j, std::vector<bool> & modified_rows);
 
     void set_cost(const unsigned j, const unsigned cost);
 
@@ -70,9 +70,9 @@ public:
 
     unsigned get_col_den(const unsigned j);
 
-    unsigned fix_essential_columns();
+    unsigned fix_essential_columns(const bool first_red, std::vector<bool> modified_rows);
 
-    unsigned fix_out_dominated_rows();
+    unsigned fix_out_dominated_rows(const bool first_red, const std::vector<bool>& modified_rows);
 
     unsigned fix_out_dominated_cols(const bool first_red, std::vector<bool> modified);
 
@@ -80,7 +80,7 @@ public:
 
     void delete_fix_out_rows(std::vector<bool>& modified_cols);
 
-    void delete_fix_out_cols();
+    void delete_fix_out_cols(std::vector<bool> & modified_rows);
 
     unsigned remaining_rows();
 

@@ -275,7 +275,7 @@ void SetCover::remove_row(const unsigned i, std::vector<bool>& modified_cols) {
 
 // removes col j from the set cover problem, if present. Otherwise it leaves the set cover
 // unchanged. 
-void SetCover::remove_col(const unsigned j){
+void SetCover::remove_col(const unsigned j, std::vector<bool>& modified_rows) {
     if (cols[j] == NULL)
         return;
 
@@ -306,6 +306,7 @@ void SetCover::remove_col(const unsigned j){
         ptr = ptr->down;
 
         --row_density[i];
+        modified_rows[i] = true;
         if (row_density[i] == 0) {
             rows[i] = NULL;
             available_row.erase(i);
