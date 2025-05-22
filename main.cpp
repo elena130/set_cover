@@ -57,17 +57,23 @@ int main(int argc, char* argv[]) {
     std::cout << "REDUCTIONS" << std::endl;
 
     SetCover sc(original_sc);
+    std::vector<bool> next_modified_cols(nc, false);
+    std::vector<bool> prec_modified_cols;
     unsigned deleted;
+    bool first_reduction = true;
 
     do {
         deleted = 0;
         deleted = sc.fix_essential_columns();
         deleted = sc.fix_out_dominated_rows();
-        deleted += sc.fix_out_dominated_cols();
-        deleted += sc.fix_out_cols_dom_set();
+        deleted += sc.fix_out_dominated_cols(first_reduction, next_modified_cols);
+        deleted += sc.fix_out_cols_dom_set(first_reduction, next_modified_cols);
 
-        sc.delete_fix_out_rows();
+        //std::fill(next_modified_cols.begin(), next_modified_cols.end(), false);
+        next_modified_cols = std::vector<bool>(nc, false);
+        sc.delete_fix_out_rows(next_modified_cols);
         sc.delete_fix_out_cols();
+        first_reduction = false;
         std::cout << "Remaining rows: " << sc.remaining_rows() << std::endl << "Remaining cols: " << sc.remaining_cols() << std::endl;
 
     } while (deleted != 0);

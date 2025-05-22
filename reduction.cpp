@@ -59,7 +59,7 @@ unsigned SetCover::fix_out_dominated_rows() {
 }
 
 
-unsigned SetCover::fix_out_dominated_cols() {
+unsigned SetCover::fix_out_dominated_cols(const bool first_red, std::vector<bool> modified) {
 
     std::cout << "Fixing out dominated cols counter: ";
 
@@ -84,17 +84,20 @@ unsigned SetCover::fix_out_dominated_cols() {
         ptr = rows[smallest];
         for (unsigned k = 0; k < row_density[smallest]; ++k) {
             if (j != ptr->col && col_assignment[j] == FREE && col_assignment[ptr->col] == FREE) {
-                if (col_is_dominated(j, ptr->col)) {
-                    ++dominated;
+                if (first_red || modified[j]) {
+                    if (col_is_dominated(j, ptr->col)) {
+                        ++dominated;
 
-                    if (col_density[j] != col_density[ptr->col] || col_density[j] < col_density[ptr->col] ) {
-                        col_assignment[j] = FIX_OUT;
-                        break;
-                    }
-                    else {
-                        col_assignment[ptr->col] = FIX_OUT;
+                        if (col_density[j] != col_density[ptr->col] || col_density[j] < col_density[ptr->col] ) {
+                            col_assignment[j] = FIX_OUT;
+                            break;
+                        }
+                        else {
+                            col_assignment[ptr->col] = FIX_OUT;
+                        }
                     }
                 }
+
             }
             ptr = ptr->right;
         }
@@ -109,7 +112,7 @@ unsigned SetCover::fix_out_dominated_cols() {
     return dominated;
 }
 
-unsigned SetCover::fix_out_cols_dom_set() {
+unsigned SetCover::fix_out_cols_dom_set(const bool first_red, const std::vector<bool>& modified) {
     std::vector<int> min_cost_col(n_rows, -1);
     std::set<unsigned> added;
     unsigned cost;
@@ -133,6 +136,10 @@ unsigned SetCover::fix_out_cols_dom_set() {
     // consider ordering the available columns by their cost and iterate by decreasing cost
     for (auto j = available_col.crbegin(); j != available_col.crend(); ++j) {
         unsigned idx = *j;
+        if (!first_red && !modified[idx]) {
+            continue;
+        }
+
         Cell* c = cols[idx];
         to_cover.clear();
         added.clear(); 
@@ -165,18 +172,18 @@ unsigned SetCover::fix_out_cols_dom_set() {
     return fixed_out;
 }
 
-void SetCover::delete_fix_out_rows() {
+void SetCover::delete_fix_out_rows(std::vector<bool>& modified_cols) {
     for (unsigned i = 0; i < n_rows; ++i) {
         if(row_assignment[i] == FIX_OUT)
-            remove_row(i);
-        }
+            remove_row(i, modified_cols);
     }
+}
 
 void SetCover::delete_fix_out_cols() {
     for(unsigned j=0; j< n_cols; ++j){
         if(col_assignment[j] == FIX_OUT)
             remove_col(j);
-        }
+    }
 }
 
 unsigned SetCover::remaining_rows() {

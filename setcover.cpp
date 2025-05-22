@@ -229,7 +229,7 @@ bool SetCover::col_is_dominated(const unsigned j, const unsigned k){
 }
 
 // removes a row from the set cover, if present. Otherwise it doesn't modify the set cover. 
-void SetCover::remove_row(const unsigned i) {
+void SetCover::remove_row(const unsigned i, std::vector<bool>& modified_cols) {
     if (rows[i] == NULL)
         return;
 
@@ -265,6 +265,7 @@ void SetCover::remove_row(const unsigned i) {
             costs[j] = UINT_MAX;
             available_col.erase(j);
         }
+        modified_cols[j] = true;
     }
 
     rows[i] = NULL;
