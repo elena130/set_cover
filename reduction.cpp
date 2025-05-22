@@ -117,7 +117,8 @@ unsigned SetCover::fix_out_dominated_cols(const bool first_red, std::vector<bool
 }
 
 unsigned SetCover::fix_out_cols_dom_set(const bool first_red, const std::vector<bool>& modified) {
-    std::vector<int> min_cost_col(n_rows, -1);
+    unsigned default_value = n_cols + 1;
+    std::vector<unsigned> min_cost_col(n_rows, default_value);
     std::set<unsigned> added;
     unsigned cost;
     unsigned fixed_out = 0;
@@ -127,7 +128,7 @@ unsigned SetCover::fix_out_cols_dom_set(const bool first_red, const std::vector<
         Cell* cell = rows[i];
         unsigned min = UINT_MAX;
         for (unsigned k = 0; k < row_density[i]; ++k) {
-            if (min_cost_col[i] == -1 || costs[cell->col] < min) {
+            if (min_cost_col[i] == default_value || costs[cell->col] < min) {
                 min_cost_col[i] = cell->col;
                 min = costs[cell->col];
             }
@@ -135,8 +136,6 @@ unsigned SetCover::fix_out_cols_dom_set(const bool first_red, const std::vector<
         }
     }
     
-    std::set<unsigned> to_cover;
-
     // consider ordering the available columns by their cost and iterate by decreasing cost
     for (auto j = available_col.crbegin(); j != available_col.crend(); ++j) {
         unsigned idx = *j;
@@ -145,19 +144,14 @@ unsigned SetCover::fix_out_cols_dom_set(const bool first_red, const std::vector<
         }
 
         Cell* c = cols[idx];
-        to_cover.clear();
         added.clear(); 
         cost = 0;
-
-        for (unsigned k = 0; k < col_density[idx]; ++k) {
-            to_cover.insert(c->row);
-            c = c->down;
-        }
+        bool is_covered = true;
 
         c = cols[idx];
-        while (to_cover.size() != 0) {
+        for (unsigned k = 0; k < col_density[idx]; ++k) {
             if (min_cost_col[c->row] == idx) {
-                cost = UINT_MAX;
+                is_covered = false;
                 break;
             }
             if (added.find(min_cost_col[c->row]) == added.end()) {
@@ -167,11 +161,10 @@ unsigned SetCover::fix_out_cols_dom_set(const bool first_red, const std::vector<
                 }
             }
             added.insert(min_cost_col[c->row]);
-            to_cover.erase(c->row);
             c = c->down;
         }
 
-        if (costs[idx] >= cost && to_cover.size() == 0 ) {
+        if (costs[idx] >= cost && is_covered ) {
             col_assignment[idx] = FIX_OUT;
             fixed_out++;
         }
