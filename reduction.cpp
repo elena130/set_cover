@@ -1,5 +1,6 @@
 #include <iostream>
 #include <chrono>
+#include <string>
 #include "limits.h"
 #include "setcover.h"
 
@@ -63,11 +64,9 @@ unsigned SetCover::fix_out_dominated_rows(const bool first_red, const std::vecto
 }
 
 
-unsigned SetCover::fix_out_dominated_cols(const bool first_red, std::vector<bool> modified, const bool show_prints) {
+unsigned SetCover::fix_out_dominated_cols(const bool first_red, std::vector<bool> modified, const Logger logger) {
 
-    if (show_prints) {
-        std::cout << "Fixing out dominated cols counter: ";
-    }
+    logger.log("Fixing out dominated cols counter: ");
 
     unsigned dominated = 0;
 
@@ -108,16 +107,12 @@ unsigned SetCover::fix_out_dominated_cols(const bool first_red, std::vector<bool
             ptr = ptr->right;
         }
 
-        if (show_prints) {
-            if (j % 50000 == 0) {
-                std::cout << j << "\t";
-            }
+        if (j % 50000 == 0) {
+            logger.log_tab(std::to_string(j));
         }
     }
 
-    if (show_prints) {
-        std::cout << std::endl;
-    }
+    logger.log_endl("");
 
     return dominated;
 }
