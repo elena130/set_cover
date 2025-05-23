@@ -6,12 +6,26 @@
 #include <set>
 #include "limits.h"
 
-SetCover::SetCover(unsigned r, unsigned c) : n_rows(r), n_cols(c), rows(r), cols(c), costs(c), 
-row_density(r,0), col_density(c), row_assignment(r, FREE), col_assignment(c, FREE){
+SetCover::SetCover(unsigned r, unsigned c) : n_rows(r), n_cols(c){
+    rows = new Cell*[r];
+    cols = new Cell*[n_cols];
+    costs = new unsigned[n_cols];
+    row_density = new unsigned[n_rows];
+    col_density = new unsigned[n_cols];
+    row_assignment = new Status[n_rows];
+    col_assignment = new Status[n_cols];
+    
     for (unsigned i = 0; i < r; ++i) {
+        rows[i] = NULL;
+        row_density[i] = 0;
+        row_assignment[i] = FREE;
         available_row.insert(available_row.end(), i);
     }
     for (unsigned j = 0; j < c; ++j) {
+        cols[j] = NULL;
+        costs[j] = 0;
+        col_density[j] = 0;
+        col_assignment[j] = FREE;
         available_col.insert(available_col.end(), j);
     }
 }
@@ -34,13 +48,6 @@ void SetCover::clear() {
 
     n_rows = 0;
     n_cols = 0;
-    rows.clear();
-    cols.clear();
-    costs.clear();
-    row_density.clear();
-    col_density.clear();
-    row_assignment.clear();
-    col_assignment.clear();
     available_row.clear();
     available_col.clear();
 }
@@ -48,15 +55,25 @@ void SetCover::clear() {
 void SetCover::copy(const SetCover& s) {
     n_rows = s.n_rows;
     n_cols = s.n_cols;
-    rows.resize(n_rows);
-    cols.resize(n_cols);
-    costs.resize(n_cols);
-    row_density.resize(n_rows);
-    col_density.resize(n_cols);
-    row_assignment.resize(n_rows);
-    col_assignment.resize(n_cols);
+    rows = new Cell * [n_rows];
+    cols = new Cell * [n_cols];
+    costs = new unsigned[n_cols];
+    row_density = new unsigned[n_rows];
+    col_density = new unsigned[n_cols];
+    row_assignment = new Status[n_rows];
+    col_assignment = new Status[n_cols];
     available_row = s.available_row;
     available_col = s.available_col;
+
+    for (unsigned i = 0; i < n_rows; ++i) {
+        rows[i] = NULL;
+        row_density[i] = 0;
+    }
+
+    for (unsigned j = 0; j < n_cols; ++j) {
+        cols[j] = NULL;
+        col_density[j] = 0;
+    }
 
     for (unsigned j = 0; j < n_cols; j++) {
         costs[j] = s.costs[j];
@@ -229,7 +246,7 @@ bool SetCover::col_is_dominated(const unsigned j, const unsigned k){
 }
 
 // removes a row from the set cover, if present. Otherwise it doesn't modify the set cover. 
-void SetCover::remove_row(const unsigned i, std::vector<bool>& modified_cols) {
+void SetCover::remove_row(const unsigned i, bool* modified_cols) {
     if (rows[i] == NULL)
         return;
 
@@ -275,7 +292,7 @@ void SetCover::remove_row(const unsigned i, std::vector<bool>& modified_cols) {
 
 // removes col j from the set cover problem, if present. Otherwise it leaves the set cover
 // unchanged. 
-void SetCover::remove_col(const unsigned j, std::vector<bool>& modified_rows) {
+void SetCover::remove_col(const unsigned j, bool* modified_rows) {
     if (cols[j] == NULL)
         return;
 
@@ -323,7 +340,7 @@ void SetCover::remove_col(const unsigned j, std::vector<bool>& modified_rows) {
 
 void SetCover::chvtal() {
     // number of new rows each column covers if selected in the next iteration 
-    std::vector<unsigned> new_cov_rows(n_cols, 0);;
+    unsigned * new_cov_rows = new unsigned[n_cols];
     // rows to cover to have a feasible solution
     std::set<unsigned> uncovered_rows(available_row);
     // available cols to select 
@@ -331,7 +348,10 @@ void SetCover::chvtal() {
     // cols selected in the solution built by Chvatal
     std::set<unsigned> selected_cols;
     // number of columns which cover each row
-    std::vector<unsigned> row_cov_by(n_rows, 0);
+    unsigned* row_cov_by = new unsigned[n_rows];
+    for (unsigned i = 0; i < n_rows; ++i) {
+        row_cov_by[i] = 0;
+    }
 
     for (unsigned j = 0; j < n_cols; ++j) {
         new_cov_rows[j] = col_density[j];
@@ -375,7 +395,7 @@ void SetCover::chvtal() {
     chvatal_reduction(selected_cols, row_cov_by);
 }
 
-void SetCover::chvatal_reduction(std::set<unsigned>& selected_cols, std::vector<unsigned>& coperte) {
+void SetCover::chvatal_reduction(std::set<unsigned>& selected_cols, unsigned* coperte) {
     std::vector<unsigned> ordered_cols(selected_cols.begin(), selected_cols.end());
     Cell* ptr;
     bool remove_col;

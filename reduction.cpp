@@ -4,7 +4,7 @@
 #include "limits.h"
 #include "setcover.h"
 
-unsigned SetCover::fix_essential_columns(const bool first_red, std::vector<bool> modified_rows) {
+unsigned SetCover::fix_essential_columns(const bool first_red, bool * modified_rows) {
     unsigned fixed_cols = 0;
     for(unsigned i : available_row )
         if (row_density[i] == 1) {
@@ -27,7 +27,7 @@ unsigned SetCover::fix_essential_columns(const bool first_red, std::vector<bool>
     return fixed_cols;
 }
 
-unsigned SetCover::fix_out_dominated_rows(const bool first_red, const std::vector<bool> & modified_rows) {
+unsigned SetCover::fix_out_dominated_rows(const bool first_red, const bool * modified_rows) {
     unsigned dominated_rows = 0;
     unsigned shortest;
 
@@ -64,7 +64,7 @@ unsigned SetCover::fix_out_dominated_rows(const bool first_red, const std::vecto
 }
 
 
-unsigned SetCover::fix_out_dominated_cols(const bool first_red, std::vector<bool> modified, const Logger logger) {
+unsigned SetCover::fix_out_dominated_cols(const bool first_red, bool* modified, const Logger logger) {
 
     logger.log("Fixing out dominated cols counter: ");
 
@@ -117,7 +117,7 @@ unsigned SetCover::fix_out_dominated_cols(const bool first_red, std::vector<bool
     return dominated;
 }
 
-unsigned SetCover::fix_out_cols_dom_set(const bool first_red, const std::vector<bool>& modified) {
+unsigned SetCover::fix_out_cols_dom_set(const bool first_red, const bool* modified) {
     unsigned default_value = n_cols + 1;
     std::vector<unsigned> min_cost_col(n_rows, default_value);
     std::set<unsigned> added;
@@ -174,14 +174,14 @@ unsigned SetCover::fix_out_cols_dom_set(const bool first_red, const std::vector<
     return fixed_out;
 }
 
-void SetCover::delete_fix_out_rows(std::vector<bool>& modified_cols) {
+void SetCover::delete_fix_out_rows(bool* modified_cols) {
     for (unsigned i = 0; i < n_rows; ++i) {
         if(row_assignment[i] == FIX_OUT)
             remove_row(i, modified_cols);
     }
 }
 
-void SetCover::delete_fix_out_cols(std::vector<bool>& modified_rows) {
+void SetCover::delete_fix_out_cols(bool* modified_rows) {
     for(unsigned j=0; j< n_cols; ++j){
         if(col_assignment[j] == FIX_OUT)
             remove_col(j, modified_rows);

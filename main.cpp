@@ -64,8 +64,11 @@ int main(int argc, char* argv[]) {
     logger.log_endl("REDUCTIONS");
 
     SetCover sc(original_sc);
-    std::vector<bool> modified_cols(nc, false);
-    std::vector<bool> modified_rows(nr, false);
+    bool* modified_cols = new bool[nc]();
+    bool* modified_rows = new bool[nr]();
+    
+
+
     unsigned deleted;
     bool first_reduction = true;
 
@@ -76,8 +79,8 @@ int main(int argc, char* argv[]) {
         deleted += sc.fix_out_cols_dom_set(first_reduction, modified_cols);
         deleted += sc.fix_out_dominated_cols(first_reduction, modified_cols, logger);
 
-        modified_cols = std::vector<bool>(nc, false);
-        modified_rows = std::vector<bool>(nr, false);
+        modified_cols = new bool[nc]();
+        modified_rows = new bool[nr]();
         sc.delete_fix_out_rows(modified_cols);
         sc.delete_fix_out_cols(modified_rows);
         first_reduction = false;

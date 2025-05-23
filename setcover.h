@@ -22,13 +22,13 @@ enum Status {
 class SetCover {
 private:
     unsigned int n_rows, n_cols;
-    std::vector<Cell*> rows;
-    std::vector<Cell*> cols;
-    std::vector<unsigned> costs;
-    std::vector<unsigned> row_density;
-    std::vector<unsigned> col_density;
-    std::vector<Status> row_assignment;
-    std::vector<Status> col_assignment;
+    Cell** rows;
+    Cell** cols;
+    unsigned* costs;
+    unsigned* row_density;
+    unsigned* col_density;
+    Status* row_assignment;
+    Status* col_assignment;
     std::set<unsigned> available_row;
     std::set<unsigned> available_col;
 
@@ -36,7 +36,7 @@ private:
 
     void copy(const SetCover& s);
 
-    void chvatal_reduction(std::set<unsigned>& selected_cols, std::vector<unsigned>& coperte);
+    void chvatal_reduction(std::set<unsigned>& selected_cols, unsigned* coperte);
 
 public:
     SetCover(unsigned r, unsigned c);
@@ -59,9 +59,9 @@ public:
 
     bool col_is_dominated(const unsigned j, const unsigned k);
 
-    void remove_row(const unsigned i, std::vector<bool>& modified_cols);
+    void remove_row(const unsigned i, bool* modified_cols);
 
-    void remove_col(const unsigned j, std::vector<bool> & modified_rows);
+    void remove_col(const unsigned j, bool* modified_rows);
 
     void set_cost(const unsigned j, const unsigned cost);
 
@@ -71,17 +71,17 @@ public:
 
     unsigned get_col_den(const unsigned j);
 
-    unsigned fix_essential_columns(const bool first_red, std::vector<bool> modified_rows);
+    unsigned fix_essential_columns(const bool first_red, bool * modified_rows);
 
-    unsigned fix_out_dominated_rows(const bool first_red, const std::vector<bool>& modified_rows);
+    unsigned fix_out_dominated_rows(const bool first_red, const bool * modified_rows);
 
-    unsigned fix_out_dominated_cols(const bool first_red, std::vector<bool> modified, const Logger logger);
+    unsigned fix_out_dominated_cols(const bool first_red, bool* modified, const Logger logger);
 
-    unsigned fix_out_cols_dom_set(const bool first_red, const std::vector<bool> & modified);
+    unsigned fix_out_cols_dom_set(const bool first_red, const bool* modified);
 
-    void delete_fix_out_rows(std::vector<bool>& modified_cols);
+    void delete_fix_out_rows(bool* modified_cols);
 
-    void delete_fix_out_cols(std::vector<bool> & modified_rows);
+    void delete_fix_out_cols(bool * modified_rows);
 
     unsigned remaining_rows();
 
