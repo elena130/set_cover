@@ -32,6 +32,11 @@ unsigned SetCover::fix_out_dominated_rows(const bool first_red, const bool * mod
     unsigned shortest;
 
     for(unsigned i : available_row ){
+
+        if (!first_red && !modified_rows[i]) {
+            continue;
+        }
+
         shortest = rows[i]->col;
         Cell* ptr = rows[i];
         for (unsigned k = 0; k < row_density[i]; ++k) {
@@ -44,16 +49,14 @@ unsigned SetCover::fix_out_dominated_rows(const bool first_red, const bool * mod
         ptr = cols[shortest];
         for (unsigned k = 0; k < col_density[shortest]; ++k) {
             if (i != ptr->row && row_assignment[i] == FREE && row_assignment[ptr->row] == FREE) {
-                if (first_red || modified_rows[i]) {
-                    if (row_is_subset_of(i, ptr->row)) {
-                        dominated_rows++;
-                        if (row_density[i] != row_density[ptr->row] || ptr->row > i) {
-                            row_assignment[ptr->row] = FIX_OUT;
-                        }
-                        else {
-                            row_assignment[i] = FIX_OUT;
-                            break;
-                        }
+                if (row_is_subset_of(i, ptr->row)) {
+                    dominated_rows++;
+                    if (row_density[i] != row_density[ptr->row] || ptr->row > i) {
+                        row_assignment[ptr->row] = FIX_OUT;
+                    }
+                    else {
+                        row_assignment[i] = FIX_OUT;
+                        break;
                     }
                 }
             }
@@ -76,6 +79,10 @@ unsigned SetCover::fix_out_dominated_cols(const bool first_red, bool* modified, 
             continue; 
         }
 
+        if (!first_red && !modified[j]) {
+            continue;
+        }
+
         Cell* ptr = cols[j];
         unsigned smallest = ptr->row;
 
@@ -89,20 +96,17 @@ unsigned SetCover::fix_out_dominated_cols(const bool first_red, bool* modified, 
         ptr = rows[smallest];
         for (unsigned k = 0; k < row_density[smallest]; ++k) {
             if (j != ptr->col && col_assignment[j] == FREE && col_assignment[ptr->col] == FREE) {
-                if (first_red || modified[j]) {
-                    if (col_is_dominated(j, ptr->col)) {
-                        ++dominated;
+                if (col_is_dominated(j, ptr->col)) {
+                    ++dominated;
 
-                        if (col_density[j] != col_density[ptr->col] || col_density[j] < col_density[ptr->col] ) {
-                            col_assignment[j] = FIX_OUT;
-                            break;
-                        }
-                        else {
-                            col_assignment[ptr->col] = FIX_OUT;
-                        }
+                    if (col_density[j] != col_density[ptr->col] || col_density[j] < col_density[ptr->col] ) {
+                        col_assignment[j] = FIX_OUT;
+                        break;
+                    }
+                    else {
+                        col_assignment[ptr->col] = FIX_OUT;
                     }
                 }
-
             }
             ptr = ptr->right;
         }
