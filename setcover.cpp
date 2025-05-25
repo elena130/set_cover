@@ -46,6 +46,14 @@ void SetCover::clear() {
         }
     }
 
+    delete[] rows;
+    delete[] cols;
+    delete[] costs;
+    delete[] row_density;
+    delete[] col_density;
+    delete[] row_assignment;
+    delete[] col_assignment;
+
     n_rows = 0;
     n_cols = 0;
     available_row.clear();
@@ -392,7 +400,9 @@ void SetCover::chvtal() {
         }
 
     }
+
     chvatal_reduction(selected_cols, row_cov_by);
+    delete[] new_cov_rows;
 }
 
 void SetCover::chvatal_reduction(std::set<unsigned>& selected_cols, unsigned* coperte) {
