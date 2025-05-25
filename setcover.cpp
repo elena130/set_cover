@@ -346,7 +346,7 @@ void SetCover::remove_col(const unsigned j, bool* modified_rows) {
     costs[j] = UINT_MAX;
 }
 
-void SetCover::chvtal() {
+void SetCover::chvtal(Solution& chvatal_sol) {
     // number of new rows each column covers if selected in the next iteration 
     unsigned * new_cov_rows = new unsigned[n_cols];
     // rows to cover to have a feasible solution
@@ -357,6 +357,9 @@ void SetCover::chvtal() {
     std::set<unsigned> selected_cols;
     // number of columns which cover each row
     unsigned* row_cov_by = new unsigned[n_rows];
+    // Solution 
+    //Solution chvatal_sol(n_cols); 
+
     for (unsigned i = 0; i < n_rows; ++i) {
         row_cov_by[i] = 0;
     }
@@ -379,9 +382,9 @@ void SetCover::chvtal() {
                 min_col = j;
             }
         }
-        col_assignment[min_col] = FIX_IN;
+
+        chvatal_sol.add_col(min_col);
         cols_to_select.erase(min_col);
-        selected_cols.insert(min_col);
 
         Cell* col_ptr = cols[min_col];
         // updating the number of new rows each column covers 
@@ -401,12 +404,12 @@ void SetCover::chvtal() {
 
     }
 
-    chvatal_reduction(selected_cols, row_cov_by);
+    chvatal_reduction(chvatal_sol, row_cov_by);
     delete[] new_cov_rows;
 }
 
-void SetCover::chvatal_reduction(std::set<unsigned>& selected_cols, unsigned* coperte) {
-    std::vector<unsigned> ordered_cols(selected_cols.begin(), selected_cols.end());
+void SetCover::chvatal_reduction(Solution& solution, unsigned* coperte) {
+    std::vector<unsigned> ordered_cols(solution.sol, solution.sol + n_cols);
     Cell* ptr;
     bool remove_col;
 
@@ -444,27 +447,26 @@ void SetCover::chvatal_reduction(std::set<unsigned>& selected_cols, unsigned* co
                 --coperte[ptr->row];
                 ptr = ptr->down;
             }
-            selected_cols.erase(j);
-            col_assignment[j] = FREE;
+            solution.remove_col(j);
         }
         ++iter;
     }
 }
 
-bool SetCover::solution_is_correct(const SetCover original) {
+bool SetCover::solution_is_correct(const Solution& solution) {
     Cell* ptr;
     bool ok = true;
 
-    for (unsigned i = 0; i < n_rows; ++i) {
-        ptr = original.rows[i];
+    for (unsigned i : available_row) {
+        ptr = rows[i];
         unsigned counter = 0;
 
-        while (counter < original.row_density[i] && col_assignment[ptr->col] != FIX_IN) {
+        while (counter < row_density[i] && !solution.sol[ptr->col]) {
             ++counter;
             ptr = ptr->right;
         }
 
-        if (col_assignment[ptr->col] != FIX_IN) {
+        if (counter == row_density[i]) {
             ok = false;
             std::cout << "Riga: " << ptr->col << "non coperta" << std::endl;
             break;
@@ -474,23 +476,26 @@ bool SetCover::solution_is_correct(const SetCover original) {
     return ok;
 }
 
-unsigned SetCover::solution_value(const SetCover original) {
+unsigned SetCover::solution_value(const Solution& solution) {
     unsigned solution_cost = 0;
 
     for (unsigned j = 0; j < n_cols; ++j) {
+        if (solution.sol[j])
+            solution_cost += costs[j];
+    }
+
+    for (unsigned j = 0; j < n_cols; ++j) {
         if (col_assignment[j] == FIX_IN)
-            solution_cost += original.costs[j];
+            solution_cost += costs[j];
     }
 
     return solution_cost;
 }
 
-void SetCover::print_solution() {
+void SetCover::print_solution(const Solution solution) {
     std::cout << "Columns in solution: ";
-    for (unsigned j = 0; j < n_cols; ++j) {
-        if (col_assignment[j] == FIX_IN) {
-            std::cout << j << "\t";
-        }
+    for (unsigned j : solution.set_s) {
+        std::cout << j << "\t";
     }
     std::cout << std::endl;
 }

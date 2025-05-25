@@ -90,16 +90,17 @@ int main(int argc, char* argv[]) {
     logger.log_endl("CHVATAL");
 
     std::set<unsigned> selected;
-    sc.chvtal();
+    Solution chvatal_sol(nc);
+    sc.chvtal(chvatal_sol);
 
-    if (sc.solution_is_correct(original_sc)) {
+    if (sc.solution_is_correct(chvatal_sol)) {
         logger.log_endl("Solution is correct");
     }
     else {
         std::cout << "Solution is wrong, check your code" << std::endl;
     }
 
-    unsigned sol_val = sc.solution_value(original_sc);
+    unsigned sol_val = sc.solution_value(chvatal_sol);
     logger.log_endl("Solution cost: " + std::to_string(sol_val));
 
     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();

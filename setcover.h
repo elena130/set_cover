@@ -19,6 +19,29 @@ enum Status {
     FIX_IN = 1
 };
 
+struct Solution {
+    bool* sol;
+    std::set<unsigned> set_s;
+
+    Solution(const unsigned n_cols) {
+        sol = new bool[n_cols]();
+    }
+
+    ~Solution() {
+        delete[] sol;
+    }
+
+    void add_col(const unsigned j) {
+        sol[j] = true;
+        set_s.insert(j);
+    }
+
+    void remove_col(const unsigned j) {
+        sol[j] = false;
+        set_s.erase(j);
+    }
+};
+
 class SetCover {
 private:
     unsigned int n_rows, n_cols;
@@ -36,7 +59,7 @@ private:
 
     void copy(const SetCover& s);
 
-    void chvatal_reduction(std::set<unsigned>& selected_cols, unsigned* coperte);
+    void chvatal_reduction(Solution &solution, unsigned* coperte);
 
 public:
     SetCover(unsigned r, unsigned c);
@@ -87,13 +110,13 @@ public:
 
     unsigned remaining_cols();
 
-    void chvtal();
+    void chvtal(Solution & chvatal_sol);
 
-    bool solution_is_correct(const SetCover original);
+    bool solution_is_correct(const Solution & solution);
 
-    unsigned solution_value(const SetCover original);
+    unsigned solution_value(const Solution & solution);
     
-    void print_solution();
+    void print_solution(const Solution solution);
 };
 
 #endif
