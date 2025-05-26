@@ -6,26 +6,13 @@
 #include <set>
 #include "limits.h"
 
-SetCover::SetCover(unsigned r, unsigned c) : n_rows(r), n_cols(c){
-    rows = new Cell*[r];
-    cols = new Cell*[n_cols];
-    costs = new unsigned[n_cols];
-    row_density = new unsigned[n_rows];
-    col_density = new unsigned[n_cols];
-    row_assignment = new Status[n_rows];
-    col_assignment = new Status[n_cols];
+SetCover::SetCover(unsigned r, unsigned c) : n_rows(r), n_cols(c), rows(r), cols(c), costs(c),
+row_density(r, 0), col_density(c), row_assignment(r, FREE), col_assignment(c, FREE) {
     
     for (unsigned i = 0; i < r; ++i) {
-        rows[i] = NULL;
-        row_density[i] = 0;
-        row_assignment[i] = FREE;
         available_row.insert(available_row.end(), i);
     }
     for (unsigned j = 0; j < c; ++j) {
-        cols[j] = NULL;
-        costs[j] = 0;
-        col_density[j] = 0;
-        col_assignment[j] = FREE;
         available_col.insert(available_col.end(), j);
     }
 }
@@ -46,16 +33,15 @@ void SetCover::clear() {
         }
     }
 
-    delete[] rows;
-    delete[] cols;
-    delete[] costs;
-    delete[] row_density;
-    delete[] col_density;
-    delete[] row_assignment;
-    delete[] col_assignment;
-
     n_rows = 0;
     n_cols = 0;
+    rows.clear();
+    cols.clear();
+    costs.clear();
+    row_density.clear();
+    col_density.clear();
+    row_assignment.clear();
+    col_assignment.clear();
     available_row.clear();
     available_col.clear();
 }
@@ -63,25 +49,15 @@ void SetCover::clear() {
 void SetCover::copy(const SetCover& s) {
     n_rows = s.n_rows;
     n_cols = s.n_cols;
-    rows = new Cell * [n_rows];
-    cols = new Cell * [n_cols];
-    costs = new unsigned[n_cols];
-    row_density = new unsigned[n_rows];
-    col_density = new unsigned[n_cols];
-    row_assignment = new Status[n_rows];
-    col_assignment = new Status[n_cols];
+    rows.resize(n_rows);
+    cols.resize(n_cols);
+    costs.resize(n_cols);
+    row_density.resize(n_rows);
+    col_density.resize(n_cols);
+    row_assignment.resize(n_rows);
+    col_assignment.resize(n_cols);
     available_row = s.available_row;
     available_col = s.available_col;
-
-    for (unsigned i = 0; i < n_rows; ++i) {
-        rows[i] = NULL;
-        row_density[i] = 0;
-    }
-
-    for (unsigned j = 0; j < n_cols; ++j) {
-        cols[j] = NULL;
-        col_density[j] = 0;
-    }
 
     for (unsigned j = 0; j < n_cols; j++) {
         costs[j] = s.costs[j];
@@ -254,7 +230,7 @@ bool SetCover::col_is_dominated(const unsigned j, const unsigned k){
 }
 
 // removes a row from the set cover, if present. Otherwise it doesn't modify the set cover. 
-void SetCover::remove_row(const unsigned i, bool* modified_cols) {
+void SetCover::remove_row(const unsigned i, std::vector<bool>& modified_cols) {
     if (rows[i] == NULL)
         return;
 
@@ -300,7 +276,7 @@ void SetCover::remove_row(const unsigned i, bool* modified_cols) {
 
 // removes col j from the set cover problem, if present. Otherwise it leaves the set cover
 // unchanged. 
-void SetCover::remove_col(const unsigned j, bool* modified_rows) {
+void SetCover::remove_col(unsigned j, std::vector<bool>& modified_rows) {
     if (cols[j] == NULL)
         return;
 
@@ -348,7 +324,7 @@ void SetCover::remove_col(const unsigned j, bool* modified_rows) {
 
 void SetCover::chvtal(Solution& chvatal_sol) {
     // number of new rows each column covers if selected in the next iteration 
-    unsigned * new_cov_rows = new unsigned[n_cols];
+    std::vector<unsigned> new_cov_rows(n_cols, 0);
     // rows to cover to have a feasible solution
     std::set<unsigned> uncovered_rows(available_row);
     // available cols to select 
@@ -356,9 +332,7 @@ void SetCover::chvtal(Solution& chvatal_sol) {
     // cols selected in the solution built by Chvatal
     std::set<unsigned> selected_cols;
     // number of columns which cover each row
-    unsigned* row_cov_by = new unsigned[n_rows];
-    // Solution 
-    //Solution chvatal_sol(n_cols); 
+    std::vector<unsigned> row_cov_by(n_rows, 0);
 
     for (unsigned i = 0; i < n_rows; ++i) {
         row_cov_by[i] = 0;
@@ -405,11 +379,10 @@ void SetCover::chvtal(Solution& chvatal_sol) {
     }
 
     chvatal_reduction(chvatal_sol, row_cov_by);
-    delete[] new_cov_rows;
 }
 
-void SetCover::chvatal_reduction(Solution& solution, unsigned* coperte) {
-    std::vector<unsigned> ordered_cols(solution.sol, solution.sol + n_cols);
+void SetCover::chvatal_reduction(Solution& solution, std::vector<unsigned>& coperte) {
+    std::vector<unsigned> ordered_cols(solution.set_s.begin(), solution.set_s.end());
     Cell* ptr;
     bool remove_col;
 
@@ -453,8 +426,8 @@ void SetCover::chvatal_reduction(Solution& solution, unsigned* coperte) {
     }
 }
 
-std::vector<Solution> SetCover::lagrangean_relaxation(LagrangenaPar& lp) {
-    LagrangeanVar lv;
+std::vector<Solution> SetCover::lagrangian_relaxation(LagrangianPar& lp) {
+    LagrangianVar lv;
     lv.solution = std::vector<bool>(n_cols, false);
     lv.subgradients = std::vector<double>(n_rows, 0);
     lv.multipliers = lp.init_multipliers;
@@ -463,7 +436,7 @@ std::vector<Solution> SetCover::lagrangean_relaxation(LagrangenaPar& lp) {
     lv.max_lb = 0;
     lv.lb = 0;
     lv.pi = lp.init_pi;
-    lv.step_size = lp.init_t;
+    lv.t = lp.init_t;
 
     std::vector<Solution> best_sols;
 
@@ -471,7 +444,7 @@ std::vector<Solution> SetCover::lagrangean_relaxation(LagrangenaPar& lp) {
     unsigned no_improvements = 30;
 
     for (unsigned it = 0; it < lp.max_iter && lv.pi > 0.005 && (lp.ub - lv.lb) > lp.min_diff; ++it) {
-        lagrange_solution(lv);
+        lagrangian_solution(lv);
         calc_subgradients(lv);
         update_step_size(lp, lv);
         update_multipliers(lv);
@@ -480,7 +453,7 @@ std::vector<Solution> SetCover::lagrangean_relaxation(LagrangenaPar& lp) {
             lv.max_lb = lv.lb;
             lv.best_multipliers = lv.multipliers;
             worse_it = 0;
-            best_sols.push_back(lagrangean_heuristic(lv));
+            best_sols.push_back(lagrangian_heuristic(lv));
         }
         else {
             ++worse_it;
@@ -494,30 +467,11 @@ std::vector<Solution> SetCover::lagrangean_relaxation(LagrangenaPar& lp) {
     return best_sols;
 }
 
-bool SetCover::sol_is_feasible(const Solution solution) {
-    for (unsigned i : available_row) {
-        Cell* ptr = rows[i];
-        bool covered = false;
-        for (unsigned k = 0; k < row_density[i]; ++k) {
-            if (solution.sol[ptr->col]) {
-                covered = true;
-                break;
-            }
-            ptr = ptr->right;
-        }
-        if (covered == false) {
-            std::cout << "Non coperta: " << i << std::endl;
-            return false;
-        }
-    }
-    return true;
-}
-
 // creates a new solution for the problem starting out from the lagrangean solution already found. 
-Solution SetCover::lagrangean_heuristic(LagrangeanVar& lv) {
+Solution SetCover::lagrangian_heuristic(LagrangianVar& lv) {
     // add the minimun cost column to cover all the uncovered rows left by the lagrangean 
     Cell* ptr;
-    Solution solution;
+    Solution solution(n_cols);
     solution.sol = std::vector<bool>(n_cols, false);
 
     for (unsigned i : available_row) {
@@ -535,23 +489,21 @@ Solution SetCover::lagrangean_heuristic(LagrangeanVar& lv) {
                 // metti la soluzione nella nuova struttura? 
                 // visto che potresti anche dover tenere traccia di molte altre 
                 covered = true;
-                solution.sol[ptr->col] = true;
-                solution.s_sol.insert(ptr->col);
+                solution.add_col(ptr->col);
                 break;
             }
             ptr = ptr->right;
         }
         if (covered == false) {
             //std::cout << "row: " << i << "not covered";
-            solution.sol[min_cost_col] = true;
-            solution.s_sol.insert(min_cost_col);
+            solution.add_col(min_cost_col);
         }
     }
     return solution;
 }
 
 // calculates the lagrangian costs and derves from them the solution 
-void SetCover::lagrange_solution(LagrangeanVar& lv) {
+void SetCover::lagrangian_solution(LagrangianVar& lv) {
     lv.lb = 0;
     // calculate lagrangean costs 
     // C_j = c_j - \sum_i \lambda_i * a_ij
@@ -571,7 +523,8 @@ void SetCover::lagrange_solution(LagrangeanVar& lv) {
             lv.solution[j] = false;
         }
 
-        lv.lb += lv.cost_lagrang[j] * lv.solution[j];
+        if(lv.solution[j])
+            lv.lb += lv.cost_lagrang[j];
     }
 
     for (unsigned i : available_row) {
@@ -580,31 +533,33 @@ void SetCover::lagrange_solution(LagrangeanVar& lv) {
 }
 
 // gradients G_i = 1 - \sum_j a_ij * x_j
-void SetCover::calc_subgradients(LagrangeanVar& lv) {
+void SetCover::calc_subgradients(LagrangianVar& lv) {
     for (unsigned i : available_row) {
         lv.subgradients[i] = 1;
         Cell* ptr = rows[i];
         for (unsigned k = 0; k < row_density[i]; ++k) {
-            lv.subgradients[i] -= lv.solution[ptr->col];
+            if(lv.solution[ptr->col])
+                lv.subgradients[i] -= lv.solution[ptr->col];
             ptr = ptr->right;
         }
     }
 }
 
 // step_size = \phi * (UB - LB) / \sum_i G_i^2
-void SetCover::update_step_size(LagrangenaPar& lp, LagrangeanVar& lv) {
-    lv.step_size = lv.pi * (lp.ub - lv.lb);
+void SetCover::update_step_size(LagrangianPar& lp, LagrangianVar& lv) {
+    lv.t = lv.pi * (lp.ub - lv.lb);
     double sum_of_grad = 0;
     for (unsigned i = 0; i < n_rows; ++i) {
         sum_of_grad += (lv.subgradients[i] * lv.subgradients[i]);
     }
-    lv.step_size /= sum_of_grad;
+    lv.t /= sum_of_grad;
 }
 
-// updates the value of the multipliers \lambda 
-void SetCover::update_multipliers(LagrangeanVar& lv) {
+// updates the value of the multipliers \lambda
+// \lambda_i = max(0, \lambda_i + t*G_i)
+void SetCover::update_multipliers(LagrangianVar& lv) {
     for (unsigned i : available_row) {
-        double updated_val = lv.multipliers[i] + lv.step_size * lv.subgradients[i];
+        double updated_val = lv.multipliers[i] + (lv.t * lv.subgradients[i]);
         if (updated_val > 0) {
             lv.multipliers[i] = updated_val;
         }
@@ -612,7 +567,6 @@ void SetCover::update_multipliers(LagrangeanVar& lv) {
             lv.multipliers[i] = 0;
         }
     }
-
 }
 
 bool SetCover::solution_is_correct(const Solution& solution) {

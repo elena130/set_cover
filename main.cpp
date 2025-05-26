@@ -64,8 +64,8 @@ int main(int argc, char* argv[]) {
     logger.log_endl("REDUCTIONS");
 
     SetCover sc(original_sc);
-    bool* modified_cols = new bool[nc]();
-    bool* modified_rows = new bool[nr]();
+    std::vector<bool> modified_cols(nc, false);
+    std::vector<bool> modified_rows(nr, false);
     unsigned deleted;
     bool first_reduction = true;
 
@@ -75,11 +75,11 @@ int main(int argc, char* argv[]) {
         deleted += sc.fix_essential_columns(first_reduction, modified_rows);
         deleted += sc.fix_out_cols_dom_set(first_reduction, modified_cols);
         deleted += sc.fix_out_dominated_cols(first_reduction, modified_cols, logger);
-        std::fill_n(modified_rows, nr, false);
+        std::fill_n(modified_rows.begin(), nr, false);
         sc.delete_fix_out_cols(modified_rows);
 
         deleted += sc.fix_out_dominated_rows(first_reduction, modified_rows);
-        std::fill_n(modified_cols, nc, false);
+        std::fill_n(modified_cols.begin(), nc, false);
         sc.delete_fix_out_rows(modified_cols);
 
         first_reduction = false;
@@ -104,6 +104,16 @@ int main(int argc, char* argv[]) {
     unsigned sol_val = sc.solution_value(chvatal_sol);
     logger.log_endl("Solution cost: " + std::to_string(sol_val));
 
+    LagrangianPar lp;
+    lp.init_multipliers = std::vector<double>(nr, 1);
+    lp.ub = sol_val;
+    lp.init_pi = 2;         // Beasley
+    lp.init_t = 1;
+    lp.max_iter = 50000;
+    lp.min_t = 0.005;
+    lp.min_diff = 0.005;
+    std::vector<Solution> sols = sc.lagrangian_relaxation(lp);
+    
     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
     auto time = std::chrono::duration_cast<std::chrono::seconds>(end - begin).count();
     
