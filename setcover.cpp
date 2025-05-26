@@ -426,7 +426,7 @@ void SetCover::chvatal_reduction(Solution& solution, std::vector<unsigned>& cope
     }
 }
 
-std::vector<Solution> SetCover::lagrangian_relaxation(LagrangianPar& lp) {
+double SetCover::lagrangian_lb(LagrangianPar& lp) {
     LagrangianVar lv;
     lv.solution = std::vector<bool>(n_cols, false);
     lv.subgradients = std::vector<double>(n_rows, 0);
@@ -464,7 +464,7 @@ std::vector<Solution> SetCover::lagrangian_relaxation(LagrangianPar& lp) {
             worse_it = 0;
         }
     }
-    return best_sols;
+    return lv.max_lb;
 }
 
 // creates a new solution for the problem starting out from the lagrangean solution already found. 

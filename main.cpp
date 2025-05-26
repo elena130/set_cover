@@ -112,7 +112,7 @@ int main(int argc, char* argv[]) {
     lp.max_iter = 50000;
     lp.min_t = 0.005;
     lp.min_diff = 0.005;
-    std::vector<Solution> sols = sc.lagrangian_relaxation(lp);
+    double lb = sc.lagrangian_lb(lp);
     
     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
     auto time = std::chrono::duration_cast<std::chrono::seconds>(end - begin).count();
@@ -120,7 +120,7 @@ int main(int argc, char* argv[]) {
     logger.log_endl("Time difference [s] = " + std::to_string(time));
     
     std::cout << nr << "\t" << nc << "\t";
-    std::cout << sc.remaining_rows() << "\t" << sc.remaining_cols() << "\t" << sol_val << "\t" << 0 << "\t" << time << std::endl;
+    std::cout << sc.remaining_rows() << "\t" << sc.remaining_cols() << "\t" << sol_val << "\t" << lb << "\t" << time << std::endl;
 
     return 0;
 }

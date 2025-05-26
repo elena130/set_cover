@@ -130,7 +130,7 @@ public:
 
     void chvtal(Solution & chvatal_sol);
 
-    std::vector<Solution> lagrangian_relaxation(LagrangianPar& lp);
+    double lagrangian_lb(LagrangianPar& lp);
 
     Solution lagrangian_heuristic(LagrangianVar& lv);
 
