@@ -486,8 +486,6 @@ Solution SetCover::lagrangian_heuristic(LagrangianVar& lv) {
                 min_cost = costs[ptr->col];
             }
             if (lv.solution[ptr->col]) {
-                // metti la soluzione nella nuova struttura? 
-                // visto che potresti anche dover tenere traccia di molte altre 
                 covered = true;
                 solution.add_col(ptr->col);
                 break;
@@ -495,7 +493,6 @@ Solution SetCover::lagrangian_heuristic(LagrangianVar& lv) {
             ptr = ptr->right;
         }
         if (covered == false) {
-            //std::cout << "row: " << i << "not covered";
             solution.add_col(min_cost_col);
         }
     }
