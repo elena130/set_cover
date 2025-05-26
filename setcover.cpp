@@ -453,6 +453,168 @@ void SetCover::chvatal_reduction(Solution& solution, unsigned* coperte) {
     }
 }
 
+std::vector<Solution> SetCover::lagrangean_relaxation(LagrangenaPar& lp) {
+    LagrangeanVar lv;
+    lv.solution = std::vector<bool>(n_cols, false);
+    lv.subgradients = std::vector<double>(n_rows, 0);
+    lv.multipliers = lp.init_multipliers;
+    lv.best_multipliers = lp.init_multipliers;
+    lv.cost_lagrang = std::vector<double>(n_cols, 0);
+    lv.max_lb = 0;
+    lv.lb = 0;
+    lv.pi = lp.init_pi;
+    lv.step_size = lp.init_t;
+
+    std::vector<Solution> best_sols;
+
+    unsigned worse_it = 0;
+    unsigned no_improvements = 30;
+
+    for (unsigned it = 0; it < lp.max_iter && lv.pi > 0.005 && (lp.ub - lv.lb) > lp.min_diff; ++it) {
+        lagrange_solution(lv);
+        calc_subgradients(lv);
+        update_step_size(lp, lv);
+        update_multipliers(lv);
+
+        if (lv.lb > lv.max_lb) {
+            lv.max_lb = lv.lb;
+            lv.best_multipliers = lv.multipliers;
+            worse_it = 0;
+            best_sols.push_back(lagrangean_heuristic(lv));
+        }
+        else {
+            ++worse_it;
+        }
+
+        if (worse_it == no_improvements) {
+            lv.pi /= 2;
+            worse_it = 0;
+        }
+    }
+    return best_sols;
+}
+
+bool SetCover::sol_is_feasible(const Solution solution) {
+    for (unsigned i : available_row) {
+        Cell* ptr = rows[i];
+        bool covered = false;
+        for (unsigned k = 0; k < row_density[i]; ++k) {
+            if (solution.sol[ptr->col]) {
+                covered = true;
+                break;
+            }
+            ptr = ptr->right;
+        }
+        if (covered == false) {
+            std::cout << "Non coperta: " << i << std::endl;
+            return false;
+        }
+    }
+    return true;
+}
+
+// creates a new solution for the problem starting out from the lagrangean solution already found. 
+Solution SetCover::lagrangean_heuristic(LagrangeanVar& lv) {
+    // add the minimun cost column to cover all the uncovered rows left by the lagrangean 
+    Cell* ptr;
+    Solution solution;
+    solution.sol = std::vector<bool>(n_cols, false);
+
+    for (unsigned i : available_row) {
+        bool covered = false;
+        ptr = rows[i];
+        unsigned min_cost_col = ptr->col;
+        unsigned min_cost = UINT_MAX;
+
+        for (unsigned k = 0; k < row_density[i]; ++k) {
+            if (costs[ptr->col] < min_cost) {
+                min_cost_col = ptr->col;
+                min_cost = costs[ptr->col];
+            }
+            if (lv.solution[ptr->col]) {
+                // metti la soluzione nella nuova struttura? 
+                // visto che potresti anche dover tenere traccia di molte altre 
+                covered = true;
+                solution.sol[ptr->col] = true;
+                solution.s_sol.insert(ptr->col);
+                break;
+            }
+            ptr = ptr->right;
+        }
+        if (covered == false) {
+            //std::cout << "row: " << i << "not covered";
+            solution.sol[min_cost_col] = true;
+            solution.s_sol.insert(min_cost_col);
+        }
+    }
+    return solution;
+}
+
+// calculates the lagrangian costs and derves from them the solution 
+void SetCover::lagrange_solution(LagrangeanVar& lv) {
+    lv.lb = 0;
+    // calculate lagrangean costs 
+    // C_j = c_j - \sum_i \lambda_i * a_ij
+    for (unsigned j : available_col) {
+        lv.cost_lagrang[j] = costs[j];
+        Cell* ptr = cols[j];
+        for (unsigned k = 0; k < col_density[j]; ++k) {
+            // \lambda_i * a_ij but a_ij=1
+            lv.cost_lagrang[j] -= lv.multipliers[ptr->row];
+            ptr = ptr->down;
+        }
+
+        if (lv.cost_lagrang[j] <= 0) {
+            lv.solution[j] = true;
+        }
+        else {
+            lv.solution[j] = false;
+        }
+
+        lv.lb += lv.cost_lagrang[j] * lv.solution[j];
+    }
+
+    for (unsigned i : available_row) {
+        lv.lb += lv.multipliers[i];
+    }
+}
+
+// gradients G_i = 1 - \sum_j a_ij * x_j
+void SetCover::calc_subgradients(LagrangeanVar& lv) {
+    for (unsigned i : available_row) {
+        lv.subgradients[i] = 1;
+        Cell* ptr = rows[i];
+        for (unsigned k = 0; k < row_density[i]; ++k) {
+            lv.subgradients[i] -= lv.solution[ptr->col];
+            ptr = ptr->right;
+        }
+    }
+}
+
+// step_size = \phi * (UB - LB) / \sum_i G_i^2
+void SetCover::update_step_size(LagrangenaPar& lp, LagrangeanVar& lv) {
+    lv.step_size = lv.pi * (lp.ub - lv.lb);
+    double sum_of_grad = 0;
+    for (unsigned i = 0; i < n_rows; ++i) {
+        sum_of_grad += (lv.subgradients[i] * lv.subgradients[i]);
+    }
+    lv.step_size /= sum_of_grad;
+}
+
+// updates the value of the multipliers \lambda 
+void SetCover::update_multipliers(LagrangeanVar& lv) {
+    for (unsigned i : available_row) {
+        double updated_val = lv.multipliers[i] + lv.step_size * lv.subgradients[i];
+        if (updated_val > 0) {
+            lv.multipliers[i] = updated_val;
+        }
+        else {
+            lv.multipliers[i] = 0;
+        }
+    }
+
+}
+
 bool SetCover::solution_is_correct(const Solution& solution) {
     Cell* ptr;
     bool ok = true;

@@ -61,6 +61,8 @@ private:
 
     void chvatal_reduction(Solution &solution, unsigned* coperte);
 
+    std::vector<Solution> lagrangean_relaxation(LagrangenaPar& lp);
+
 public:
     SetCover(unsigned r, unsigned c);
 
