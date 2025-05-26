@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <unordered_map>
 #include <set>
+#include <cmath>
 #include "limits.h"
 
 SetCover::SetCover(unsigned r, unsigned c) : n_rows(r), n_cols(c), rows(r), cols(c), costs(c),
@@ -499,11 +500,10 @@ Solution SetCover::lagrangian_heuristic(LagrangianVar& lv) {
     return solution;
 }
 
-// calculates the lagrangian costs and derves from them the solution 
+// calculates the lagrangian costs and calculates the solution 
+// C_j = c_j - \sum_i \lambda_i * a_ij
 void SetCover::lagrangian_solution(LagrangianVar& lv) {
     lv.lb = 0;
-    // calculate lagrangean costs 
-    // C_j = c_j - \sum_i \lambda_i * a_ij
     for (unsigned j : available_col) {
         lv.cost_lagrang[j] = costs[j];
         Cell* ptr = cols[j];
@@ -532,6 +532,12 @@ void SetCover::lagrangian_solution(LagrangianVar& lv) {
 // gradients G_i = 1 - \sum_j a_ij * x_j
 void SetCover::calc_subgradients(LagrangianVar& lv) {
     for (unsigned i : available_row) {
+        // Beasley optimization
+        if (std::abs(lv.multipliers[i]) < 0.005 && lv.subgradients[i] < 0) {
+            lv.subgradients[i] = 0;
+            continue;
+        }
+
         lv.subgradients[i] = 1;
         Cell* ptr = rows[i];
         for (unsigned k = 0; k < row_density[i]; ++k) {
