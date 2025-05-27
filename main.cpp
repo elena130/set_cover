@@ -109,10 +109,11 @@ int main(int argc, char* argv[]) {
     lp.ub = sol_val;
     lp.init_pi = 2;         // Beasley
     lp.init_t = 1;
-    lp.max_iter = 50000;
+    lp.max_iter = 5000;
     lp.min_t = 0.005;
     lp.min_diff = 0.005;
-    double lb = sc.lagrangian_lb(lp);
+    double lb = 0;
+    lb = sc.lagrangian_lb(lp);
     
     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
     auto time = std::chrono::duration_cast<std::chrono::seconds>(end - begin).count();

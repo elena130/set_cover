@@ -550,7 +550,7 @@ void SetCover::calc_subgradients(LagrangianVar& lv) {
 
 // step_size = \phi * (UB - LB) / \sum_i G_i^2
 void SetCover::update_step_size(LagrangianPar& lp, LagrangianVar& lv) {
-    lv.t = lv.pi * (lp.ub - lv.lb);
+    lv.t = lv.pi * ((1.05*lp.ub) - lv.lb);
     double sum_of_grad = 0;
     for (unsigned i = 0; i < n_rows; ++i) {
         sum_of_grad += (lv.subgradients[i] * lv.subgradients[i]);
