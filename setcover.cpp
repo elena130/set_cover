@@ -378,10 +378,10 @@ void SetCover::chvtal(Solution& chvatal_sol) {
 
     }
 
-    chvatal_reduction(chvatal_sol, row_cov_by);
+    remove_redundant_cols(chvatal_sol, row_cov_by);
 }
 
-void SetCover::chvatal_reduction(Solution& solution, std::vector<unsigned>& coperte) {
+void SetCover::remove_redundant_cols(Solution& solution, std::vector<unsigned>& coperte) {
     std::vector<unsigned> ordered_cols(solution.set_s.begin(), solution.set_s.end());
     Cell* ptr;
     bool remove_col;
@@ -453,7 +453,7 @@ double SetCover::lagrangian_lb(LagrangianPar& lp) {
     lv.lb = 0;
     lv.pi = lp.init_pi;
     lv.t = lp.init_t;
-    std::vector<Solution> best_sols;
+    Solution best_sol;
 
     unsigned worse_it = 0;      // number of non improving iterations passed
     unsigned max_worse_it = 15; // number of non improving iterations after which pi is updated
@@ -464,6 +464,8 @@ double SetCover::lagrangian_lb(LagrangianPar& lp) {
         calc_subgradients(lv);
         update_step_size(lp, lv);
         update_multipliers(lv);
+
+        cost_fixing(lp, lv);
 
         if (lv.lb > lv.max_lb && lv.lb < lp.ub) {
             lv.max_lb = lv.lb;
@@ -478,7 +480,7 @@ double SetCover::lagrangian_lb(LagrangianPar& lp) {
             }
             std::cout << "huer_val: " << feasible_sol_val << " lb=" << lv.lb << " ub=" << lp.ub << std::endl;
 
-            best_sols.push_back(feasible_sol);
+            best_sol = feasible_sol;
             worse_it = 0;
         }
         else {
@@ -494,7 +496,45 @@ double SetCover::lagrangian_lb(LagrangianPar& lp) {
     return lv.max_lb;
 }
 
+void SetCover::cost_fixing(LagrangianPar & lp, LagrangianVar & lv) {
 
+    for (unsigned j : available_col) {
+        if (lv.solution[j]) {
+            if (lv.lb - lv.cost_lagrang[j] > lp.ub) {
+                col_assignment[j] = FIX_IN;
+                Cell* ptr = cols[j];
+                for (unsigned k = 0; k < col_density[j]; ++k) {
+                    row_assignment[ptr->row] = FIX_OUT;
+                    ptr = ptr->down;
+                }
+            }
+        }
+        else if(lv.lb + lv.cost_lagrang[j] > lp.ub) {
+            col_assignment[j] = FIX_OUT;
+        }
+    }
+
+    // begin reductions 
+    std::vector<bool> mod_rows(n_rows, false);
+    std::vector<bool> mod_cols(n_cols, false);
+    unsigned reduction;
+    Logger logger;
+
+    do {
+        reduction = 0;
+        std::fill_n(mod_rows.begin(), n_rows, false);
+        delete_fix_out_cols(mod_rows);
+        std::fill_n(mod_cols.begin(), n_cols, false);
+        delete_fix_out_rows(mod_cols);
+
+        reduction += fix_essential_columns(false, mod_rows);
+        reduction += fix_out_cols_dom_set(false, mod_cols);
+        reduction += fix_out_dominated_cols(false, mod_cols, logger);
+
+    } while (reduction != 0);
+    
+
+}
 
 // creates a feasible solution for the problem starting out from the lagrangean solution already found. 
 Solution SetCover::lagrangian_heuristic(LagrangianVar& lv) {
@@ -530,7 +570,7 @@ Solution SetCover::lagrangian_heuristic(LagrangianVar& lv) {
         }
     }
 
-    chvatal_reduction(solution, covered_by);
+    remove_redundant_cols(solution, covered_by);
     std::cout << "euristica lang. sol corretta =" << solution_is_correct(solution) << std::endl;
 
     return solution;

@@ -23,6 +23,8 @@ struct Solution {
     std::vector<bool> sol;
     std::set<unsigned> set_s;
 
+    Solution(){}
+
     Solution(const unsigned n_cols) : sol(n_cols, false){}
 
     void add_col(const unsigned j) {
@@ -75,7 +77,7 @@ private:
 
     void copy(const SetCover& s);
 
-    void chvatal_reduction(Solution &solution, std::vector<unsigned>& coperte);
+    void remove_redundant_cols(Solution &solution, std::vector<unsigned>& coperte);
 
     void init_multipliers(LagrangianVar& lv);
 
@@ -133,6 +135,8 @@ public:
     void chvtal(Solution & chvatal_sol);
 
     double lagrangian_lb(LagrangianPar& lp);
+
+    void cost_fixing(LagrangianPar& lp, LagrangianVar& lv);
 
     Solution lagrangian_heuristic(LagrangianVar& lv);
 
