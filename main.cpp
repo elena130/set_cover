@@ -101,7 +101,7 @@ int main(int argc, char* argv[]) {
         std::cout << "Solution is wrong, check your code" << std::endl;
     }
 
-    unsigned sol_val = sc.solution_value(chvatal_sol);
+    unsigned sol_val = original_sc.solution_value(chvatal_sol);
     logger.log_endl("Solution cost: " + std::to_string(sol_val));
 
     LagrangianPar lp;

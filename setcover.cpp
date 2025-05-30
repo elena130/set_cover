@@ -320,7 +320,6 @@ void SetCover::remove_col(unsigned j, std::vector<bool>& modified_rows) {
     cols[j] = NULL;
     col_density[j] = 0;
     available_col.erase(j);
-    costs[j] = UINT_MAX;
 }
 
 void SetCover::chvtal(Solution& chvatal_sol) {
