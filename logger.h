@@ -10,6 +10,10 @@ public:
     Logger();
     Logger(const bool sp);
 
+    ~Logger();
+
+    void operator=(const Logger& l);
+
     void log_endl(const std::string& message) const;
 
     void log(const std::string& message) const;
