@@ -188,7 +188,7 @@ void SetCover::delete_fix_out_rows(std::vector<bool>& modified_cols) {
 
 void SetCover::delete_fix_out_cols(std::vector<bool>& modified_rows) {
     for(unsigned j=0; j< n_cols; ++j){
-        if(col_assignment[j] == FIX_OUT)
+        if(col_assignment[j] != FREE)
             remove_col(j, modified_rows);
     }
 }
