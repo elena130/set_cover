@@ -426,81 +426,119 @@ void SetCover::chvatal_reduction(Solution& solution, std::vector<unsigned>& cope
     }
 }
 
+// \lambda_i = min_j c_j / |I_j| 
+void SetCover::init_multipliers(LagrangianVar& lv) {
+
+    lv.multipliers = std::vector<double>(n_rows, 1000);
+    for (unsigned i : available_row) {
+        Cell* ptr = rows[i];
+
+        for (unsigned k = 0; k < row_density[i]; ++k) {
+            double score = double(costs[ptr->col]) / double(col_density[ptr->col]);
+            if (lv.multipliers[i] >= score) {
+                lv.multipliers[i] = score;
+            }
+            ptr = ptr->right;
+        }
+    }
+}
+
 double SetCover::lagrangian_lb(LagrangianPar& lp) {
     LagrangianVar lv;
     lv.solution = std::vector<bool>(n_cols, false);
     lv.subgradients = std::vector<double>(n_rows, 0);
-    lv.multipliers = lp.init_multipliers;
     lv.best_multipliers = lp.init_multipliers;
     lv.cost_lagrang = std::vector<double>(n_cols, 0);
     lv.max_lb = 0;
     lv.lb = 0;
     lv.pi = lp.init_pi;
     lv.t = lp.init_t;
-
     std::vector<Solution> best_sols;
 
-    unsigned worse_it = 0;
-    unsigned no_improvements = 30;
+    unsigned worse_it = 0;      // number of non improving iterations passed
+    unsigned max_worse_it = 15; // number of non improving iterations after which pi is updated
 
+    init_multipliers(lv);
     for (unsigned it = 0; it < lp.max_iter && lv.pi > 0.005 && (lp.ub - lv.lb) > lp.min_diff; ++it) {
         lagrangian_solution(lv);
         calc_subgradients(lv);
         update_step_size(lp, lv);
         update_multipliers(lv);
 
-        if (lv.lb > lv.max_lb) {
+        if (lv.lb > lv.max_lb && lv.lb < lp.ub) {
             lv.max_lb = lv.lb;
             lv.best_multipliers = lv.multipliers;
+
+            Solution feasible_sol = lagrangian_heuristic(lv);
+            double feasible_sol_val = 0;
+            feasible_sol_val = solution_value(feasible_sol);
+
+            if (feasible_sol_val < lp.ub) {
+                lp.ub = feasible_sol_val;
+            }
+            std::cout << "huer_val: " << feasible_sol_val << " lb=" << lv.lb << " ub=" << lp.ub << std::endl;
+
+            best_sols.push_back(feasible_sol);
             worse_it = 0;
-            best_sols.push_back(lagrangian_heuristic(lv));
         }
         else {
             ++worse_it;
         }
 
-        if (worse_it == no_improvements) {
+        if (worse_it == max_worse_it) {
             lv.pi /= 2;
             worse_it = 0;
         }
     }
+    std::cout << "pi=" << lv.pi << " diff=" << (lp.ub - lv.lb) << std::endl;
     return lv.max_lb;
 }
 
-// creates a new solution for the problem starting out from the lagrangean solution already found. 
+
+
+// creates a feasible solution for the problem starting out from the lagrangean solution already found. 
 Solution SetCover::lagrangian_heuristic(LagrangianVar& lv) {
     // add the minimun cost column to cover all the uncovered rows left by the lagrangean 
     Cell* ptr;
-    Solution solution(n_cols);
-    solution.sol = std::vector<bool>(n_cols, false);
+    Solution solution(n_cols);  // create struct to hold the data of the new solution 
+    solution.sol = lv.solution;
+    std::vector<unsigned> covered_by(n_rows, 0);
 
     for (unsigned i : available_row) {
         bool covered = false;
         ptr = rows[i];
         unsigned min_cost_col = ptr->col;
-        unsigned min_cost = UINT_MAX;
+        unsigned min_cost = costs[ptr->col];
 
         for (unsigned k = 0; k < row_density[i]; ++k) {
+            if (lv.solution[ptr->col] || solution.sol[ptr->col]) {
+                covered = true;
+                solution.add_col(ptr->col);
+                lv.solution[ptr->col] = true;
+                covered_by[i]++;
+            }
             if (costs[ptr->col] < min_cost) {
                 min_cost_col = ptr->col;
                 min_cost = costs[ptr->col];
-            }
-            if (lv.solution[ptr->col]) {
-                covered = true;
-                solution.add_col(ptr->col);
-                break;
             }
             ptr = ptr->right;
         }
         if (covered == false) {
             solution.add_col(min_cost_col);
+            lv.solution[min_cost_col] = true;
+            covered_by[i]++;
         }
     }
+
+    chvatal_reduction(solution, covered_by);
+    std::cout << "euristica lang. sol corretta =" << solution_is_correct(solution) << std::endl;
+
     return solution;
 }
 
 // calculates the lagrangian costs and calculates the solution 
 // C_j = c_j - \sum_i \lambda_i * a_ij
+// z = \sum_j C_j*x_j + \sum_i \lambda_i
 void SetCover::lagrangian_solution(LagrangianVar& lv) {
     lv.lb = 0;
     for (unsigned j : available_col) {
@@ -514,13 +552,11 @@ void SetCover::lagrangian_solution(LagrangianVar& lv) {
 
         if (lv.cost_lagrang[j] <= 0) {
             lv.solution[j] = true;
+            lv.lb += lv.cost_lagrang[j];
         }
         else {
             lv.solution[j] = false;
         }
-
-        if(lv.solution[j])
-            lv.lb += lv.cost_lagrang[j];
     }
 
     for (unsigned i : available_row) {
@@ -541,7 +577,7 @@ void SetCover::calc_subgradients(LagrangianVar& lv) {
         Cell* ptr = rows[i];
         for (unsigned k = 0; k < row_density[i]; ++k) {
             if(lv.solution[ptr->col])
-                lv.subgradients[i] -= lv.solution[ptr->col];
+                lv.subgradients[i] -= 1;
             ptr = ptr->right;
         }
     }
@@ -551,7 +587,7 @@ void SetCover::calc_subgradients(LagrangianVar& lv) {
 void SetCover::update_step_size(LagrangianPar& lp, LagrangianVar& lv) {
     lv.t = lv.pi * ((1.05*lp.ub) - lv.lb);
     double sum_of_grad = 0;
-    for (unsigned i = 0; i < n_rows; ++i) {
+    for (unsigned i : available_row) {
         sum_of_grad += (lv.subgradients[i] * lv.subgradients[i]);
     }
     lv.t /= sum_of_grad;
@@ -597,9 +633,8 @@ bool SetCover::solution_is_correct(const Solution& solution) {
 unsigned SetCover::solution_value(const Solution& solution) {
     unsigned solution_cost = 0;
 
-    for (unsigned j = 0; j < n_cols; ++j) {
-        if (solution.sol[j])
-            solution_cost += costs[j];
+    for (unsigned j : solution.set_s) {
+        solution_cost += costs[j];
     }
 
     for (unsigned j = 0; j < n_cols; ++j) {

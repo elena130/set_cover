@@ -77,6 +77,8 @@ private:
 
     void chvatal_reduction(Solution &solution, std::vector<unsigned>& coperte);
 
+    void init_multipliers(LagrangianVar& lv);
+
     
 
 public:
