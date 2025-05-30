@@ -478,7 +478,6 @@ double SetCover::lagrangian_lb(LagrangianPar& lp) {
             if (feasible_sol_val < lp.ub) {
                 lp.ub = feasible_sol_val;
             }
-            std::cout << "huer_val: " << feasible_sol_val << " lb=" << lv.lb << " ub=" << lp.ub << std::endl;
 
             best_sol = feasible_sol;
             worse_it = 0;
@@ -492,7 +491,6 @@ double SetCover::lagrangian_lb(LagrangianPar& lp) {
             worse_it = 0;
         }
     }
-    std::cout << "pi=" << lv.pi << " diff=" << (lp.ub - lv.lb) << std::endl;
     return lv.max_lb;
 }
 
@@ -571,7 +569,6 @@ Solution SetCover::lagrangian_heuristic(LagrangianVar& lv) {
     }
 
     remove_redundant_cols(solution, covered_by);
-    std::cout << "euristica lang. sol corretta =" << solution_is_correct(solution) << std::endl;
 
     return solution;
 }
