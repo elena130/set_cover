@@ -99,7 +99,7 @@ unsigned SetCover::fix_out_dominated_cols(const bool first_red, const std::vecto
                 if (col_is_dominated(j, ptr->col)) {
                     ++dominated;
 
-                    if (col_density[j] != col_density[ptr->col] || col_density[j] < col_density[ptr->col] ) {
+                    if (col_density[j] != col_density[ptr->col] || costs[j] > costs[ptr->col] ) {
                         col_assignment[j] = FIX_OUT;
                         break;
                     }
@@ -133,7 +133,8 @@ unsigned SetCover::fix_out_cols_dom_set(const bool first_red, const std::vector<
         Cell* cell = rows[i];
         unsigned min = UINT_MAX;
         for (unsigned k = 0; k < row_density[i]; ++k) {
-            if (min_cost_col[i] == default_value || costs[cell->col] < min) {
+            if (min_cost_col[i] == default_value || costs[cell->col] < min 
+                || (costs[cell->col] <= min && col_density[cell->col] > col_density[min])) {
                 min_cost_col[i] = cell->col;
                 min = costs[cell->col];
             }
