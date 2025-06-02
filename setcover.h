@@ -116,6 +116,10 @@ public:
 
     unsigned get_col_den(const unsigned j);
 
+    void print_rows();
+
+    void print_cols();
+
     unsigned fix_essential_columns(const bool first_red, const std::vector<bool>& modified_rows);
 
     unsigned fix_out_dominated_rows(const bool first_red, const std::vector<bool>& modified_rows);

@@ -714,3 +714,15 @@ unsigned SetCover::get_row_den(const unsigned i){
 unsigned SetCover::get_col_den(const unsigned j) {
     return col_density[j];
 }
+
+void SetCover::print_rows() {
+    for (unsigned i : available_row) {
+        printf("%d\n", i);
+    }
+}
+
+void SetCover::print_cols() {
+    for (unsigned j : available_col) {
+        printf("%d\n", j);
+    }
+}
