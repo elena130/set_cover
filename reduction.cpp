@@ -134,7 +134,7 @@ unsigned SetCover::fix_out_cols_dom_set(const bool first_red, const std::vector<
         unsigned min = UINT_MAX;
         for (unsigned k = 0; k < row_density[i]; ++k) {
             if (min_cost_col[i] == default_value || costs[cell->col] < min 
-                || (costs[cell->col] <= min && col_density[cell->col] > col_density[min])) {
+                || (costs[cell->col] <= min && col_density[cell->col] > col_density[min_cost_col[i]])) {
                 min_cost_col[i] = cell->col;
                 min = costs[cell->col];
             }
