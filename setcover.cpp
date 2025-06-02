@@ -456,35 +456,16 @@ double SetCover::lagrangian_lb(LagrangianPar& lp) {
     Solution best_sol;
 
     unsigned worse_it = 0;      // number of non improving iterations passed
-    unsigned max_worse_it = 20; // number of non improving iterations after which pi is updated
-    double worst_sol = 0;
-    double best_it_sol = 0;
-    bool first = true;
+    unsigned max_worse_it = 15; // number of non improving iterations after which pi is updated
 
     init_multipliers(lv);
     unsigned it;
-    for (it = 0; it < lp.max_iter && (lp.ub - lv.lb) > lp.min_diff; ++it) {
-        if (it == 51) {
-            std::cout << "controlla" << std::endl;
-        }
-        if (it == 50) {
-            std::cout << "Controlla m moltiplicatori" << std::endl;
-        }
-
+    for (it = 0; it < lp.max_iter && lv.pi > 0.005 && (lp.ub - lv.lb) > lp.min_diff; ++it) {
         lagrangian_solution(lv);
-        
-
-        if (first) {
-            worst_sol = lv.lb;
-            best_it_sol = lv.lb;
-        }
-
-        if (lv.lb < worst_sol)
-            worst_sol = lv.lb;
-
-        if (lv.lb > best_it_sol) {
-            best_it_sol = lv.lb;
-        }
+        calc_subgradients(lv);
+        update_step_size(lp, lv);
+        update_multipliers(lp, lv);
+        cost_fixing(lp, lv);
 
         if (lv.lb > lv.max_lb && lv.lb < lp.ub) {
             lv.max_lb = lv.lb;
@@ -498,28 +479,18 @@ double SetCover::lagrangian_lb(LagrangianPar& lp) {
             }
 
             best_sol = feasible_sol;
+            worse_it = 0;
+        }
+        else {
+            worse_it++;
         }
 
-        calc_subgradients(lv);
-        update_step_size(lp, lv);
-        update_multipliers(lp, lv);
-        cost_fixing(lp, lv);
-
-        if (it % max_worse_it == 0) {
-            if (100 * lv.max_lb / worst_sol > 1) {
-                lv.pi /= double(2);
-            }
-            else if (100 * lv.max_lb / worst_sol <= 0.1) {
-                lv.pi *= 1.5;
-            }
-
-            worst_sol = lv.lb;
-            best_it_sol = lv.lb;
+        
+        if (worse_it == max_worse_it) {
+            lv.pi /= 2;
+            worse_it = 0;
         }
-        first = false;
-        std::cout << it << "\t";
     }
-    std::cout << "it=" << it << "pi=" << lv.pi << " (lp.ub - lv.lb)=" << (lp.ub - lv.lb) << std::endl;
     return lv.max_lb;
 }
 
@@ -670,11 +641,9 @@ void SetCover::update_multipliers(LagrangianPar& lp, LagrangianVar& lv) {
     for (unsigned i : available_row) {
         grad_sum += lv.subgradients[i];
     }
-    if (std::abs(grad_sum) < 0.005) {
-        std::cout << "Divisione quasi per zero";
-    }
+
     for (unsigned i : available_row) {
-        double updated_val = lv.multipliers[i] + (lv.t * lv.subgradients[i] * (double(lp.ub) - lv.lb)) / grad_sum;
+        double updated_val = lv.multipliers[i] + (lv.t * lv.subgradients[i]);
         if (updated_val > 0) {
             lv.multipliers[i] = updated_val;
         }

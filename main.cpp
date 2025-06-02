@@ -109,7 +109,7 @@ int main(int argc, char* argv[]) {
     lp.ub = sol_val;
     lp.init_pi = 0.1;         // Beasley
     lp.init_t = 1;
-    lp.max_iter = 1000;
+    lp.max_iter = 300;
     lp.min_t = 0.005;
     lp.min_diff = 0.005;
     double lb = 0;
