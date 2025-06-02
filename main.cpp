@@ -107,9 +107,9 @@ int main(int argc, char* argv[]) {
     LagrangianPar lp;
     lp.init_multipliers = std::vector<double>(nr, 1);
     lp.ub = sol_val;
-    lp.init_pi = 2;         // Beasley
+    lp.init_pi = 0.1;         // Beasley
     lp.init_t = 1;
-    lp.max_iter = 5000;
+    lp.max_iter = 1000;
     lp.min_t = 0.005;
     lp.min_diff = 0.005;
     double lb = 0;

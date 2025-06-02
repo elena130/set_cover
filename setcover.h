@@ -146,7 +146,7 @@ public:
 
     void update_step_size(LagrangianPar& lp, LagrangianVar& lv);
 
-    void update_multipliers(LagrangianVar& lv);
+    void update_multipliers(LagrangianPar & lp, LagrangianVar& lv);
 
     bool solution_is_correct(const Solution & solution);
 

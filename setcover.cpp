@@ -456,41 +456,70 @@ double SetCover::lagrangian_lb(LagrangianPar& lp) {
     Solution best_sol;
 
     unsigned worse_it = 0;      // number of non improving iterations passed
-    unsigned max_worse_it = 15; // number of non improving iterations after which pi is updated
+    unsigned max_worse_it = 20; // number of non improving iterations after which pi is updated
+    double worst_sol = 0;
+    double best_it_sol = 0;
+    bool first = true;
 
     init_multipliers(lv);
-    for (unsigned it = 0; it < lp.max_iter && lv.pi > 0.005 && (lp.ub - lv.lb) > lp.min_diff; ++it) {
-        lagrangian_solution(lv);
-        calc_subgradients(lv);
-        update_step_size(lp, lv);
-        update_multipliers(lv);
+    unsigned it;
+    for (it = 0; it < lp.max_iter && (lp.ub - lv.lb) > lp.min_diff; ++it) {
+        if (it == 51) {
+            std::cout << "controlla" << std::endl;
+        }
+        if (it == 50) {
+            std::cout << "Controlla m moltiplicatori" << std::endl;
+        }
 
-        cost_fixing(lp, lv);
+        lagrangian_solution(lv);
+        
+
+        if (first) {
+            worst_sol = lv.lb;
+            best_it_sol = lv.lb;
+        }
+
+        if (lv.lb < worst_sol)
+            worst_sol = lv.lb;
+
+        if (lv.lb > best_it_sol) {
+            best_it_sol = lv.lb;
+        }
 
         if (lv.lb > lv.max_lb && lv.lb < lp.ub) {
             lv.max_lb = lv.lb;
             lv.best_multipliers = lv.multipliers;
 
             Solution feasible_sol = lagrangian_heuristic(lv);
-            double feasible_sol_val = 0;
-            feasible_sol_val = solution_value(feasible_sol);
+            double feasible_sol_val = solution_value(feasible_sol);
 
             if (feasible_sol_val < lp.ub) {
                 lp.ub = feasible_sol_val;
             }
 
             best_sol = feasible_sol;
-            worse_it = 0;
-        }
-        else {
-            ++worse_it;
         }
 
-        if (worse_it == max_worse_it) {
-            lv.pi /= 2;
-            worse_it = 0;
+        calc_subgradients(lv);
+        update_step_size(lp, lv);
+        update_multipliers(lp, lv);
+        cost_fixing(lp, lv);
+
+        if (it % max_worse_it == 0) {
+            if (100 * lv.max_lb / worst_sol > 1) {
+                lv.pi /= double(2);
+            }
+            else if (100 * lv.max_lb / worst_sol <= 0.1) {
+                lv.pi *= 1.5;
+            }
+
+            worst_sol = lv.lb;
+            best_it_sol = lv.lb;
         }
+        first = false;
+        std::cout << it << "\t";
     }
+    std::cout << "it=" << it << "pi=" << lv.pi << " (lp.ub - lv.lb)=" << (lp.ub - lv.lb) << std::endl;
     return lv.max_lb;
 }
 
@@ -500,6 +529,7 @@ void SetCover::cost_fixing(LagrangianPar & lp, LagrangianVar & lv) {
         if (lv.solution[j]) {
             if (lv.lb - lv.cost_lagrang[j] > lp.ub) {
                 col_assignment[j] = FIX_IN;
+                lv.solution[j] = true;
                 Cell* ptr = cols[j];
                 for (unsigned k = 0; k < col_density[j]; ++k) {
                     row_assignment[ptr->row] = FIX_OUT;
@@ -509,6 +539,7 @@ void SetCover::cost_fixing(LagrangianPar & lp, LagrangianVar & lv) {
         }
         else if(lv.lb + lv.cost_lagrang[j] > lp.ub) {
             col_assignment[j] = FIX_OUT;
+            lv.solution[j] = false;
         }
     }
 
@@ -535,6 +566,7 @@ void SetCover::cost_fixing(LagrangianPar & lp, LagrangianVar & lv) {
 }
 
 // creates a feasible solution for the problem starting out from the lagrangean solution already found. 
+// Suggested by Beasley
 Solution SetCover::lagrangian_heuristic(LagrangianVar& lv) {
     // add the minimun cost column to cover all the uncovered rows left by the lagrangean 
     Cell* ptr;
@@ -555,7 +587,8 @@ Solution SetCover::lagrangian_heuristic(LagrangianVar& lv) {
                 lv.solution[ptr->col] = true;
                 covered_by[i]++;
             }
-            if (costs[ptr->col] < min_cost) {
+            // choose the columns which have minimum column cost and lagrangian cost 
+            if (costs[ptr->col] < min_cost || (costs[ptr->col] == min_cost && lv.cost_lagrang[ptr->col] < lv.cost_lagrang[min_cost_col])) {
                 min_cost_col = ptr->col;
                 min_cost = costs[ptr->col];
             }
@@ -632,9 +665,16 @@ void SetCover::update_step_size(LagrangianPar& lp, LagrangianVar& lv) {
 
 // updates the value of the multipliers \lambda
 // \lambda_i = max(0, \lambda_i + t*G_i)
-void SetCover::update_multipliers(LagrangianVar& lv) {
+void SetCover::update_multipliers(LagrangianPar& lp, LagrangianVar& lv) {
+    double grad_sum = 0;
     for (unsigned i : available_row) {
-        double updated_val = lv.multipliers[i] + (lv.t * lv.subgradients[i]);
+        grad_sum += lv.subgradients[i];
+    }
+    if (std::abs(grad_sum) < 0.005) {
+        std::cout << "Divisione quasi per zero";
+    }
+    for (unsigned i : available_row) {
+        double updated_val = lv.multipliers[i] + (lv.t * lv.subgradients[i] * (double(lp.ub) - lv.lb)) / grad_sum;
         if (updated_val > 0) {
             lv.multipliers[i] = updated_val;
         }
