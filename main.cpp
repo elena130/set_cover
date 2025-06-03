@@ -124,7 +124,7 @@ int main(int argc, char* argv[]) {
     logger.log_endl("Time difference [s] = " + std::to_string(time));
     
     std::cout << nr << "\t" << nc << "\t";
-    std::cout << sc.remaining_rows() << "\t" << sc.remaining_cols() << "\t" << sol_val << "\t" << lb << "\t"  << opt_gap << "\t" << time << std::endl;
+    std::cout << sc.remaining_rows() << "\t" << sc.remaining_cols() << "\t" << lp.ub << "\t" << lb << "\t"  << opt_gap << "\t" << time << std::endl;
 
     return 0;
 }
