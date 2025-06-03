@@ -146,6 +146,8 @@ public:
 
     void lagrangian_solution(LagrangianVar& lv);
 
+    double lagrangian_sol_value(LagrangianVar& lv);
+
     void calc_subgradients(LagrangianVar& lv);
 
     void update_step_size(LagrangianPar& lp, LagrangianVar& lv);

@@ -447,12 +447,12 @@ double SetCover::lagrangian_lb(LagrangianPar& lp) {
     LagrangianVar lv;
     lv.solution = std::vector<bool>(n_cols, false);
     lv.subgradients = std::vector<double>(n_rows, 0);
-    lv.best_multipliers = lp.init_multipliers;
     lv.cost_lagrang = std::vector<double>(n_cols, 0);
     lv.max_lb = 0;
     lv.lb = 0;
     lv.pi = lp.init_pi;
     lv.t = lp.init_t;
+    std::vector<bool> best_lb_sol(n_cols, false);
     Solution best_sol;
 
     unsigned worse_it = 0;      // number of non improving iterations passed
@@ -462,22 +462,30 @@ double SetCover::lagrangian_lb(LagrangianPar& lp) {
     unsigned it;
     for (it = 0; it < lp.max_iter && lv.pi > 0.005 && (lp.ub - lv.lb) > lp.min_diff; ++it) {
         lagrangian_solution(lv);
+        lv.lb = lagrangian_sol_value(lv);
         calc_subgradients(lv);
         update_step_size(lp, lv);
         update_multipliers(lp, lv);
-        cost_fixing(lp, lv);
 
-        // aggiorna il valore della soluzione per l'upper bound
 
         if (lv.lb > lv.max_lb && lv.lb < lp.ub) {
-            lv.max_lb = lv.lb;
-            lv.best_multipliers = lv.multipliers;
 
             Solution feasible_sol = lagrangian_heuristic(lv);
-            double feasible_sol_val = solution_value(feasible_sol);
+
+            double feasible_sol_val = 0;
+            for (unsigned j : available_col) {
+                if(feasible_sol.sol[j])
+                    feasible_sol_val += costs[j];
+            }
 
             if (feasible_sol_val < lp.ub) {
                 lp.ub = feasible_sol_val;
+            }
+
+            if (lv.lb < lp.ub) {
+                lv.max_lb = lv.lb;
+                lv.best_multipliers = lv.multipliers;
+                best_lb_sol = lv.solution;
             }
 
             best_sol = feasible_sol;
@@ -492,16 +500,40 @@ double SetCover::lagrangian_lb(LagrangianPar& lp) {
             lv.pi /= 2;
             worse_it = 0;
         }
+
+        cost_fixing(lp, lv);
+
     }
 
-    // add fixed cols cost to the best lower bound found  
+    // calcola la soluzioine da zero con i moltiplicatori 
+    // C_j = c_j - \sum_i \lambda_i * a_ij
+    // z = \sum_j C_j*x_j + \sum_i \lambda_i
+    double right_sol = 0;
     for (unsigned j = 0; j < n_cols; ++j) {
+       
         if (col_assignment[j] == FIX_IN) {
-            lv.max_lb += costs[j];
+            right_sol += costs[j];
+        }
+        else if (best_lb_sol[j]) {
+            lv.cost_lagrang[j] = costs[j];
+
+            Cell* ptr = cols[j];
+            for (unsigned k = 0; k < col_density[j]; ++k) {
+                lv.cost_lagrang[j] -= lv.best_multipliers[ptr->row];
+                ptr = ptr->down;
+            }
+
+            right_sol += lv.cost_lagrang[j];
         }
     }
 
-    return lv.max_lb;
+    for (unsigned i : available_row) {
+        right_sol += lv.best_multipliers[i];
+    }
+
+    lv.max_lb = right_sol;
+
+    return right_sol;
 }
 
 
@@ -592,7 +624,6 @@ Solution SetCover::lagrangian_heuristic(LagrangianVar& lv) {
 // C_j = c_j - \sum_i \lambda_i * a_ij
 // z = \sum_j C_j*x_j + \sum_i \lambda_i
 void SetCover::lagrangian_solution(LagrangianVar& lv) {
-    lv.lb = 0;
     for (unsigned j : available_col) {
         lv.cost_lagrang[j] = costs[j];
         Cell* ptr = cols[j];
@@ -604,16 +635,26 @@ void SetCover::lagrangian_solution(LagrangianVar& lv) {
 
         if (lv.cost_lagrang[j] <= 0) {
             lv.solution[j] = true;
-            lv.lb += lv.cost_lagrang[j];
         }
         else {
             lv.solution[j] = false;
         }
     }
+}
+
+// z = \sum_j C_j*x_j + \sum_i \lambda_i
+double SetCover::lagrangian_sol_value(LagrangianVar& lv) {
+    double solution_value = 0;
+    for (unsigned j : available_col) {
+        if (lv.solution[j]) {
+            solution_value += lv.cost_lagrang[j];
+        }
+    }
 
     for (unsigned i : available_row) {
-        lv.lb += lv.multipliers[i];
+        solution_value += lv.multipliers[i];
     }
+    return solution_value;
 }
 
 // gradients G_i = 1 - \sum_j a_ij * x_j
@@ -648,11 +689,6 @@ void SetCover::update_step_size(LagrangianPar& lp, LagrangianVar& lv) {
 // updates the value of the multipliers \lambda
 // \lambda_i = max(0, \lambda_i + t*G_i)
 void SetCover::update_multipliers(LagrangianPar& lp, LagrangianVar& lv) {
-    double grad_sum = 0;
-    for (unsigned i : available_row) {
-        grad_sum += lv.subgradients[i];
-    }
-
     for (unsigned i : available_row) {
         double updated_val = lv.multipliers[i] + (lv.t * lv.subgradients[i]);
         if (updated_val > 0) {

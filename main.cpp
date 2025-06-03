@@ -116,7 +116,8 @@ int main(int argc, char* argv[]) {
     lb = sc.lagrangian_lb(lp);
 
     sol_val = sc.solution_value(chvatal_sol);
-    double opt_gap = ((double(sol_val) - lb) / lb) * 100;
+    // opt_gap = (UB - LB) / LB * 100
+    double opt_gap = ((double(lp.ub) - lb) / lb) * 100;
     
     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
     auto time = std::chrono::duration_cast<std::chrono::seconds>(end - begin).count();
