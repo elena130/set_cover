@@ -101,7 +101,7 @@ int main(int argc, char* argv[]) {
         std::cout << "Solution is wrong, check your code" << std::endl;
     }
 
-    unsigned sol_val = original_sc.solution_value(chvatal_sol);
+    unsigned sol_val = sc.solution_value(chvatal_sol);
     logger.log_endl("Solution cost: " + std::to_string(sol_val));
 
     LagrangianPar lp;
@@ -114,6 +114,9 @@ int main(int argc, char* argv[]) {
     lp.min_diff = 0.005;
     double lb = 0;
     lb = sc.lagrangian_lb(lp);
+
+    sol_val = sc.solution_value(chvatal_sol);
+    double opt_gap = ((double(sol_val) - lb) / lb) * 100;
     
     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
     auto time = std::chrono::duration_cast<std::chrono::seconds>(end - begin).count();
@@ -121,7 +124,7 @@ int main(int argc, char* argv[]) {
     logger.log_endl("Time difference [s] = " + std::to_string(time));
     
     std::cout << nr << "\t" << nc << "\t";
-    std::cout << sc.remaining_rows() << "\t" << sc.remaining_cols() << "\t" << lp.ub << "\t" << lb << "\t" << time << std::endl;
+    std::cout << sc.remaining_rows() << "\t" << sc.remaining_cols() << "\t" << sol_val << "\t" << lb << "\t"  << opt_gap << "\t" << time << std::endl;
 
     return 0;
 }

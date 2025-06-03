@@ -467,6 +467,8 @@ double SetCover::lagrangian_lb(LagrangianPar& lp) {
         update_multipliers(lp, lv);
         cost_fixing(lp, lv);
 
+        // aggiorna il valore della soluzione per l'upper bound
+
         if (lv.lb > lv.max_lb && lv.lb < lp.ub) {
             lv.max_lb = lv.lb;
             lv.best_multipliers = lv.multipliers;
@@ -491,8 +493,17 @@ double SetCover::lagrangian_lb(LagrangianPar& lp) {
             worse_it = 0;
         }
     }
+
+    // add fixed cols cost to the best lower bound found  
+    for (unsigned j = 0; j < n_cols; ++j) {
+        if (col_assignment[j] == FIX_IN) {
+            lv.max_lb += costs[j];
+        }
+    }
+
     return lv.max_lb;
 }
+
 
 void SetCover::cost_fixing(LagrangianPar & lp, LagrangianVar & lv) {
 
@@ -679,12 +690,8 @@ bool SetCover::solution_is_correct(const Solution& solution) {
 unsigned SetCover::solution_value(const Solution& solution) {
     unsigned solution_cost = 0;
 
-    for (unsigned j : solution.set_s) {
-        solution_cost += costs[j];
-    }
-
     for (unsigned j = 0; j < n_cols; ++j) {
-        if (col_assignment[j] == FIX_IN)
+        if (solution.sol[j] || col_assignment[j] == FIX_IN)
             solution_cost += costs[j];
     }
 
