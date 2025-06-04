@@ -39,13 +39,12 @@ struct Solution {
 };
 
 struct LagrangianPar {
-    std::vector<double> init_multipliers;
     double init_pi;         // initial value pi
     double init_t;          // initial value of step size
     unsigned max_iter;      // max number of iterations
     double min_t;           
     double min_diff;        // min difference between ub and lb 
-    unsigned ub;
+    double ub;
 };
 
 struct LagrangianVar {

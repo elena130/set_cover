@@ -382,12 +382,12 @@ void SetCover::chvtal(Solution& chvatal_sol) {
 }
 
 void SetCover::remove_redundant_cols(Solution& solution, std::vector<unsigned>& coperte) {
-    std::vector<unsigned> ordered_cols(solution.set_s.begin(), solution.set_s.end());
+    std::vector<unsigned> cols_by_cost(solution.set_s.begin(), solution.set_s.end());
     Cell* ptr;
     bool remove_col;
 
     // order the columns by their cost, using their index to break ties
-    std::sort(ordered_cols.begin(), ordered_cols.end(), [this](unsigned j, unsigned k)->bool {
+    std::sort(cols_by_cost.begin(), cols_by_cost.end(), [this](unsigned j, unsigned k)->bool {
             if (costs[j] > costs[k]) {
                 return true;
             }
@@ -399,8 +399,8 @@ void SetCover::remove_redundant_cols(Solution& solution, std::vector<unsigned>& 
             }
         });
 
-    auto iter = ordered_cols.begin();
-    while (iter != ordered_cols.end()) {
+    auto iter = cols_by_cost.begin();
+    while (iter != cols_by_cost.end()) {
         unsigned j = *iter;
         remove_col = true;
         ptr = cols[j];
@@ -452,88 +452,51 @@ double SetCover::lagrangian_lb(LagrangianPar& lp) {
     lv.lb = 0;
     lv.pi = lp.init_pi;
     lv.t = lp.init_t;
-    std::vector<bool> best_lb_sol(n_cols, false);
-    Solution best_sol;
 
-    unsigned worse_it = 0;      // number of non improving iterations passed
-    unsigned max_worse_it = 15; // number of non improving iterations after which pi is updated
+    LagrangianVar best_lb_conf;
+    Solution ub_sol;
 
     init_multipliers(lv);
-    unsigned it;
-    for (it = 0; it < lp.max_iter && lv.pi > 0.005 && (lp.ub - lv.lb) > lp.min_diff; ++it) {
+    unsigned worsening = 0;
+
+    for (unsigned it = 0; it < lp.max_iter && (lp.ub - lv.max_lb) >= lp.min_diff && lv.pi >= 0.005; ++it) {
         lagrangian_solution(lv);
         lv.lb = lagrangian_sol_value(lv);
         calc_subgradients(lv);
         update_step_size(lp, lv);
         update_multipliers(lp, lv);
-
-
-        if (lv.lb > lv.max_lb && lv.lb < lp.ub) {
-
-            Solution feasible_sol = lagrangian_heuristic(lv);
-
-            double feasible_sol_val = 0;
-            for (unsigned j : available_col) {
-                if(feasible_sol.sol[j])
-                    feasible_sol_val += costs[j];
+        cost_fixing(lp, lv);
+        lv.lb = lagrangian_sol_value(lv);
+        for (unsigned j = 0; j < n_cols; ++j)
+            if (col_assignment[j] == FIX_IN) {
+                lv.lb += costs[j];
             }
 
-            if (feasible_sol_val < lp.ub) {
-                lp.ub = feasible_sol_val;
-            }
+        Solution upper_b_sol = lagrangian_heuristic(lv);
+        double upper_bound = double(solution_value(upper_b_sol));
 
-            if (lv.lb < lp.ub) {
-                lv.max_lb = lv.lb;
-                lv.best_multipliers = lv.multipliers;
-                best_lb_sol = lv.solution;
-            }
-
-            best_sol = feasible_sol;
-            worse_it = 0;
-        }
-        else {
-            worse_it++;
+        if (upper_bound < lp.ub) {
+            lp.ub = upper_bound;
         }
 
         
-        if (worse_it == max_worse_it) {
+        if (lv.lb > lv.max_lb && lv.lb <= lp.ub) {
+            lv.max_lb = lv.lb;
+            lv.best_multipliers = lv.multipliers;
+            best_lb_conf = lv;
+            worsening = 0;
+        }
+        else {
+            worsening++;
+        }
+
+        if (worsening % 15 == 0) {
             lv.pi /= 2;
-            worse_it = 0;
-        }
-
-        cost_fixing(lp, lv);
-
-    }
-
-    // calcola la soluzioine da zero con i moltiplicatori 
-    // C_j = c_j - \sum_i \lambda_i * a_ij
-    // z = \sum_j C_j*x_j + \sum_i \lambda_i
-    double right_sol = 0;
-    for (unsigned j = 0; j < n_cols; ++j) {
-       
-        if (col_assignment[j] == FIX_IN) {
-            right_sol += costs[j];
-        }
-        else if (best_lb_sol[j]) {
-            lv.cost_lagrang[j] = costs[j];
-
-            Cell* ptr = cols[j];
-            for (unsigned k = 0; k < col_density[j]; ++k) {
-                lv.cost_lagrang[j] -= lv.best_multipliers[ptr->row];
-                ptr = ptr->down;
-            }
-
-            right_sol += lv.cost_lagrang[j];
+            worsening = 0;
         }
     }
-
-    for (unsigned i : available_row) {
-        right_sol += lv.best_multipliers[i];
-    }
-
-    lv.max_lb = right_sol;
-
-    return right_sol;
+    
+    return lv.max_lb;
 }
 
 
@@ -543,6 +506,7 @@ void SetCover::cost_fixing(LagrangianPar & lp, LagrangianVar & lv) {
         if (lv.solution[j]) {
             if (lv.lb - lv.cost_lagrang[j] > lp.ub) {
                 col_assignment[j] = FIX_IN;
+                // rimetti la colonna 
                 lv.solution[j] = true;
                 Cell* ptr = cols[j];
                 for (unsigned k = 0; k < col_density[j]; ++k) {
@@ -649,6 +613,11 @@ double SetCover::lagrangian_sol_value(LagrangianVar& lv) {
         if (lv.solution[j]) {
             solution_value += lv.cost_lagrang[j];
         }
+    }
+
+    for (unsigned j = 0; j < n_cols; ++j) {
+        if (col_assignment[j] == FIX_IN)
+            solution_value += costs[j];
     }
 
     for (unsigned i : available_row) {

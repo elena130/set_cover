@@ -105,7 +105,6 @@ int main(int argc, char* argv[]) {
     logger.log_endl("Solution cost: " + std::to_string(sol_val));
 
     LagrangianPar lp;
-    lp.init_multipliers = std::vector<double>(nr, 1);
     lp.ub = sol_val;
     lp.init_pi = 0.1;         // Beasley
     lp.init_t = 1;
@@ -116,6 +115,7 @@ int main(int argc, char* argv[]) {
     lb = sc.lagrangian_lb(lp);
 
     sol_val = sc.solution_value(chvatal_sol);
+    logger.log_endl("Chvatal updated: " + std::to_string(sol_val));
     // opt_gap = (UB - LB) / LB * 100
     double opt_gap = ((double(lp.ub) - lb) / lb) * 100;
     
