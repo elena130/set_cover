@@ -59,6 +59,13 @@ struct LagrangianVar {
     std::vector<double> subgradients;     // G_i
 };
 
+struct LagrangianRes {
+    double max_lb;
+    std::vector<double> best_multipliers;
+    unsigned ub;
+    Solution ub_sol;
+};
+
 class SetCover {
 private:
     unsigned int n_rows, n_cols;
@@ -137,7 +144,7 @@ public:
 
     void chvtal(Solution & chvatal_sol);
 
-    double lagrangian_lb(LagrangianPar& lp);
+    LagrangianRes LagrangianReslagrangian_lb(LagrangianPar& lp);
 
     void cost_fixing(LagrangianPar& lp, LagrangianVar& lv);
 
@@ -156,6 +163,8 @@ public:
     bool solution_is_correct(const Solution & solution);
 
     unsigned solution_value(const Solution & solution);
+
+    unsigned solution_value_without_fixed_in(const Solution& solution);
     
     void print_solution(const Solution solution);
 };

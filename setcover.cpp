@@ -443,7 +443,7 @@ void SetCover::init_multipliers(LagrangianVar& lv) {
     }
 }
 
-double SetCover::lagrangian_lb(LagrangianPar& lp) {
+LagrangianRes SetCover::LagrangianReslagrangian_lb(LagrangianPar& lp) {
     LagrangianVar lv;
     lv.solution = std::vector<bool>(n_cols, false);
     lv.subgradients = std::vector<double>(n_rows, 0);
@@ -458,22 +458,26 @@ double SetCover::lagrangian_lb(LagrangianPar& lp) {
 
     init_multipliers(lv);
     unsigned worsening = 0;
+    Solution upper_b_sol;
 
     for (unsigned it = 0; it < lp.max_iter && (lp.ub - lv.max_lb) >= lp.min_diff && lv.pi >= 0.005; ++it) {
         lagrangian_solution(lv);
         lv.lb = lagrangian_sol_value(lv);
         calc_subgradients(lv);
+
+        upper_b_sol = lagrangian_heuristic(lv);
+        double upper_bound = double(solution_value_without_fixed_in(upper_b_sol));
+        cost_fixing(lp, lv);
+
         update_step_size(lp, lv);
         update_multipliers(lp, lv);
-        cost_fixing(lp, lv);
         lv.lb = lagrangian_sol_value(lv);
+        /*
         for (unsigned j = 0; j < n_cols; ++j)
             if (col_assignment[j] == FIX_IN) {
                 lv.lb += costs[j];
             }
-
-        Solution upper_b_sol = lagrangian_heuristic(lv);
-        double upper_bound = double(solution_value(upper_b_sol));
+            */
 
         if (upper_bound < lp.ub) {
             lp.ub = upper_bound;
@@ -496,7 +500,21 @@ double SetCover::lagrangian_lb(LagrangianPar& lp) {
         }
     }
     
-    return lv.max_lb;
+    LagrangianRes res;
+    res.best_multipliers = lv.best_multipliers;
+    res.max_lb = lv.max_lb;
+    res.ub = lp.ub;
+    res.ub_sol = upper_b_sol;
+
+    for (unsigned j = 0; j < n_cols; ++j) {
+        if (col_assignment[j] == FIX_IN) {
+            res.ub += costs[j];
+            res.ub_sol.add_col(j);
+            res.max_lb += costs[j];
+        }
+    }
+
+    return res;
 }
 
 
@@ -562,7 +580,6 @@ Solution SetCover::lagrangian_heuristic(LagrangianVar& lv) {
             if (lv.solution[ptr->col] || solution.sol[ptr->col]) {
                 covered = true;
                 solution.add_col(ptr->col);
-                lv.solution[ptr->col] = true;
                 covered_by[i]++;
             }
             // choose the columns which have minimum column cost and lagrangian cost 
@@ -574,7 +591,7 @@ Solution SetCover::lagrangian_heuristic(LagrangianVar& lv) {
         }
         if (covered == false) {
             solution.add_col(min_cost_col);
-            lv.solution[min_cost_col] = true;
+           // lv.solution[min_cost_col] = true;
             covered_by[i]++;
         }
     }
@@ -613,11 +630,6 @@ double SetCover::lagrangian_sol_value(LagrangianVar& lv) {
         if (lv.solution[j]) {
             solution_value += lv.cost_lagrang[j];
         }
-    }
-
-    for (unsigned j = 0; j < n_cols; ++j) {
-        if (col_assignment[j] == FIX_IN)
-            solution_value += costs[j];
     }
 
     for (unsigned i : available_row) {
@@ -701,6 +713,15 @@ unsigned SetCover::solution_value(const Solution& solution) {
     }
 
     return solution_cost;
+}
+
+unsigned SetCover::solution_value_without_fixed_in(const Solution& solution) {
+    unsigned z = 0;
+    for (unsigned j : available_col) {
+        if (solution.sol[j])
+            z += costs[j];
+    }
+    return z;
 }
 
 void SetCover::print_solution(const Solution solution) {
