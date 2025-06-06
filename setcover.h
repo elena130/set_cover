@@ -44,26 +44,18 @@ struct LagrangianPar {
     unsigned max_iter;      // max number of iterations
     double min_t;           
     double min_diff;        // min difference between ub and lb 
-    double ub;
+    double init_ub;
 };
 
 struct LagrangianVar {
-    std::vector<double> best_multipliers; // best multipliers associatedd with the best lower bound found
     std::vector<double> cost_lagrang;     // lagrangian costs 
+    double ub;
     double lb;
-    double max_lb;                        // best lb found during iterations
     std::vector<double> multipliers;      // \lambdas 
     double pi;
     std::vector<bool> solution;           // lagrangian solution 
     double t;
     std::vector<double> subgradients;     // G_i
-};
-
-struct LagrangianRes {
-    double max_lb;
-    std::vector<double> best_multipliers;
-    unsigned ub;
-    Solution ub_sol;
 };
 
 class SetCover {
@@ -144,16 +136,16 @@ public:
 
     void chvtal(Solution & chvatal_sol);
 
-    LagrangianRes LagrangianReslagrangian_lb(LagrangianPar& lp);
+    LagrangianVar LagrangianVarlagrangian_lb(LagrangianPar& lp);
 
-    void cost_fixing(LagrangianPar& lp, LagrangianVar& lv);
+    unsigned cost_fixing(LagrangianPar& lp, LagrangianVar& lv);
 
     Solution lagrangian_heuristic(LagrangianVar& lv);
 
     void lagrangian_solution(LagrangianVar& lv);
 
-    double lagrangian_sol_value(LagrangianVar& lv);
-
+    double lagrangian_sol_value(const std::vector<bool> solution, const std::vector<double> cost_lagrang, const std::vector<double> multipliers);
+    
     void calc_subgradients(LagrangianVar& lv);
 
     void update_step_size(LagrangianPar& lp, LagrangianVar& lv);

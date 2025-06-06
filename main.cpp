@@ -107,18 +107,16 @@ int main(int argc, char* argv[]) {
     
 
     LagrangianPar lp;
-    lp.ub = sc.solution_value_without_fixed_in(chvatal_sol);
+    lp.init_ub = sc.solution_value(chvatal_sol);
     lp.init_pi = 0.1;         // Beasley
     lp.init_t = 1;
     lp.max_iter = 300;
     lp.min_t = 0.005;
     lp.min_diff = 0.005;
-    LagrangianRes lr = sc.LagrangianReslagrangian_lb(lp);
+    LagrangianVar lagrangian_sol = sc.LagrangianVarlagrangian_lb(lp);
 
-    sol_val = sc.solution_value(chvatal_sol);
-    logger.log_endl("Chvatal updated: " + std::to_string(sol_val));
     // opt_gap = (UB - LB) / LB * 100
-    double opt_gap = ((double(lr.ub) - lr.max_lb) / lr.max_lb) * 100;
+    double opt_gap = ((double(lagrangian_sol.ub) - lagrangian_sol.lb) / lagrangian_sol.lb) * 100;
     
     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
     auto time = std::chrono::duration_cast<std::chrono::seconds>(end - begin).count();
@@ -126,7 +124,7 @@ int main(int argc, char* argv[]) {
     logger.log_endl("Time difference [s] = " + std::to_string(time));
     
     std::cout << nr << "\t" << nc << "\t";
-    std::cout << sc.remaining_rows() << "\t" << sc.remaining_cols() << "\t" << lr.ub << "\t" << lr.max_lb << "\t"  << opt_gap << "\t" << time << std::endl;
+    std::cout << sc.remaining_rows() << "\t" << sc.remaining_cols() << "\t" << lagrangian_sol.ub << "\t" << lagrangian_sol.lb << "\t"  << opt_gap << "\t" << time << std::endl;
 
     return 0;
 }
