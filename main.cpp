@@ -75,11 +75,13 @@ int main(int argc, char* argv[]) {
         deleted += sc.fix_essential_columns(first_reduction, modified_rows);
         deleted += sc.fix_out_cols_dom_set(first_reduction, modified_cols);
         deleted += sc.fix_out_dominated_cols(first_reduction, modified_cols, logger);
-        std::fill_n(modified_rows.begin(), nr, false);
+        for (unsigned i = 0; i < nr; ++i)
+            modified_rows[i] = false;
         sc.delete_fix_out_cols(modified_rows);
 
         deleted += sc.fix_out_dominated_rows(first_reduction, modified_rows);
-        std::fill_n(modified_cols.begin(), nc, false);
+        for (unsigned j = 0; j < nc; ++j)
+            modified_cols[j] = false;
         sc.delete_fix_out_rows(modified_cols);
 
         first_reduction = false;

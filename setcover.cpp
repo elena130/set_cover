@@ -544,8 +544,6 @@ unsigned SetCover::cost_fixing(LagrangianPar& lp, LagrangianVar& lv) {
     unsigned reduction;
     Logger logger;
 
-    
-
     // le riduzioni devi sapere quali colonne sono state ridotte perché devi controllare quale sarà il nuovo costo per l'offset
     do {
         // update the offset, adding the cost of fixed in cols
@@ -555,12 +553,14 @@ unsigned SetCover::cost_fixing(LagrangianPar& lp, LagrangianVar& lv) {
             }
         }
 
-        reduction = 0;
-        std::fill_n(mod_rows.begin(), n_rows, false);
+        for (unsigned i = 0; i < n_rows; ++i)
+            mod_rows[i] = false;
         delete_fix_out_cols(mod_rows);
-        std::fill_n(mod_cols.begin(), n_cols, false);
+        for (unsigned j = 0; j < n_cols; ++j)
+            mod_cols[j] = false;
         delete_fix_out_rows(mod_cols);
 
+        reduction = 0;
         reduction += fix_essential_columns(false, mod_rows);
         reduction += fix_out_cols_dom_set(false, mod_cols);
         reduction += fix_out_dominated_cols(false, mod_cols, logger);
