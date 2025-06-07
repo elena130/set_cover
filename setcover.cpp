@@ -466,16 +466,21 @@ LagrangianVar SetCover::LagrangianVarlagrangian_lb(LagrangianPar& lp) {
     lv.ub -= offset;
     Solution best_ub;
     LagrangianVar best_par = lv;
+    // only debug
+    Solution debug_ub;
 
     init_multipliers(lv);
     for (unsigned it = 0; it < lp.max_iter && lv.pi > 0.005 && (lv.ub - best_par.lb) > lp.min_diff;++it) {
         lagrangian_solution(lv);
         lv.lb = lagrangian_sol_value(lv.solution, lv.cost_lagrang, lv.multipliers);
+        unsigned removed = cost_fixing(lp, lv);
+        lv.lb = lagrangian_sol_value(lv.solution, lv.cost_lagrang, lv.multipliers);
         calc_subgradients(lv);
         update_step_size(lp, lv);
         update_multipliers(lp, lv);
+        offset += removed;
             
-        if(lv.lb > best_par.lb){
+        if(lv.lb > best_par.lb || removed > 0){
 
             Solution ub_sol = lagrangian_heuristic(lv);
             unsigned ub = solution_value_without_fixed_in(ub_sol);
@@ -483,6 +488,7 @@ LagrangianVar SetCover::LagrangianVarlagrangian_lb(LagrangianPar& lp) {
             if (ub < best_par.ub) {
                 lv.ub = ub;
                 best_par.ub = ub;
+                debug_ub = ub_sol;
             }
 
             if (lv.lb < best_par.ub) {
@@ -501,7 +507,6 @@ LagrangianVar SetCover::LagrangianVarlagrangian_lb(LagrangianPar& lp) {
             worsening_it = 0;
         }
 
-        cost_fixing(lp, lv);
     }
 
     best_par.lb += offset;
@@ -539,7 +544,17 @@ unsigned SetCover::cost_fixing(LagrangianPar& lp, LagrangianVar& lv) {
     unsigned reduction;
     Logger logger;
 
+    
+
+    // le riduzioni devi sapere quali colonne sono state ridotte perché devi controllare quale sarà il nuovo costo per l'offset
     do {
+        // update the offset, adding the cost of fixed in cols
+        for (unsigned j = 0; j < n_cols; ++j) {
+            if (col_assignment[j] == FIX_IN && cols[j] != NULL) {
+                offset += costs[j];
+            }
+        }
+
         reduction = 0;
         std::fill_n(mod_rows.begin(), n_rows, false);
         delete_fix_out_cols(mod_rows);
@@ -682,8 +697,9 @@ bool SetCover::solution_is_correct(const Solution& solution) {
     for (unsigned i : available_row) {
         ptr = rows[i];
         unsigned counter = 0;
-
+        //std::cout << i << "\t";
         while (counter < row_density[i] && !solution.sol[ptr->col]) {
+            
             ++counter;
             ptr = ptr->right;
         }
@@ -702,8 +718,19 @@ unsigned SetCover::solution_value(const Solution& solution) {
     unsigned solution_cost = 0;
 
     for (unsigned j = 0; j < n_cols; ++j) {
-        if (solution.sol[j] || col_assignment[j] == FIX_IN)
+        if (solution.sol[j] || col_assignment[j] == FIX_IN) {
             solution_cost += costs[j];
+            /*
+            std::cout << j << "," << costs[j];
+
+            if (col_assignment[j] == FIX_IN) {
+                std::cout << ",FIX_IN";
+            }
+            std::cout << std::endl;
+            */
+        }
+
+        
     }
 
     return solution_cost;
@@ -711,17 +738,21 @@ unsigned SetCover::solution_value(const Solution& solution) {
 
 unsigned SetCover::solution_value_without_fixed_in(const Solution& solution) {
     unsigned z = 0;
+    //std::cout << "sol value without fixed: ";
     for (unsigned j : available_col) {
-        if (solution.sol[j])
+        if (solution.sol[j] && col_assignment[j] != FIX_IN) {
             z += costs[j];
+            //std::cout << j << "\t";
+        }
     }
+    //std::cout << std::endl  << "Val:" << z << std::endl;
     return z;
 }
 
 void SetCover::print_solution(const Solution solution) {
     std::cout << "Columns in solution: ";
     for (unsigned j : solution.set_s) {
-        std::cout << j << "\t";
+        std::cout << j << ",";
     }
     std::cout << std::endl;
 }
