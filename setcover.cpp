@@ -466,8 +466,6 @@ LagrangianVar SetCover::LagrangianVarlagrangian_lb(LagrangianPar& lp) {
     lv.ub -= offset;
     Solution best_ub;
     LagrangianVar best_par = lv;
-    // only debug
-    Solution debug_ub;
 
     init_multipliers(lv);
     for (unsigned it = 0; it < lp.max_iter && lv.pi > 0.005 && (lv.ub - best_par.lb) > lp.min_diff;++it) {
@@ -488,15 +486,12 @@ LagrangianVar SetCover::LagrangianVarlagrangian_lb(LagrangianPar& lp) {
             if (ub < best_par.ub) {
                 lv.ub = ub;
                 best_par.ub = ub;
-                debug_ub = ub_sol;
             }
 
             if (lv.lb < best_par.ub) {
                 best_par = lv;
                 worsening_it = 0;
             }
-
-            
         }
         else {
             ++worsening_it;
@@ -506,7 +501,6 @@ LagrangianVar SetCover::LagrangianVarlagrangian_lb(LagrangianPar& lp) {
             lv.pi /= 2.0;
             worsening_it = 0;
         }
-
     }
 
     best_par.lb += offset;
