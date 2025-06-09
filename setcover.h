@@ -44,13 +44,13 @@ struct LagrangianPar {
     unsigned max_iter;      // max number of iterations
     double min_t;           
     double min_diff;        // min difference between ub and lb 
-    double init_ub;
+    unsigned init_ub;
 };
 
 struct LagrangianVar {
     std::vector<double> cost_lagrang;     // lagrangian costs 
-    double ub;
-    double lb;
+    unsigned ub;
+    unsigned lb;
     std::vector<double> multipliers;      // \lambdas 
     double pi;
     std::vector<bool> solution;           // lagrangian solution 

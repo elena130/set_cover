@@ -468,27 +468,32 @@ LagrangianVar SetCover::LagrangianVarlagrangian_lb(LagrangianPar& lp) {
     LagrangianVar best_par = lv;
 
     init_multipliers(lv);
-    for (unsigned it = 0; it < lp.max_iter && lv.pi > 0.005 && (lv.ub - best_par.lb) > lp.min_diff;++it) {
+    for (unsigned it = 0; it < lp.max_iter && lv.pi > 0.005 && lv.ub != best_par.lb;++it) {
         lagrangian_solution(lv);
-        lv.lb = lagrangian_sol_value(lv.solution, lv.cost_lagrang, lv.multipliers);
+        lv.lb = std::ceil(lagrangian_sol_value(lv.solution, lv.cost_lagrang, lv.multipliers));
         unsigned removed = cost_fixing(lp, lv);
-        lv.lb = lagrangian_sol_value(lv.solution, lv.cost_lagrang, lv.multipliers);
+        lv.lb = std::ceil(lagrangian_sol_value(lv.solution, lv.cost_lagrang, lv.multipliers));
         calc_subgradients(lv);
         update_step_size(lp, lv);
         update_multipliers(lp, lv);
         offset += removed;
             
-        if(lv.lb > best_par.lb || removed > 0){
+        if(lv.lb >= best_par.lb || removed > 0){
 
             Solution ub_sol = lagrangian_heuristic(lv);
             unsigned ub = solution_value_without_fixed_in(ub_sol);
 
-            if (ub < best_par.ub) {
+            if (ub == 179) {
+                std::cout << "Soluzione 179 è degenere? " << solution_is_correct(ub_sol) << std::endl;
+                std::cout << "Offset=" << offset << std::endl;
+            }
+
+            if (ub < best_par.ub && ub > best_par.lb) {
                 lv.ub = ub;
                 best_par.ub = ub;
             }
 
-            if (lv.lb < best_par.ub) {
+            if (lv.lb <= best_par.ub) {
                 best_par = lv;
                 worsening_it = 0;
             }
