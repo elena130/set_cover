@@ -50,7 +50,7 @@ struct LagrangianPar {
 struct LagrangianVar {
     std::vector<double> cost_lagrang;     // lagrangian costs 
     unsigned ub;
-    unsigned lb;
+    double lb;
     std::vector<double> multipliers;      // \lambdas 
     double pi;
     std::vector<bool> solution;           // lagrangian solution 

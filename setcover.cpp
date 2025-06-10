@@ -463,37 +463,34 @@ LagrangianVar SetCover::LagrangianVarlagrangian_lb(LagrangianPar& lp) {
         if(col_assignment[j] == FIX_IN)
             offset += costs[j];
     }
-    lv.ub -= offset;
+
     Solution best_ub;
     LagrangianVar best_par = lv;
 
     init_multipliers(lv);
-    for (unsigned it = 0; it < lp.max_iter && lv.pi > 0.005 && lv.ub != best_par.lb;++it) {
+    for (unsigned it = 0; it < lp.max_iter && lv.pi > 0.005 && lv.ub != std::ceil(best_par.lb);++it) {
+
         lagrangian_solution(lv);
-        lv.lb = std::ceil(lagrangian_sol_value(lv.solution, lv.cost_lagrang, lv.multipliers));
+        lv.lb = lagrangian_sol_value(lv.solution, lv.cost_lagrang, lv.multipliers);
         unsigned removed = cost_fixing(lp, lv);
-        lv.lb = std::ceil(lagrangian_sol_value(lv.solution, lv.cost_lagrang, lv.multipliers));
+        offset += removed;
+        lv.lb = lagrangian_sol_value(lv.solution, lv.cost_lagrang, lv.multipliers);
         calc_subgradients(lv);
         update_step_size(lp, lv);
         update_multipliers(lp, lv);
-        offset += removed;
             
-        if(lv.lb >= best_par.lb || removed > 0){
+        if((lv.lb > best_par.lb && std::ceil(lv.lb) + offset <= best_par.ub ) || removed > 0){
 
             Solution ub_sol = lagrangian_heuristic(lv);
-            unsigned ub = solution_value_without_fixed_in(ub_sol);
-
-            if (ub == 179) {
-                std::cout << "Soluzione 179 è degenere? " << solution_is_correct(ub_sol) << std::endl;
-                std::cout << "Offset=" << offset << std::endl;
-            }
+            unsigned ub = solution_value(ub_sol);
 
             if (ub < best_par.ub && ub > best_par.lb) {
                 lv.ub = ub;
                 best_par.ub = ub;
+                best_ub = ub_sol;
             }
 
-            if (lv.lb <= best_par.ub) {
+            if (std::ceil(lv.lb)  <= best_par.ub) {
                 best_par = lv;
                 worsening_it = 0;
             }
@@ -509,7 +506,6 @@ LagrangianVar SetCover::LagrangianVarlagrangian_lb(LagrangianPar& lp) {
     }
 
     best_par.lb += offset;
-    best_par.ub += offset;
     return best_par;
 }
 
@@ -667,7 +663,7 @@ void SetCover::calc_subgradients(LagrangianVar& lv) {
 
 // step_size = \phi * (UB - LB) / \sum_i G_i^2
 void SetCover::update_step_size(LagrangianPar& lp, LagrangianVar& lv) {
-    lv.t = lv.pi * ((1.05*lv.ub) - lv.lb);
+    lv.t = lv.pi * ((double)(1.05*lv.ub) - lv.lb);
     double sum_of_grad = 0;
     for (unsigned i : available_row) {
         sum_of_grad += (lv.subgradients[i] * lv.subgradients[i]);
