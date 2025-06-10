@@ -450,7 +450,7 @@ LagrangianVar SetCover::LagrangianVarlagrangian_lb(LagrangianPar& lp) {
     lv.lb = 0;  // LB
     lv.pi = lp.init_pi;
     lv.solution = std::vector<bool>(n_cols, false);   // solution vector 
-    lv.t = lp.init_pi;
+    lv.t = lp.init_t;
     lv.subgradients = std::vector<double>(n_rows);     // G_i
 
 
