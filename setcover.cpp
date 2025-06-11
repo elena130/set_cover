@@ -724,17 +724,7 @@ unsigned SetCover::solution_value(const Solution& solution) {
     for (unsigned j = 0; j < n_cols; ++j) {
         if (solution.sol[j] || col_assignment[j] == FIX_IN) {
             solution_cost += costs[j];
-            /*
-            std::cout << j << "," << costs[j];
-
-            if (col_assignment[j] == FIX_IN) {
-                std::cout << ",FIX_IN";
-            }
-            std::cout << std::endl;
-            */
         }
-
-        
     }
 
     return solution_cost;
