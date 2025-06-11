@@ -443,7 +443,7 @@ void SetCover::init_multipliers(LagrangianVar& lv) {
     }
 }
 
-LagrangianVar SetCover::LagrangianVarlagrangian_lb(LagrangianPar& lp) {
+LagrangianResult SetCover::LagrangianResultLagrangianVarlagrangian_lb(LagrangianPar& lp) {
     LagrangianVar lv;
     lv.cost_lagrang = std::vector<double>(n_cols);  
     lv.ub = lp.init_ub;    // UB
@@ -453,9 +453,12 @@ LagrangianVar SetCover::LagrangianVarlagrangian_lb(LagrangianPar& lp) {
     lv.t = lp.init_t;
     lv.subgradients = std::vector<double>(n_rows);     // G_i
 
-
     unsigned max_worsening_it = 15;
     unsigned worsening_it = 0;
+
+    LagrangianResult best_sol;
+    best_sol.ub = lv.ub;
+    best_sol.lb = 0;
 
     // init upper bound without fixed in values
     unsigned offset = 0;
@@ -465,10 +468,10 @@ LagrangianVar SetCover::LagrangianVarlagrangian_lb(LagrangianPar& lp) {
     }
 
     Solution best_ub;
-    LagrangianVar best_par = lv;
+    double best_lb_value = 0;
 
     init_multipliers(lv);
-    for (unsigned it = 0; it < lp.max_iter && lv.pi > 0.005 && lv.ub != std::ceil(best_par.lb);++it) {
+    for (unsigned it = 0; it < lp.max_iter && lv.pi > 0.005 && lv.ub != best_sol.lb;++it) {
 
         lagrangian_solution(lv);
         lv.lb = lagrangian_sol_value(lv.solution, lv.cost_lagrang, lv.multipliers);
@@ -479,20 +482,26 @@ LagrangianVar SetCover::LagrangianVarlagrangian_lb(LagrangianPar& lp) {
         update_step_size(lp, lv);
         update_multipliers(lp, lv);
             
-        if((lv.lb > best_par.lb && std::ceil(lv.lb) + offset <= best_par.ub ) || removed > 0){
+        if((lv.lb > best_lb_value && std::ceil(lv.lb) + offset <= best_sol.ub ) || removed > 0){
 
             Solution ub_sol = lagrangian_heuristic(lv);
             unsigned ub = solution_value(ub_sol);
 
-            if (ub < best_par.ub && ub > best_par.lb) {
+            if (ub < best_sol.ub && ub > best_sol.lb) {
                 lv.ub = ub;
-                best_par.ub = ub;
                 best_ub = ub_sol;
+
+                best_sol.ub = ub;
+                best_sol.ub_sol = ub_sol;
             }
 
-            if (std::ceil(lv.lb)  <= best_par.ub) {
-                best_par = lv;
+            if (std::ceil(lv.lb)  <= best_sol.ub) {
                 worsening_it = 0;
+                
+                best_sol.lagrangian_costs = lv.cost_lagrang;
+                best_sol.lb = std::ceil(lv.lb);
+                best_sol.multipliers = lv.multipliers;
+                best_lb_value = lv.lb;
             }
         }
         else {
@@ -505,8 +514,8 @@ LagrangianVar SetCover::LagrangianVarlagrangian_lb(LagrangianPar& lp) {
         }
     }
 
-    best_par.lb += offset;
-    return best_par;
+    best_sol.lb += offset;
+    return best_sol;
 }
 
 // returns the offset given by the fixed columns
