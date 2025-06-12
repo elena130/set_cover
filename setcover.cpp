@@ -452,6 +452,10 @@ LagrangianResult SetCover::LagrangianResultLagrangianVarlagrangian_lb(Lagrangian
     lv.solution = std::vector<bool>(n_cols, false);   // solution vector 
     lv.t = lp.init_t;
     lv.subgradients = std::vector<double>(n_rows);     // G_i
+    lv.prec_direction = std::vector<double>(n_rows, 0);
+    lv.direction = std::vector<double>(n_rows);
+    lv.beta = 0;
+    lv.multipliers = std::vector<double>(n_rows, 0);
 
     unsigned max_worsening_it = 15;
     unsigned worsening_it = 0;
@@ -459,6 +463,7 @@ LagrangianResult SetCover::LagrangianResultLagrangianVarlagrangian_lb(Lagrangian
     LagrangianResult best_sol;
     best_sol.ub = lv.ub;
     best_sol.lb = 0;
+    best_sol.lb_sol.sol = std::vector<bool>(n_cols, false);
 
     // init upper bound without fixed in values
     unsigned offset = 0;
@@ -469,17 +474,22 @@ LagrangianResult SetCover::LagrangianResultLagrangianVarlagrangian_lb(Lagrangian
 
     Solution best_ub;
     double best_lb_value = 0;
+        unsigned removed = 0;
 
-    init_multipliers(lv);
-    for (unsigned it = 0; it < lp.max_iter && lv.pi > 0.005 && lv.ub != best_sol.lb;++it) {
-
+    for (unsigned it = 0; it < lp.max_iter && lv.pi > 0.005 && lv.ub != best_sol.lb + offset;++it) {
         lagrangian_solution(lv);
         lv.lb = lagrangian_sol_value(lv.solution, lv.cost_lagrang, lv.multipliers);
-        unsigned removed = cost_fixing(lp, lv);
+        calc_subgradients(lv);
+        update_beta(lv);
+        update_direction(lv);
+        update_step_size(lp, lv);
+        removed = cost_fixing(lp, lv);
         offset += removed;
         lv.lb = lagrangian_sol_value(lv.solution, lv.cost_lagrang, lv.multipliers);
-        calc_subgradients(lv);
-        update_step_size(lp, lv);
+        if (removed > 0) {
+            best_sol.lb -= removed;
+
+        }
         update_multipliers(lp, lv);
             
         if((lv.lb > best_lb_value && std::ceil(lv.lb) + offset <= best_sol.ub ) || removed > 0){
@@ -487,7 +497,7 @@ LagrangianResult SetCover::LagrangianResultLagrangianVarlagrangian_lb(Lagrangian
             Solution ub_sol = lagrangian_heuristic(lv);
             unsigned ub = solution_value(ub_sol);
 
-            if (ub < best_sol.ub && ub > best_sol.lb) {
+            if (ub < best_sol.ub && ub > best_sol.lb + offset) {
                 lv.ub = ub;
                 best_ub = ub_sol;
 
@@ -495,13 +505,14 @@ LagrangianResult SetCover::LagrangianResultLagrangianVarlagrangian_lb(Lagrangian
                 best_sol.ub_sol = ub_sol;
             }
 
-            if (std::ceil(lv.lb)  <= best_sol.ub) {
+            if (std::ceil(lv.lb) + offset <= best_sol.ub) {
                 worsening_it = 0;
                 
                 best_sol.lagrangian_costs = lv.cost_lagrang;
                 best_sol.lb = std::ceil(lv.lb);
                 best_sol.multipliers = lv.multipliers;
                 best_lb_value = lv.lb;
+                best_sol.lb_sol.sol = lv.solution;
             }
         }
         else {
@@ -512,6 +523,7 @@ LagrangianResult SetCover::LagrangianResultLagrangianVarlagrangian_lb(Lagrangian
             lv.pi /= 2.0;
             worsening_it = 0;
         }
+
     }
 
     best_sol.lb += offset;
@@ -672,25 +684,52 @@ void SetCover::calc_subgradients(LagrangianVar& lv) {
 
 // step_size = \phi * (UB - LB) / \sum_i G_i^2
 void SetCover::update_step_size(LagrangianPar& lp, LagrangianVar& lv) {
-    lv.t = lv.pi * ((double)(1.05*lv.ub) - lv.lb);
-    double sum_of_grad = 0;
+    double direction_norm = 0;
     for (unsigned i : available_row) {
-        sum_of_grad += (lv.subgradients[i] * lv.subgradients[i]);
+        direction_norm += (lv.direction[i] * lv.direction[i]);
     }
-    lv.t /= sum_of_grad;
+
+    lv.t = ((double)lv.ub - lv.lb) / direction_norm;
 }
 
 // updates the value of the multipliers \lambda
 // \lambda_i = max(0, \lambda_i + t*G_i)
 void SetCover::update_multipliers(LagrangianPar& lp, LagrangianVar& lv) {
     for (unsigned i : available_row) {
-        double updated_val = lv.multipliers[i] + (lv.t * lv.subgradients[i]);
-        if (updated_val > 0) {
-            lv.multipliers[i] = updated_val;
-        }
-        else {
-            lv.multipliers[i] = 0;
-        }
+        lv.multipliers[i] = lv.multipliers[i] + lv.t * lv.direction[i];
+    }
+}
+
+void SetCover::update_beta(LagrangianVar& lv) {
+    double scalar_prod = 0;
+    for (unsigned i : available_row) {
+        scalar_prod += lv.prec_direction[i] * lv.subgradients[i];
+    }
+    
+    if (scalar_prod >= 0) {
+        lv.beta = 0;
+        return;
+    }
+
+    double subgradients_norm = 0;
+    for (unsigned i : available_row) {
+        subgradients_norm += (lv.subgradients[i] * lv.subgradients[i]);
+    }
+    subgradients_norm = std::sqrt(subgradients_norm);
+
+    double prec_direction_norm = 0;
+    for (unsigned i : available_row) {
+        prec_direction_norm += (lv.prec_direction[i] * lv.prec_direction[i]);
+    }
+    prec_direction_norm = std::sqrt(prec_direction_norm);
+
+    lv.beta = subgradients_norm / prec_direction_norm;
+}
+
+void SetCover::update_direction(LagrangianVar& lv) {
+    lv.prec_direction = lv.direction;
+    for (unsigned i : available_row) {
+        lv.direction[i] = lv.subgradients[i] + (lv.beta * lv.prec_direction[i]);
     }
 }
 

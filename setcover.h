@@ -56,6 +56,18 @@ struct LagrangianVar {
     std::vector<bool> solution;           // lagrangian solution 
     double t;
     std::vector<double> subgradients;     // G_i
+    double beta;
+    std::vector<double> direction;
+    std::vector<double> prec_direction;
+};
+
+struct LagrangianResult {
+    std::vector<double> multipliers;
+    std::vector<double> lagrangian_costs;
+    Solution ub_sol;
+    unsigned ub;
+    unsigned lb;
+    Solution lb_sol;
 };
 
 class SetCover {
@@ -136,7 +148,7 @@ public:
 
     void chvtal(Solution & chvatal_sol);
 
-    LagrangianVar LagrangianVarlagrangian_lb(LagrangianPar& lp);
+    LagrangianResult LagrangianResultLagrangianVarlagrangian_lb(LagrangianPar& lp);
 
     unsigned cost_fixing(LagrangianPar& lp, LagrangianVar& lv);
 
@@ -151,6 +163,10 @@ public:
     void update_step_size(LagrangianPar& lp, LagrangianVar& lv);
 
     void update_multipliers(LagrangianPar & lp, LagrangianVar& lv);
+
+    void update_beta(LagrangianVar& lv);
+
+    void update_direction(LagrangianVar& lv);
 
     bool solution_is_correct(const Solution & solution);
 
