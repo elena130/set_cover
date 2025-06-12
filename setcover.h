@@ -43,7 +43,6 @@ struct LagrangianPar {
     double init_t;          // initial value of step size
     unsigned max_iter;      // max number of iterations
     double min_t;           
-    double min_diff;        // min difference between ub and lb 
     unsigned init_ub;
 };
 

@@ -460,12 +460,13 @@ LagrangianResult SetCover::LagrangianResultLagrangianVarlagrangian_lb(Lagrangian
     unsigned max_worsening_it = 15;
     unsigned worsening_it = 0;
 
+    // init structure to store the best found results during iterations 
     LagrangianResult best_sol;
     best_sol.ub = lv.ub;
     best_sol.lb = 0;
     best_sol.lb_sol.sol = std::vector<bool>(n_cols, false);
 
-    // init upper bound without fixed in values
+    // calculate the initial offset, the costs of all the FIX_IN columns
     unsigned offset = 0;
     for (unsigned j = 0; j < n_cols; ++j) {
         if(col_assignment[j] == FIX_IN)
@@ -474,7 +475,7 @@ LagrangianResult SetCover::LagrangianResultLagrangianVarlagrangian_lb(Lagrangian
 
     Solution best_ub;
     double best_lb_value = 0;
-        unsigned removed = 0;
+    unsigned removed = 0;
 
     for (unsigned it = 0; it < lp.max_iter && lv.pi > 0.005 && lv.ub != best_sol.lb + offset;++it) {
         lagrangian_solution(lv);
@@ -483,13 +484,15 @@ LagrangianResult SetCover::LagrangianResultLagrangianVarlagrangian_lb(Lagrangian
         update_beta(lv);
         update_direction(lv);
         update_step_size(lp, lv);
+        
+        // calculate the costs of the removed elements 
         removed = cost_fixing(lp, lv);
         offset += removed;
-        lv.lb = lagrangian_sol_value(lv.solution, lv.cost_lagrang, lv.multipliers);
+        // update the best lower bound found 
         if (removed > 0) {
             best_sol.lb -= removed;
-
         }
+
         update_multipliers(lp, lv);
             
         if((lv.lb > best_lb_value && std::ceil(lv.lb) + offset <= best_sol.ub ) || removed > 0){
@@ -523,7 +526,6 @@ LagrangianResult SetCover::LagrangianResultLagrangianVarlagrangian_lb(Lagrangian
             lv.pi /= 2.0;
             worsening_it = 0;
         }
-
     }
 
     best_sol.lb += offset;
@@ -560,7 +562,6 @@ unsigned SetCover::cost_fixing(LagrangianPar& lp, LagrangianVar& lv) {
     unsigned reduction;
     Logger logger;
 
-    // le riduzioni devi sapere quali colonne sono state ridotte perché devi controllare quale sarà il nuovo costo per l'offset
     do {
         // update the offset, adding the cost of fixed in cols
         for (unsigned j = 0; j < n_cols; ++j) {
@@ -727,7 +728,7 @@ void SetCover::update_beta(LagrangianVar& lv) {
 }
 
 void SetCover::update_direction(LagrangianVar& lv) {
-    lv.prec_direction = lv.direction;
+    lv.prec_direction.swap(lv.direction);
     for (unsigned i : available_row) {
         lv.direction[i] = lv.subgradients[i] + (lv.beta * lv.prec_direction[i]);
     }
