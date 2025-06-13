@@ -451,7 +451,7 @@ LagrangianResult SetCover::LagrangianResultLagrangianVarlagrangian_lb(Lagrangian
     lv.pi = lp.init_pi;
     lv.solution = std::vector<bool>(n_cols, false);   // solution vector 
     lv.t = lp.init_t;
-    lv.subgradients = std::vector<double>(n_rows);     // G_i
+    lv.subgradients = std::vector<int>(n_rows);     // G_i
     lv.prec_direction = std::vector<double>(n_rows, 0);
     lv.direction = std::vector<double>(n_rows);
     lv.beta = 0;
