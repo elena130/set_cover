@@ -482,7 +482,6 @@ LagrangianResult SetCover::LagrangianResultLagrangianVarlagrangian_lb(Lagrangian
         lv.lb = lagrangian_sol_value(lv.solution, lv.cost_lagrang, lv.multipliers);
         calc_subgradients(lv);
         update_step_size(lp, lv);
-        update_multipliers(lp, lv);
             
         if((lv.lb > best_lb_value && std::ceil(lv.lb) + offset <= best_sol.ub ) || removed > 0){
 
@@ -501,10 +500,10 @@ LagrangianResult SetCover::LagrangianResultLagrangianVarlagrangian_lb(Lagrangian
             if (std::ceil(lv.lb) + offset <= best_sol.ub && lv.lb > best_lb_value) {
                 worsening_it = 0;
                 
-                best_sol.lagrangian_costs = lv.cost_lagrang;
                 best_sol.lb = std::ceil(lv.lb);
-                best_sol.multipliers = lv.multipliers;
                 best_sol.lb_sol.sol = lv.solution;
+                best_sol.lagrangian_costs = lv.cost_lagrang;
+                best_sol.multipliers = lv.multipliers;
 
                 best_lb_value = lv.lb;
             }
@@ -518,7 +517,8 @@ LagrangianResult SetCover::LagrangianResultLagrangianVarlagrangian_lb(Lagrangian
             worsening_it = 0;
         }
 
-        /*
+        update_multipliers(lp, lv);
+        
         // calculate the costs of the removed elements 
         removed = cost_fixing(lp, lv);
         offset += removed;
@@ -529,10 +529,9 @@ LagrangianResult SetCover::LagrangianResultLagrangianVarlagrangian_lb(Lagrangian
                     best_sol.lb_sol.sol[j] = false;
             }
             best_sol.lb = lagrangian_sol_value(best_sol.lb_sol.sol, best_sol.lagrangian_costs, best_sol.multipliers);
-            best_lb_value = lagrangian_sol_value(best_sol.lb_sol.sol, best_sol.lagrangian_costs, best_sol.multipliers);
-           
+            best_lb_value = best_sol.lb;
         }
-        */
+       
 
         
     }
@@ -572,12 +571,6 @@ unsigned SetCover::cost_fixing(LagrangianPar& lp, LagrangianVar& lv) {
     Logger logger;
 
     do {
-        // update the offset, adding the cost of fixed in cols
-        for (unsigned j = 0; j < n_cols; ++j) {
-            if (col_assignment[j] == FIX_IN && cols[j] != NULL) {
-                offset += costs[j];
-            }
-        }
 
         for (unsigned i = 0; i < n_rows; ++i)
             mod_rows[i] = false;
@@ -591,6 +584,12 @@ unsigned SetCover::cost_fixing(LagrangianPar& lp, LagrangianVar& lv) {
         reduction += fix_out_cols_dom_set(false, mod_cols);
         reduction += fix_out_dominated_cols(false, mod_cols, logger);
 
+        // update the offset, adding the cost of fixed in cols
+        for (unsigned j = 0; j < n_cols; ++j) {
+            if (col_assignment[j] == FIX_IN && cols[j] != NULL) {
+                offset += costs[j];
+            }
+        }
     } while (reduction != 0);
 
     return offset;
