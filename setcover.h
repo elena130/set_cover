@@ -54,7 +54,7 @@ struct LagrangianVar {
     double pi;
     std::vector<bool> solution;           // lagrangian solution 
     double t;
-    std::vector<double> subgradients;     // G_i
+    std::vector<int> subgradients;     // G_i
     double beta;
     std::vector<double> direction;
     std::vector<double> prec_direction;

@@ -481,26 +481,18 @@ LagrangianResult SetCover::LagrangianResultLagrangianVarlagrangian_lb(Lagrangian
         lagrangian_solution(lv);
         lv.lb = lagrangian_sol_value(lv.solution, lv.cost_lagrang, lv.multipliers);
         calc_subgradients(lv);
-        update_beta(lv);
-        update_direction(lv);
-        update_step_size(lp, lv);
-        
-        // calculate the costs of the removed elements 
-        removed = cost_fixing(lp, lv);
-        offset += removed;
-        // update the best lower bound found 
-        if (removed > 0) {
-            best_sol.lb -= removed;
-        }
-
         update_multipliers(lp, lv);
+        update_direction(lv);
+        update_beta(lv);
+        update_step_size(lp, lv);
             
         if((lv.lb > best_lb_value && std::ceil(lv.lb) + offset <= best_sol.ub ) || removed > 0){
 
             Solution ub_sol = lagrangian_heuristic(lv);
             unsigned ub = solution_value(ub_sol);
 
-            if (ub < best_sol.ub && ub > best_sol.lb + offset) {
+            if (ub < best_sol.ub) {
+                // dovresti riuscire a togliere questi assegnamenti
                 lv.ub = ub;
                 best_ub = ub_sol;
 
@@ -508,14 +500,15 @@ LagrangianResult SetCover::LagrangianResultLagrangianVarlagrangian_lb(Lagrangian
                 best_sol.ub_sol = ub_sol;
             }
 
-            if (std::ceil(lv.lb) + offset <= best_sol.ub) {
+            if (std::ceil(lv.lb) + offset <= best_sol.ub && lv.lb > best_lb_value) {
                 worsening_it = 0;
                 
                 best_sol.lagrangian_costs = lv.cost_lagrang;
                 best_sol.lb = std::ceil(lv.lb);
                 best_sol.multipliers = lv.multipliers;
-                best_lb_value = lv.lb;
                 best_sol.lb_sol.sol = lv.solution;
+
+                best_lb_value = lv.lb;
             }
         }
         else {
@@ -526,6 +519,24 @@ LagrangianResult SetCover::LagrangianResultLagrangianVarlagrangian_lb(Lagrangian
             lv.pi /= 2.0;
             worsening_it = 0;
         }
+
+        /*
+        // calculate the costs of the removed elements 
+        removed = cost_fixing(lp, lv);
+        offset += removed;
+        // update the best lower bound found 
+        if (removed > 0) {
+            for (unsigned j = 0; j < n_cols; ++j) {
+                if (best_sol.lb_sol.sol[j] && col_assignment[j] != FREE)
+                    best_sol.lb_sol.sol[j] = false;
+            }
+            best_sol.lb = lagrangian_sol_value(best_sol.lb_sol.sol, best_sol.lagrangian_costs, best_sol.multipliers);
+            best_lb_value = lagrangian_sol_value(best_sol.lb_sol.sol, best_sol.lagrangian_costs, best_sol.multipliers);
+           
+        }
+        */
+
+        
     }
 
     best_sol.lb += offset;
@@ -689,6 +700,8 @@ void SetCover::update_step_size(LagrangianPar& lp, LagrangianVar& lv) {
     for (unsigned i : available_row) {
         direction_norm += (lv.direction[i] * lv.direction[i]);
     }
+    if (direction_norm == 0)
+        direction_norm = 0.001;
 
     lv.t = ((double)lv.ub - lv.lb) / direction_norm;
 }
@@ -730,7 +743,7 @@ void SetCover::update_beta(LagrangianVar& lv) {
 void SetCover::update_direction(LagrangianVar& lv) {
     lv.prec_direction.swap(lv.direction);
     for (unsigned i : available_row) {
-        lv.direction[i] = lv.subgradients[i] + (lv.beta * lv.prec_direction[i]);
+        lv.direction[i] = (double)lv.subgradients[i] + (lv.beta * lv.prec_direction[i]);
     }
 }
 
