@@ -481,10 +481,8 @@ LagrangianResult SetCover::LagrangianResultLagrangianVarlagrangian_lb(Lagrangian
         lagrangian_solution(lv);
         lv.lb = lagrangian_sol_value(lv.solution, lv.cost_lagrang, lv.multipliers);
         calc_subgradients(lv);
-        update_multipliers(lp, lv);
-        update_direction(lv);
-        update_beta(lv);
         update_step_size(lp, lv);
+        update_multipliers(lp, lv);
             
         if((lv.lb > best_lb_value && std::ceil(lv.lb) + offset <= best_sol.ub ) || removed > 0){
 
@@ -679,7 +677,7 @@ double SetCover::lagrangian_sol_value(const std::vector<bool> solution, const st
 void SetCover::calc_subgradients(LagrangianVar& lv) {
     for (unsigned i : available_row) {
         // Beasley optimization
-        if (std::abs(lv.multipliers[i]) < 0.005 && lv.subgradients[i] < 0) {
+        if (std::abs(lv.multipliers[i]) < 0.0005 && lv.subgradients[i] < 0) {
             lv.subgradients[i] = 0;
             continue;
         }
@@ -696,21 +694,26 @@ void SetCover::calc_subgradients(LagrangianVar& lv) {
 
 // step_size = \phi * (UB - LB) / \sum_i G_i^2
 void SetCover::update_step_size(LagrangianPar& lp, LagrangianVar& lv) {
-    double direction_norm = 0;
+    double subgradient_norm = 0;
     for (unsigned i : available_row) {
-        direction_norm += (lv.direction[i] * lv.direction[i]);
+        subgradient_norm += lv.subgradients[i] * lv.subgradients[i];
     }
-    if (direction_norm == 0)
-        direction_norm = 0.001;
 
-    lv.t = ((double)lv.ub - lv.lb) / direction_norm;
+    lv.t = lv.pi* ((double)lv.ub - lv.lb) / (double)subgradient_norm;
 }
 
 // updates the value of the multipliers \lambda
 // \lambda_i = max(0, \lambda_i + t*G_i)
 void SetCover::update_multipliers(LagrangianPar& lp, LagrangianVar& lv) {
+    
     for (unsigned i : available_row) {
-        lv.multipliers[i] = lv.multipliers[i] + lv.t * lv.direction[i];
+        double updated_val = lv.multipliers[i] + (lv.t * (double)lv.subgradients[i]);
+        if (updated_val > 0) {
+            lv.multipliers[i] = updated_val;
+        }
+        else {
+            lv.multipliers[i] = 0;  
+        }
     }
 }
 
