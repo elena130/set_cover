@@ -88,10 +88,6 @@ private:
 
     void remove_redundant_cols(Solution &solution, std::vector<unsigned>& coperte);
 
-    void init_multipliers(LagrangianVar& lv);
-
-    
-
 public:
     SetCover(unsigned r, unsigned c);
 
@@ -147,7 +143,7 @@ public:
 
     void chvtal(Solution & chvatal_sol);
 
-    LagrangianResult LagrangianResultLagrangianVarlagrangian_lb(LagrangianPar& lp);
+    LagrangianResult lagrangian_lb(LagrangianPar& lp);
 
     unsigned cost_fixing(LagrangianPar& lp, LagrangianVar& lv);
 

@@ -112,7 +112,7 @@ int main(int argc, char* argv[]) {
     lp.init_t = 1;
     lp.max_iter = 300;
     lp.min_t = 0.005;
-    LagrangianResult lagrangian_res = sc.LagrangianResultLagrangianVarlagrangian_lb(lp);
+    LagrangianResult lagrangian_res = sc.lagrangian_lb(lp);
 
     // opt_gap = (UB - LB) / LB * 100
     double opt_gap = ((double(lagrangian_res.ub) - lagrangian_res.lb) / lagrangian_res.lb) * 100;
