@@ -255,7 +255,7 @@ void SetCover::calc_subgradients(LagrangianVar& lv) {
     }
 }
 
-// step_size = \phi * (UB - LB) / \sum_i G_i^2
+// step_size = \phi * (UB - LB) / \sum_i s_i^2
 void SetCover::update_step_size(LagrangianPar& lp, LagrangianVar& lv) {
     double dir_norm_2 = 0;
     for (unsigned i : available_row) {
@@ -265,7 +265,7 @@ void SetCover::update_step_size(LagrangianPar& lp, LagrangianVar& lv) {
 }
 
 // updates the value of the multipliers \lambda
-// \lambda_i = max(0, \lambda_i + t*G_i)
+// \lambda_i = max(0, \lambda_i + t*s_i)
 void SetCover::update_multipliers(LagrangianPar& lp, LagrangianVar& lv) {
 
     for (unsigned i : available_row) {
