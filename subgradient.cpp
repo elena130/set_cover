@@ -29,7 +29,7 @@ LagrangianResult SetCover::lagrangian_lb(LagrangianPar& lp) {
     // init structure to store the best found results during iterations 
     LagrangianResult best_sol;
     best_sol.ub = lv.ub;
-    best_sol.ub_sol = Solution(n_cols);
+    best_sol.ub_sol = lp.init_ub_sol;
     best_sol.lb = 0;
     best_sol.lb_sol.sol = std::vector<bool>(n_cols, false);
 

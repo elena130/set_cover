@@ -44,6 +44,7 @@ struct LagrangianPar {
     unsigned max_iter;      // max number of iterations
     double min_t;           
     unsigned init_ub;
+    Solution init_ub_sol;
 };
 
 struct LagrangianVar {

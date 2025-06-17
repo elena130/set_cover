@@ -108,6 +108,7 @@ int main(int argc, char* argv[]) {
 
     LagrangianPar lp;
     lp.init_ub = sc.solution_value(chvatal_sol);
+    lp.init_ub_sol = chvatal_sol;
     lp.init_pi = 2;         // Beasley
     lp.init_t = 1;
     lp.max_iter = 1000;
