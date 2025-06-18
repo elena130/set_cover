@@ -254,7 +254,6 @@ void SetCover::calc_subgradients(LagrangianVar& lv) {
         // Beasley optimization
         if (std::abs(lv.multipliers[i]) == 0 && lv.subgradients[i] < 0) {
             lv.subgradients[i] = 0;
-            continue;
         }
     }
 }
