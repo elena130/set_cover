@@ -260,12 +260,9 @@ void SetCover::calc_subgradients(LagrangianVar& lv) {
 
 // step_size = \phi * (UB - LB) / \sum_i s_i^2
 void SetCover::update_step_size(LagrangianPar& lp, LagrangianVar& lv) {
-    double dir_norm_2 = 0;
-    for (unsigned i : available_row) {
-        dir_norm_2 += (lv.direction[i] * lv.direction[i]);
-    }
+    double subgradient_norm_2 = subgradients_sp(lv);
 
-    lv.t = lv.pi * (1.05*(double)lv.ub - lv.lb) / dir_norm_2;
+    lv.t = lv.pi * (1.05*(double)lv.ub - lv.lb) / subgradient_norm_2;
 }
 
 // updates the value of the multipliers \lambda
@@ -293,11 +290,7 @@ void SetCover::update_beta(LagrangianVar& lv) {
         return;
     }
 
-    double subgradient_norm = 0;
-    for (unsigned i : available_row) {
-        subgradient_norm += (lv.subgradients[i] * lv.subgradients[i]);
-    }
-    subgradient_norm = std::sqrt(subgradient_norm);
+    double subgradient_norm = std::sqrt(subgradients_sp(lv));
 
     double prec_direction_norm = 0;
     for (unsigned i : available_row) {
@@ -313,4 +306,14 @@ void SetCover::update_direction(LagrangianVar& lv) {
     for (unsigned i : available_row) {
         lv.direction[i] = (double)lv.subgradients[i] + (lv.beta * lv.prec_direction[i]);
     }
+}
+
+unsigned SetCover::subgradients_sp(LagrangianVar& lv) {
+    unsigned scalar_prod = 0;
+    for (unsigned i : available_row) {
+        if (lv.multipliers[i] == 0 && lv.subgradients[i] < 0)
+            continue;
+        scalar_prod += (lv.subgradients[i] * lv.subgradients[i]);
+    }
+    return scalar_prod;
 }
