@@ -27,46 +27,44 @@ LagrangianResult SetCover::lagrangian_lb(LagrangianPar& lp) {
     }
 
     // init structure to store the best found results during iterations 
-    LagrangianResult best_sol;
-    best_sol.ub = lv.ub;
-    best_sol.ub_sol = lp.init_ub_sol;
-    best_sol.lb = 0;
-    best_sol.lb_sol.sol = std::vector<bool>(n_cols, false);
+    LagrangianResult lr;
+    lr.ub = lv.ub;
+    lr.ub_sol = lp.init_ub_sol;
+    lr.lb = 0;
+    lr.lb_sol.sol = std::vector<bool>(n_cols, false);
 
     Solution best_ub;
     double best_lb_value = 0;
     unsigned removed = 0;
 
-    for (unsigned it = 0; it < lp.max_iter && lv.pi > 0.005 && lv.ub != best_sol.lb;++it) {
+    for (unsigned it = 0; it < lp.max_iter && lv.pi > 0.005 && lv.ub != lr.lb;++it) {
         lagrangian_solution(lv);
         lv.lb = lagrangian_sol_value(lv.solution, lv.cost_lagrang, lv.multipliers) + offset;
         calc_subgradients(lv);
-
         update_beta(lv);
         update_direction(lv);
         update_step_size(lp, lv);
 
-        if ((lv.lb > best_lb_value && std::ceil(lv.lb) <= best_sol.ub) || removed > 0) {
+        if ((lv.lb > best_lb_value && std::ceil(lv.lb) <= lr.ub) || removed > 0) {
 
             Solution ub_sol = lagrangian_heuristic(lv);
             unsigned ub = solution_value(ub_sol);
 
-            if (ub < best_sol.ub) {
-                // dovresti riuscire a togliere questi assegnamenti
+            if (ub < lr.ub) {
                 lv.ub = ub;
                 best_ub = ub_sol;
 
-                best_sol.ub = ub;
-                best_sol.ub_sol = ub_sol;
+                lr.ub = ub;
+                lr.ub_sol = ub_sol;
             }
 
-            if (std::ceil(lv.lb) <= best_sol.ub && lv.lb > best_lb_value) {
+            if (std::ceil(lv.lb) <= lr.ub && lv.lb > best_lb_value) {
                 worsening_it = 0;
 
-                best_sol.lb = std::ceil(lv.lb);
-                best_sol.lb_sol.sol = lv.solution;
-                best_sol.lagrangian_costs = lv.cost_lagrang;
-                best_sol.multipliers = lv.multipliers;
+                lr.lb = std::ceil(lv.lb);
+                lr.lb_sol.sol = lv.solution;
+                lr.lagrangian_costs = lv.cost_lagrang;
+                lr.multipliers = lv.multipliers;
 
                 best_lb_value = lv.lb;
             }
@@ -89,23 +87,17 @@ LagrangianResult SetCover::lagrangian_lb(LagrangianPar& lp) {
         // update the best lower bound found
         if (removed > 0) {
             for (unsigned j = 0; j < n_cols; ++j) {
-                if (col_assignment[j] != FREE && best_sol.lb_sol.sol[j]) {
-                    best_sol.lb_sol.remove_col(j);
+                if (col_assignment[j] != FREE && lr.lb_sol.sol[j]) {
+                    lr.lb_sol.remove_col(j);
                 }
-
-                if (col_assignment[j] == FIX_OUT && best_sol.ub_sol.sol[j]) {
-                    best_sol.ub_sol.remove_col(j);
-                }
-                
             }
-            best_sol.lb = lagrangian_sol_value(best_sol.lb_sol.sol, best_sol.lagrangian_costs, best_sol.multipliers) + offset;
-            best_lb_value = best_sol.lb;
-            best_sol.ub = solution_value(best_sol.ub_sol);
+            lr.lb = lagrangian_sol_value(lr.lb_sol.sol, lr.lagrangian_costs, lr.multipliers) + offset;
+            best_lb_value = lr.lb;
         }
         
     }
 
-    return best_sol;
+    return lr;
 }
 
 // returns the offset given by the fixed columns
@@ -251,10 +243,7 @@ void SetCover::calc_subgradients(LagrangianVar& lv) {
             ptr = ptr->right;
         }
 
-        // Beasley optimization
-        if (std::abs(lv.multipliers[i]) == 0 && lv.subgradients[i] < 0) {
-            lv.subgradients[i] = 0;
-        }
+       
     }
 }
 

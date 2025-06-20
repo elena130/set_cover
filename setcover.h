@@ -165,6 +165,7 @@ public:
     void update_direction(LagrangianVar& lv);
 
     unsigned subgradients_sp(LagrangianVar& lv);
+
     bool solution_is_correct(const Solution & solution);
 
     unsigned solution_value(const Solution & solution);
