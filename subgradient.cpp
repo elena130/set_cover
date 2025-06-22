@@ -249,9 +249,12 @@ void SetCover::calc_subgradients(LagrangianVar& lv) {
 
 // step_size = \phi * (UB - LB) / \sum_i s_i^2
 void SetCover::update_step_size(LagrangianPar& lp, LagrangianVar& lv) {
-    double subgradient_norm_2 = subgradients_sp(lv);
+    double direction_norm_2 = 0;
+    for (unsigned i : available_row) {
+        direction_norm_2 += (lv.direction[i] * lv.direction[i]);
+    }
 
-    lv.t = lv.pi * (1.05*(double)lv.ub - lv.lb) / subgradient_norm_2;
+    lv.t = lv.pi * (1.05*(double)lv.ub - lv.lb) / direction_norm_2;
 }
 
 // updates the value of the multipliers \lambda
