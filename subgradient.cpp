@@ -38,7 +38,6 @@ LagrangianResult SetCover::lagrangian_lb(LagrangianPar& lp) {
     unsigned removed = 0;
 
     for (unsigned it = 0; it < lp.max_iter && lv.pi > 0.005 && lv.ub != lr.lb;++it) {
-        update_multipliers(lp, lv);
         lagrangian_solution(lv);
         lv.lb = lagrangian_sol_value(lv.solution, lv.cost_lagrang, lv.multipliers) + offset;
         calc_subgradients(lv);
@@ -93,6 +92,8 @@ LagrangianResult SetCover::lagrangian_lb(LagrangianPar& lp) {
             best_lb_value = lagrangian_sol_value(lr.lb_sol.sol, lr.lagrangian_costs, lr.multipliers) + offset;
             lr.lb = std::ceil(best_lb_value);
         }
+
+        update_multipliers(lp, lv);
     }
 
     return lr;
@@ -240,8 +241,6 @@ void SetCover::calc_subgradients(LagrangianVar& lv) {
                 lv.subgradients[i] -= 1;
             ptr = ptr->right;
         }
-
-       
     }
 }
 
