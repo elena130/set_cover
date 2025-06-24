@@ -14,6 +14,7 @@ LagrangianResult SetCover::lagrangian_lb(LagrangianPar& lp) {
     lv.direction = std::vector<double>(n_rows, 0);
     lv.beta = 0;
     lv.multipliers = std::vector<double>(n_rows, 0);
+    lv.worsening_it = 0;
 
     unsigned max_worsening_it = 15;
     unsigned worsening_it = 0;
@@ -60,7 +61,7 @@ LagrangianResult SetCover::lagrangian_lb(LagrangianPar& lp) {
             }
 
             if (std::ceil(lv.lb) <= lr.ub && lv.lb > best_lb_value) {
-                worsening_it = 0;
+                lv.worsening_it = 0;
 
                 lr.lb = std::ceil(lv.lb);
                 lr.lb_sol.sol = lv.solution;
@@ -71,12 +72,12 @@ LagrangianResult SetCover::lagrangian_lb(LagrangianPar& lp) {
             }
         }
         else {
-            ++worsening_it;
+            ++lv.worsening_it;
         }
 
-        if (worsening_it == max_worsening_it) {
+        if (lv.worsening_it == max_worsening_it) {
             lv.pi /= 2.0;
-            worsening_it = 0;
+            lv.worsening_it = 0;
         }
 
         // calculate the costs of the removed elements
@@ -92,6 +93,7 @@ LagrangianResult SetCover::lagrangian_lb(LagrangianPar& lp) {
             best_lb_value = lagrangian_sol_value(lr.lb_sol.sol, lr.lagrangian_costs, lr.multipliers) + offset;
             lr.lb = std::ceil(best_lb_value);
         }
+    }
 
     for (unsigned j = 0; j < n_cols; ++j) {
         if (lr.lb_sol.sol[j] || col_assignment[j] == FIX_IN) {
@@ -254,7 +256,14 @@ void SetCover::update_step_size(LagrangianPar& lp, LagrangianVar& lv) {
         direction_norm_2 += (lv.direction[i] * lv.direction[i]);
     }
 
+    if (std::abs(direction_norm_2) < 1E-10) {
+        lv.t = 0;
+        lv.pi /= 2;
+        lv.worsening_it = 0;
+    }
+    else {
     lv.t = lv.pi * (1.05*(double)lv.ub - lv.lb) / direction_norm_2;
+}
 }
 
 // updates the value of the multipliers \lambda

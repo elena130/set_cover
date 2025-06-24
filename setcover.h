@@ -59,6 +59,7 @@ struct LagrangianVar {
     double beta;
     std::vector<double> direction;
     std::vector<double> prec_direction;
+    unsigned worsening_it;
 };
 
 struct LagrangianResult {
