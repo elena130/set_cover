@@ -93,7 +93,10 @@ LagrangianResult SetCover::lagrangian_lb(LagrangianPar& lp) {
             lr.lb = std::ceil(best_lb_value);
         }
 
-        update_multipliers(lp, lv);
+    for (unsigned j = 0; j < n_cols; ++j) {
+        if (lr.lb_sol.sol[j] || col_assignment[j] == FIX_IN) {
+            lr.lb_sol.add_col(j);
+        }
     }
 
     return lr;
