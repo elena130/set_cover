@@ -17,7 +17,6 @@ LagrangianResult SetCover::lagrangian_lb(LagrangianPar& lp) {
     lv.worsening_it = 0;
 
     unsigned max_worsening_it = 15;
-    unsigned worsening_it = 0;
 
 
     // calculate the initial offset, the costs of all the FIX_IN columns
@@ -79,6 +78,8 @@ LagrangianResult SetCover::lagrangian_lb(LagrangianPar& lp) {
             lv.pi /= 2.0;
             lv.worsening_it = 0;
         }
+
+        update_multipliers(lp, lv);
 
         // calculate the costs of the removed elements
         removed = cost_fixing(lp, lv);
@@ -256,14 +257,14 @@ void SetCover::update_step_size(LagrangianPar& lp, LagrangianVar& lv) {
         direction_norm_2 += (lv.direction[i] * lv.direction[i]);
     }
 
-    if (std::abs(direction_norm_2) < 1E-10) {
+    if (std::abs(direction_norm_2) < 1e-10) {
         lv.t = 0;
         lv.pi /= 2;
         lv.worsening_it = 0;
     }
     else {
-    lv.t = lv.pi * (1.05*(double)lv.ub - lv.lb) / direction_norm_2;
-}
+        lv.t = lv.pi * (1.05*(double)lv.ub - lv.lb) / direction_norm_2;
+    }
 }
 
 // updates the value of the multipliers \lambda
@@ -303,9 +304,10 @@ void SetCover::update_beta(LagrangianVar& lv) {
 }
 
 void SetCover::update_direction(LagrangianVar& lv) {
-    lv.prec_direction = (lv.direction);
     for (unsigned i : available_row) {
-        lv.direction[i] = (double)lv.subgradients[i] + (lv.beta * lv.prec_direction[i]);
+        double dir = (double)lv.subgradients[i] + (lv.beta * lv.prec_direction[i]);
+        lv.prec_direction[i] = lv.direction[i];
+        lv.direction[i] = dir;
     }
 }
 
