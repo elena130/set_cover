@@ -6,6 +6,23 @@
 #include "parser.h"
 #include "setcover.h"
 #include "logger.h"
+#include <cmath>
+
+double normal_score(double cost, double covered) {
+    return cost / covered;
+}
+
+double log_score(double cost, double covered) {
+    if (covered == 1 || covered == 2)
+        return cost ;
+    return cost / std::log2(covered);
+}
+
+double nlog_score(double cost, double covered) {
+    if (covered == 1 || covered == 2)
+        return cost;
+    return cost / (covered * std::log2(covered));
+}
 
 int main(int argc, char* argv[]) {
     std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
@@ -95,7 +112,11 @@ int main(int argc, char* argv[]) {
 
     std::set<unsigned> selected;
     Solution chvatal_sol(nc);
-    sc.chvtal(chvatal_sol);
+    Solution chvatal_log(nc);
+    Solution chvatal_nlog(nc);
+    sc.chvtal(chvatal_sol, normal_score);
+    sc.chvtal(chvatal_log, log_score);
+    sc.chvtal(chvatal_nlog, nlog_score);
 
     if (sc.solution_is_correct(chvatal_sol)) {
         logger.log_endl("Solution is correct");
@@ -105,11 +126,27 @@ int main(int argc, char* argv[]) {
     }
 
     unsigned sol_val = sc.solution_value(chvatal_sol);
+    unsigned log_sol_val = sc.solution_value(chvatal_log);
+    unsigned nlog_sol_val = sc.solution_value(chvatal_nlog);
     logger.log_endl("Solution cost: " + std::to_string(sol_val));
+    logger.log_endl("Solution cost log: " + std::to_string(log_sol_val));
+    logger.log_endl("Solution cost nlog: " + std::to_string(nlog_sol_val));
+
+    unsigned best_chvatal = sol_val;
+    Solution best_chvatal_sol = chvatal_sol;
+
+    if (best_chvatal > log_sol_val) {
+        best_chvatal = log_sol_val;
+        best_chvatal_sol = chvatal_log;
+    }
+    if (best_chvatal > nlog_sol_val) {
+        best_chvatal = nlog_sol_val;
+        best_chvatal_sol = chvatal_nlog;
+    }
 
     LagrangianPar lp;
-    lp.init_ub = sc.solution_value(chvatal_sol);
-    lp.init_ub_sol = chvatal_sol;
+    lp.init_ub = best_chvatal;
+    lp.init_ub_sol = best_chvatal_sol;
     lp.init_pi = 2;         // Beasley
     lp.init_t = 1;
     lp.max_iter = 1000;
@@ -120,6 +157,10 @@ int main(int argc, char* argv[]) {
     double opt_gap = ((double(lagrangian_res.ub) - lagrangian_res.lb) / lagrangian_res.lb) * 100;
     unsigned dynamic_lb = sc.dynamic_prog(lagrangian_res.multipliers, lagrangian_res.ub, lagrangian_res.lb);
     std::cout << "DINAMICO: " << dynamic_lb << std::endl;
+
+    if (dynamic_lb > lagrangian_res.lb)
+        lagrangian_res.lb = dynamic_lb;
+
     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
     auto time = std::chrono::duration_cast<std::chrono::seconds>(end - begin).count();
     

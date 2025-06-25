@@ -145,7 +145,7 @@ public:
 
     unsigned remaining_cols();
 
-    void chvtal(Solution & chvatal_sol);
+    void chvtal(Solution & chvatal_sol, double (*calc_score)(double, double));
 
     LagrangianResult lagrangian_lb(LagrangianPar& lp);
 

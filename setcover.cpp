@@ -322,7 +322,7 @@ void SetCover::remove_col(unsigned j, std::vector<bool>& modified_rows) {
     available_col.erase(j);
 }
 
-void SetCover::chvtal(Solution& chvatal_sol) {
+void SetCover::chvtal(Solution& chvatal_sol, double (*calc_score)(double, double)) {
     // number of new rows each column covers if selected in the next iteration 
     std::vector<unsigned> new_cov_rows(n_cols, 0);
     // rows to cover to have a feasible solution
@@ -350,7 +350,8 @@ void SetCover::chvtal(Solution& chvatal_sol) {
             if (new_cov_rows[j] == 0)
                 continue;
 
-            float score = float(costs[j]) / float(new_cov_rows[j]);
+            //float score = float(costs[j]) / float(new_cov_rows[j]);
+            float score = (calc_score)(float(costs[j]), float(new_cov_rows[j]));
             if (score < min_score) {
                 min_score = score;
                 min_col = j;
@@ -441,10 +442,8 @@ unsigned SetCover::dynamic_prog(const std::vector<double>& multipliers, unsigned
     unsigned offset = calc_offset();
 
     lb -= offset;
-    std::cout << "Prima alloc";
     std::vector<std::vector<double>> matrix(n_cols, std::vector<double>(ub + 1, 0));
     std::vector<double> col_mult(n_cols, 0);
-    std::cout << "dopo alloc";
 
     // TODO: passa direttamente calcolati 
     // w_i = \sum_j \in C_i w_j
