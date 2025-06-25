@@ -156,7 +156,7 @@ int main(int argc, char* argv[]) {
     // opt_gap = (UB - LB) / LB * 100
     double opt_gap = ((double(lagrangian_res.ub) - lagrangian_res.lb) / lagrangian_res.lb) * 100;
     unsigned dynamic_lb = sc.dynamic_prog(lagrangian_res.multipliers, lagrangian_res.ub, lagrangian_res.lb);
-    std::cout << "DINAMICO: " << dynamic_lb << std::endl;
+    logger.log_endl("LB Dinamico: " + std::to_string(dynamic_lb));
 
     if (dynamic_lb > lagrangian_res.lb)
         lagrangian_res.lb = dynamic_lb;
