@@ -90,6 +90,8 @@ private:
 
     void remove_redundant_cols(Solution &solution, std::vector<unsigned>& coperte);
 
+    unsigned calc_offset();
+
 public:
     SetCover(unsigned r, unsigned c);
 
@@ -166,6 +168,8 @@ public:
     void update_direction(LagrangianVar& lv);
 
     unsigned subgradients_sp(LagrangianVar& lv);
+
+    unsigned dynamic_prog(const std::vector<double>& multipliers, unsigned ub, unsigned lb);
 
     bool solution_is_correct(const Solution & solution);
 

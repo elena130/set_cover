@@ -426,6 +426,107 @@ void SetCover::remove_redundant_cols(Solution& solution, std::vector<unsigned>& 
     }
 }
 
+unsigned SetCover::calc_offset() {
+    unsigned offset = 0;
+    for (unsigned j = 0; j < n_cols; ++j) {
+        if (col_assignment[j] == FIX_IN)
+            offset += costs[j];
+    }
+    return offset;
+}
+
+unsigned SetCover::dynamic_prog(const std::vector<double>& multipliers, unsigned ub, unsigned lb)
+{
+    // remove offset from both solutions
+    unsigned offset = calc_offset();
+
+    lb -= offset;
+    std::cout << "Prima alloc";
+    std::vector<std::vector<double>> matrix(n_cols, std::vector<double>(ub + 1, 0));
+    std::vector<double> col_mult(n_cols, 0);
+    std::cout << "dopo alloc";
+
+    // TODO: passa direttamente calcolati 
+    // w_i = \sum_j \in C_i w_j
+    for (unsigned j : available_col) {
+        Cell* it_col = cols[j];
+        for (unsigned k = 0; k < col_density[j]; ++k) {
+            col_mult[j] += multipliers[it_col->row];
+            it_col = it_col->down;
+        }
+    }
+
+    // init first row of the matrix 
+    unsigned first_col = *available_col.begin();
+    for (unsigned c = 0; c < ub + 1; ++c) {
+        if (costs[first_col] <= c)
+            matrix[first_col][c] = col_mult[first_col];
+    }
+
+    // fill the matrix 
+    unsigned prec = first_col;
+    std::set<unsigned>::iterator iterator = available_col.begin();
+    ++iterator;
+    for (; iterator != available_col.end(); ++iterator) {
+        unsigned i = *iterator;
+        for (unsigned c = 0; c < ub + 1; ++c) {
+            if (c < costs[i]) {
+                matrix[i][c] = matrix[prec][c];
+                continue;
+            }
+
+            if (matrix[prec][c] > col_mult[i] + matrix[prec][c - costs[i]])
+                matrix[i][c] = matrix[prec][c];
+            else
+                matrix[i][c] = col_mult[i] + matrix[prec][c - costs[i]];
+        }
+        prec = i;
+    }
+
+    // \Omega = \sum_i \lambda_i
+    double omega = 0;
+    for (unsigned k : available_row) {
+        omega += multipliers[k];
+    }
+
+    // find the minimum solution such that T_{n,c} >= \Omega 
+    unsigned min_c = 0;
+    unsigned last = *(available_col.rbegin());
+    for (unsigned c = 0; c < ub + 1; ++c) {
+        if (matrix[last][c] >= omega) {
+            min_c = c;
+            break;
+        }
+    }
+
+    /*
+    Solution solution(n_cols);
+
+    unsigned cur_i = available_col.crbegin();
+    unsigned cur_c = min_c;
+    while (cur_i > *available_col.begin()) {
+        unsigned prec = prec_element(available_col, cur_i);
+
+        if(matrix[cur_i][cur_c] == matrix[prec][cur_c]){
+            cur_i = prec;
+        }
+        else {
+            solution.add_col(cur_i);
+            cur_c = cur_c - costs[cur_i];
+            cur_i = prec;
+        }
+    }
+
+    for (unsigned j = 0; j < n_cols; ++j) {
+        if (col_assignment[j] == FIX_IN)
+            solution.add_col(j);
+    }
+    std::cout << "Sol dinamica è corretta: " << solution_is_correct(solution) << std::endl;
+    */
+
+    return min_c + offset;
+}
+
 bool SetCover::solution_is_correct(const Solution& solution) {
     Cell* ptr;
     bool ok = true;

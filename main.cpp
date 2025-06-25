@@ -90,6 +90,7 @@ int main(int argc, char* argv[]) {
     } while (deleted != 0);
 
     logger.log_endl("");
+
     logger.log_endl("CHVATAL");
 
     std::set<unsigned> selected;
@@ -117,14 +118,15 @@ int main(int argc, char* argv[]) {
 
     // opt_gap = (UB - LB) / LB * 100
     double opt_gap = ((double(lagrangian_res.ub) - lagrangian_res.lb) / lagrangian_res.lb) * 100;
-    
+    unsigned dynamic_lb = sc.dynamic_prog(lagrangian_res.multipliers, lagrangian_res.ub, lagrangian_res.lb);
+    std::cout << "DINAMICO: " << dynamic_lb << std::endl;
     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
     auto time = std::chrono::duration_cast<std::chrono::seconds>(end - begin).count();
     
     logger.log_endl("Time difference [s] = " + std::to_string(time));
     
     std::cout << nr << "\t" << nc << "\t";
-    std::cout << sc.remaining_rows() << "\t" << sc.remaining_cols() << "\t" << lagrangian_res.ub << "\t" << lagrangian_res.lb << "\t"  << opt_gap << "\t" << time << std::endl;
+    std::cout << sc.remaining_rows() << "\t" << sc.remaining_cols() << "\t" << lagrangian_res.ub << "\t" << lagrangian_res.lb << "\t"  << opt_gap << "\t" << time << "\t" << dynamic_lb << std::endl;
 
     return 0;
 }
