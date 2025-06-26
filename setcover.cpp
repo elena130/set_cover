@@ -6,6 +6,7 @@
 #include <set>
 #include <cmath>
 #include "limits.h"
+#include <map>
 
 SetCover::SetCover(unsigned r, unsigned c) : n_rows(r), n_cols(c), rows(r), cols(c), costs(c),
 row_density(r, 0), col_density(c), row_assignment(r, FREE), col_assignment(c, FREE) {
@@ -443,42 +444,51 @@ unsigned SetCover::dynamic_prog(const std::vector<double>& multipliers, unsigned
 
     lb -= offset;
     ub -= offset;
-    std::vector<unsigned> col_list(available_col.begin(), available_col.end());
-    std::vector<std::vector<double>> matrix(col_list.size(), std::vector<double>(ub + 1, 0));
-    std::vector<double> col_mult(col_list.size(), 0);
+
+    std::vector<std::map<unsigned, double>> matrix(2, std::map<unsigned, double>());
+    std::vector<double> col_mult(available_col.size(), 0);
     
     // TODO: passa direttamente calcolati 
     // w_i = \sum_j \in C_i w_j
-    for (unsigned j = 0; j < col_list.size(); ++j) {
-        Cell* it_col = cols[col_list[j]];
-        for (unsigned k = 0; k < col_density[col_list[j]]; ++k) {
-            col_mult[j] += multipliers[it_col->row];
+    auto col_index = available_col.begin();
+    unsigned l = 0; 
+    for (unsigned j : available_col) {
+        Cell* it_col = cols[j];
+        for (unsigned k = 0; k < col_density[*col_index]; ++k) {
+            col_mult[l] += multipliers[it_col->row];
             it_col = it_col->down;
         }
+        ++col_index;
+        ++l;
     }
 
     // init first row of the matrix 
-    unsigned first_col = col_list[0];
+    unsigned first_col = *available_col.begin();
     for (unsigned c = 0; c < ub + 1; ++c) {
         if (costs[first_col] <= c)
-            matrix[first_col][c] = col_mult[0];
+            matrix[0][c] = col_mult[0];
     }
 
     // fill the matrix 
-    unsigned prec = first_col;
-    for (unsigned i = 1; i < col_list.size(); ++i) {
+    auto col_it = ++available_col.begin();
+    unsigned current = 1;
+    unsigned prec = 0;
+    for (unsigned i = 1; i < available_col.size(); ++i) {
         for (unsigned c = 0; c < ub + 1; ++c) {
-            if (c < costs[col_list[i]]) {
-                matrix[i][c] = matrix[prec][c];
+            unsigned current_col = *col_it;
+            if (c < costs[current_col]) {
+                matrix[current][c] = matrix[prec][c];
                 continue;
             }
 
-            if (matrix[prec][c] > col_mult[i] + matrix[prec][c - costs[col_list[i]]])
-                matrix[i][c] = matrix[prec][c];
+            if (matrix[prec][c] > col_mult[i] + matrix[prec][c - costs[current_col]])
+                matrix[current][c] = matrix[prec][c];
             else
-                matrix[i][c] = col_mult[i] + matrix[prec][c - costs[col_list[i]]];
+                matrix[current][c] = col_mult[i] + matrix[prec][c - costs[current_col]];
         }
-        prec = i;
+        prec = current;
+        current = (current + 1) % 2;
+        
     }
 
     // \Omega = \sum_i \lambda_i
@@ -489,38 +499,12 @@ unsigned SetCover::dynamic_prog(const std::vector<double>& multipliers, unsigned
 
     // find the minimum solution such that T_{n,c} >= \Omega 
     unsigned min_c = 0;
-    unsigned last = col_list.size()-1;
     for (unsigned c = lb; c < ub + 1; ++c) {
-        if (matrix[last][c] >= omega) {
+        if (matrix[current][c] >= omega) {
             min_c = c;
             break;
         }
     }
-
-    /*
-    Solution solution(n_cols);
-
-    unsigned cur_i = available_col.crbegin();
-    unsigned cur_c = min_c;
-    while (cur_i > *available_col.begin()) {
-        unsigned prec = prec_element(available_col, cur_i);
-
-        if(matrix[cur_i][cur_c] == matrix[prec][cur_c]){
-            cur_i = prec;
-        }
-        else {
-            solution.add_col(cur_i);
-            cur_c = cur_c - costs[cur_i];
-            cur_i = prec;
-        }
-    }
-
-    for (unsigned j = 0; j < n_cols; ++j) {
-        if (col_assignment[j] == FIX_IN)
-            solution.add_col(j);
-    }
-    std::cout << "Sol dinamica è corretta: " << solution_is_correct(solution) << std::endl;
-    */
 
     return min_c + offset;
 }
