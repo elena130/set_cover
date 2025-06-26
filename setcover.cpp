@@ -442,55 +442,54 @@ unsigned SetCover::dynamic_prog(const std::vector<double>& multipliers, unsigned
     unsigned offset = calc_offset();
 
     lb -= offset;
-    std::vector<std::vector<double>> matrix(n_cols, std::vector<double>(ub + 1, 0));
-    std::vector<double> col_mult(n_cols, 0);
-
+    ub -= offset;
+    std::vector<unsigned> col_list(available_col.begin(), available_col.end());
+    std::vector<std::vector<double>> matrix(col_list.size(), std::vector<double>(ub + 1, 0));
+    std::vector<double> col_mult(col_list.size(), 0);
+    
     // TODO: passa direttamente calcolati 
     // w_i = \sum_j \in C_i w_j
-    for (unsigned j : available_col) {
-        Cell* it_col = cols[j];
-        for (unsigned k = 0; k < col_density[j]; ++k) {
+    for (unsigned j = 0; j < col_list.size(); ++j) {
+        Cell* it_col = cols[col_list[j]];
+        for (unsigned k = 0; k < col_density[col_list[j]]; ++k) {
             col_mult[j] += multipliers[it_col->row];
             it_col = it_col->down;
         }
     }
 
     // init first row of the matrix 
-    unsigned first_col = *available_col.begin();
+    unsigned first_col = col_list[0];
     for (unsigned c = 0; c < ub + 1; ++c) {
         if (costs[first_col] <= c)
-            matrix[first_col][c] = col_mult[first_col];
+            matrix[first_col][c] = col_mult[0];
     }
 
     // fill the matrix 
     unsigned prec = first_col;
-    std::set<unsigned>::iterator iterator = available_col.begin();
-    ++iterator;
-    for (; iterator != available_col.end(); ++iterator) {
-        unsigned i = *iterator;
+    for (unsigned i = 1; i < col_list.size(); ++i) {
         for (unsigned c = 0; c < ub + 1; ++c) {
-            if (c < costs[i]) {
+            if (c < costs[col_list[i]]) {
                 matrix[i][c] = matrix[prec][c];
                 continue;
             }
 
-            if (matrix[prec][c] > col_mult[i] + matrix[prec][c - costs[i]])
+            if (matrix[prec][c] > col_mult[i] + matrix[prec][c - costs[col_list[i]]])
                 matrix[i][c] = matrix[prec][c];
             else
-                matrix[i][c] = col_mult[i] + matrix[prec][c - costs[i]];
+                matrix[i][c] = col_mult[i] + matrix[prec][c - costs[col_list[i]]];
         }
         prec = i;
     }
 
     // \Omega = \sum_i \lambda_i
     double omega = 0;
-    for (unsigned k : available_row) {
-        omega += multipliers[k];
+    for (unsigned i: available_row) {
+        omega += multipliers[i];
     }
 
     // find the minimum solution such that T_{n,c} >= \Omega 
     unsigned min_c = 0;
-    unsigned last = *(available_col.rbegin());
+    unsigned last = col_list.size()-1;
     for (unsigned c = 0; c < ub + 1; ++c) {
         if (matrix[last][c] >= omega) {
             min_c = c;
