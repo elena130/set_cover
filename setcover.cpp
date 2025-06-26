@@ -490,7 +490,7 @@ unsigned SetCover::dynamic_prog(const std::vector<double>& multipliers, unsigned
     // find the minimum solution such that T_{n,c} >= \Omega 
     unsigned min_c = 0;
     unsigned last = col_list.size()-1;
-    for (unsigned c = 0; c < ub + 1; ++c) {
+    for (unsigned c = lb; c < ub + 1; ++c) {
         if (matrix[last][c] >= omega) {
             min_c = c;
             break;
