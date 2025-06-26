@@ -158,9 +158,7 @@ int main(int argc, char* argv[]) {
     unsigned dynamic_lb = sc.dynamic_prog(lagrangian_res.multipliers, lagrangian_res.ub, lagrangian_res.lb);
     logger.log_endl("LB Dinamico: " + std::to_string(dynamic_lb));
 
-    if (dynamic_lb > lagrangian_res.lb)
-        lagrangian_res.lb = dynamic_lb;
-
+   
     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
     auto time = std::chrono::duration_cast<std::chrono::seconds>(end - begin).count();
     
