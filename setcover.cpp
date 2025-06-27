@@ -445,7 +445,7 @@ unsigned SetCover::dynamic_prog(const std::vector<double>& multipliers, unsigned
     lb -= offset;
     ub -= offset;
 
-    std::vector<std::map<unsigned, double>> matrix(2, std::map<unsigned, double>());
+    std::vector<std::vector<double>> matrix(2, std::vector<double>(ub + 1));
     std::vector<double> col_mult(available_col.size(), 0);
     
     // TODO: passa direttamente calcolati 
