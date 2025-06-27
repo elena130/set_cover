@@ -450,15 +450,13 @@ unsigned SetCover::dynamic_prog(const std::vector<double>& multipliers, unsigned
     
     // TODO: passa direttamente calcolati 
     // w_i = \sum_j \in C_i w_j
-    auto col_index = available_col.begin();
     unsigned l = 0; 
     for (unsigned j : available_col) {
         Cell* it_col = cols[j];
-        for (unsigned k = 0; k < col_density[*col_index]; ++k) {
+        for (unsigned k = 0; k < col_density[j]; ++k) {
             col_mult[l] += multipliers[it_col->row];
             it_col = it_col->down;
         }
-        ++col_index;
         ++l;
     }
 
@@ -474,8 +472,8 @@ unsigned SetCover::dynamic_prog(const std::vector<double>& multipliers, unsigned
     unsigned current = 1;
     unsigned prec = 0;
     for (unsigned i = 1; i < available_col.size(); ++i) {
+        unsigned current_col = *col_it;
         for (unsigned c = 0; c < ub + 1; ++c) {
-            unsigned current_col = *col_it;
             if (c < costs[current_col]) {
                 matrix[current][c] = matrix[prec][c];
                 continue;
@@ -488,7 +486,7 @@ unsigned SetCover::dynamic_prog(const std::vector<double>& multipliers, unsigned
         }
         prec = current;
         current = (current + 1) % 2;
-        
+        ++col_it;
     }
 
     // \Omega = \sum_i \lambda_i
