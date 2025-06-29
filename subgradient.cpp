@@ -225,7 +225,7 @@ void SetCover::lagrangian_solution(LagrangianVar& lv) {
 // z = \sum_j C_j*x_j + \sum_i \lambda_i
 double SetCover::lagrangian_sol_value(const std::vector<bool> solution, const std::vector<double> cost_lagrang, const std::vector<double> multipliers) {
     double solution_value = 0;
-    for (unsigned j = 0; j < n_cols; ++j) {
+    for (unsigned j : available_col) {
         if (solution[j]) {
             solution_value += cost_lagrang[j];
         }
