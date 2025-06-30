@@ -437,7 +437,7 @@ unsigned SetCover::calc_offset() {
     return offset;
 }
 
-unsigned SetCover::dynamic_prog(const std::vector<double>& multipliers, unsigned ub, unsigned lb)
+unsigned SetCover::dynamic_prog(const std::vector<double>& mult_by_row, unsigned ub, unsigned lb)
 {
     // remove offset from both solutions
     unsigned offset = calc_offset();
@@ -450,7 +450,6 @@ unsigned SetCover::dynamic_prog(const std::vector<double>& multipliers, unsigned
     
     // TODO: passa direttamente calcolati 
     // w_i = \sum_j \in C_i w_j
-    unsigned l = 0; 
     for (unsigned j : available_col) {
         Cell* it_col = cols[j];
         for (unsigned k = 0; k < col_density[j]; ++k) {
@@ -459,7 +458,6 @@ unsigned SetCover::dynamic_prog(const std::vector<double>& multipliers, unsigned
             mult_by_col[j] += mult_by_row[it_col->row];
             it_col = it_col->down;
         }
-        ++l;
     }
 
     // init first row of the matrix 
