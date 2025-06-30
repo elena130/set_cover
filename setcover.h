@@ -1,6 +1,9 @@
 #include <vector>
 #include <set>
 #include "logger.h"
+#include "Solution.h"
+#include "LagrangianData.h"
+#include "status.h"
 
 #ifndef SETCOVER_H
 #define SETCOVER_H
@@ -11,31 +14,6 @@ struct Cell {
     Cell* right;
     Cell* down;
     Cell* left;
-};
-
-enum Status {
-    FREE = -1,
-    FIX_OUT = 0,
-    FIX_IN = 1
-};
-
-struct Solution {
-    std::vector<bool> sol;
-    std::set<unsigned> set_s;
-
-    Solution(){}
-
-    Solution(const unsigned n_cols) : sol(n_cols, false){}
-
-    void add_col(const unsigned j) {
-        sol[j] = true;
-        set_s.insert(j);
-    }
-
-    void remove_col(const unsigned j) {
-        sol[j] = false;
-        set_s.erase(j);
-    }
 };
 
 struct LagrangianPar {
@@ -60,15 +38,6 @@ struct LagrangianVar {
     std::vector<double> direction;
     std::vector<double> prec_direction;
     unsigned worsening_it;
-};
-
-struct LagrangianResult {
-    std::vector<double> multipliers;
-    std::vector<double> lagrangian_costs;
-    Solution ub_sol;
-    unsigned ub;
-    unsigned lb;
-    Solution lb_sol;
 };
 
 class SetCover {
