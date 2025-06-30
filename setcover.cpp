@@ -446,7 +446,7 @@ unsigned SetCover::dynamic_prog(const std::vector<double>& multipliers, unsigned
     ub -= offset;
 
     std::vector<std::vector<double>> matrix(2, std::vector<double>(ub + 1));
-    std::vector<double> col_mult(available_col.size(), 0);
+    std::map<unsigned,double> mult_by_col;
     
     // TODO: passa direttamente calcolati 
     // w_i = \sum_j \in C_i w_j
@@ -454,7 +454,9 @@ unsigned SetCover::dynamic_prog(const std::vector<double>& multipliers, unsigned
     for (unsigned j : available_col) {
         Cell* it_col = cols[j];
         for (unsigned k = 0; k < col_density[j]; ++k) {
-            col_mult[l] += multipliers[it_col->row];
+            if (mult_by_col.count(j) == 0)
+                mult_by_col[j] = 0;
+            mult_by_col[j] += mult_by_row[it_col->row];
             it_col = it_col->down;
         }
         ++l;
@@ -464,7 +466,7 @@ unsigned SetCover::dynamic_prog(const std::vector<double>& multipliers, unsigned
     unsigned first_col = *available_col.begin();
     for (unsigned c = 0; c < ub + 1; ++c) {
         if (costs[first_col] <= c)
-            matrix[0][c] = col_mult[0];
+            matrix[0][c] = mult_by_col[first_col];
     }
 
     // fill the matrix 
@@ -479,10 +481,10 @@ unsigned SetCover::dynamic_prog(const std::vector<double>& multipliers, unsigned
                 continue;
             }
 
-            if (matrix[prec][c] > col_mult[i] + matrix[prec][c - costs[current_col]])
+            if (matrix[prec][c] > mult_by_col[current_col] + matrix[prec][c - costs[current_col]])
                 matrix[current][c] = matrix[prec][c];
             else
-                matrix[current][c] = col_mult[i] + matrix[prec][c - costs[current_col]];
+                matrix[current][c] = mult_by_col[current_col] + matrix[prec][c - costs[current_col]];
         }
         prec = current;
         current = (current + 1) % 2;
@@ -492,13 +494,13 @@ unsigned SetCover::dynamic_prog(const std::vector<double>& multipliers, unsigned
     // \Omega = \sum_i \lambda_i
     double omega = 0;
     for (unsigned i: available_row) {
-        omega += multipliers[i];
+        omega += mult_by_row[i];
     }
 
     // find the minimum solution such that T_{n,c} >= \Omega 
     unsigned min_c = 0;
     for (unsigned c = lb; c < ub + 1; ++c) {
-        if (matrix[current][c] >= omega) {
+        if (matrix[prec][c] >= omega) {
             min_c = c;
             break;
         }
