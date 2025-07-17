@@ -7,6 +7,7 @@
 struct LagrangianResult {
     std::vector<double> multipliers;
     std::vector<double> lagrangian_costs;
+    std::vector<int> subgradients;
     Solution ub_sol;
     unsigned ub;
     unsigned lb;

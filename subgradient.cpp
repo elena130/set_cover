@@ -66,6 +66,7 @@ LagrangianResult SetCover::lagrangian_lb(LagrangianPar& lp) {
                 lr.lb_sol.sol = lv.solution;
                 lr.lagrangian_costs = lv.cost_lagrang;
                 lr.multipliers = lv.multipliers;
+                lr.subgradients = lv.subgradients;
 
                 best_lb_value = lv.lb;
             }
