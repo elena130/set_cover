@@ -9,15 +9,15 @@ unsigned SetCover::fix_essential_columns(const bool first_red, const std::vector
     for(unsigned i : available_row )
         if (row_density[i] == 1) {
             unsigned col = get_row_head(i)->col;
-            if (col_assignment[col] == FREE) {
+            if (conf.cols[col] == FREE) {
                 if (first_red || modified_rows[i]) {
-                    col_assignment[col] = FIX_IN;
+                    conf.cols[col] = FIX_IN;
                     ++fixed_cols;
                 
                     // fix out all the rows which are covered by the fixed column 
                     Cell* ptr = cols[col];
                     for (unsigned k = 0; k < col_density[col]; ++k) {
-                        row_assignment[ptr->row] = FIX_OUT;
+                        conf.rows[ptr->row] = FIX_OUT;
                         ptr = ptr->down;
                     }
                 }
@@ -48,14 +48,14 @@ unsigned SetCover::fix_out_dominated_rows(const bool first_red, const std::vecto
 
         ptr = cols[shortest];
         for (unsigned k = 0; k < col_density[shortest]; ++k) {
-            if (i != ptr->row && row_assignment[i] == FREE && row_assignment[ptr->row] == FREE) {
+            if (i != ptr->row && conf.rows[i] == FREE && conf.rows[ptr->row] == FREE) {
                 if (row_is_subset_of(i, ptr->row)) {
                     dominated_rows++;
                     if (row_density[i] != row_density[ptr->row] || ptr->row > i) {
-                        row_assignment[ptr->row] = FIX_OUT;
+                        conf.rows[ptr->row] = FIX_OUT;
                     }
                     else {
-                        row_assignment[i] = FIX_OUT;
+                        conf.rows[i] = FIX_OUT;
                         break;
                     }
                 }
@@ -75,7 +75,7 @@ unsigned SetCover::fix_out_dominated_cols(const bool first_red, const std::vecto
 
     for(unsigned j : available_col){
 
-        if (col_assignment[j] == FIX_IN) {
+        if (conf.cols[j] == FIX_IN) {
             continue; 
         }
 
@@ -95,16 +95,16 @@ unsigned SetCover::fix_out_dominated_cols(const bool first_red, const std::vecto
 
         ptr = rows[smallest];
         for (unsigned k = 0; k < row_density[smallest]; ++k) {
-            if (j != ptr->col && col_assignment[j] == FREE && col_assignment[ptr->col] == FREE) {
+            if (j != ptr->col && conf.cols[j] == FREE && conf.cols[ptr->col] == FREE) {
                 if (col_is_dominated(j, ptr->col)) {
                     ++dominated;
 
                     if (col_density[j] != col_density[ptr->col] || costs[j] > costs[ptr->col] ) {
-                        col_assignment[j] = FIX_OUT;
+                        conf.cols[j] = FIX_OUT;
                         break;
                     }
                     else {
-                        col_assignment[ptr->col] = FIX_OUT;
+                        conf.cols[ptr->col] = FIX_OUT;
                     }
                 }
             }
@@ -171,7 +171,7 @@ unsigned SetCover::fix_out_cols_dom_set(const bool first_red, const std::vector<
         }
 
         if (costs[idx] >= cost && is_covered ) {
-            col_assignment[idx] = FIX_OUT;
+            conf.cols[idx] = FIX_OUT;
             fixed_out++;
         }
     }
@@ -181,14 +181,14 @@ unsigned SetCover::fix_out_cols_dom_set(const bool first_red, const std::vector<
 
 void SetCover::delete_fix_out_rows(std::vector<bool>& modified_cols) {
     for (unsigned i = 0; i < n_rows; ++i) {
-        if(row_assignment[i] == FIX_OUT)
+        if(conf.rows[i] == FIX_OUT)
             remove_row(i, modified_cols);
     }
 }
 
 void SetCover::delete_fix_out_cols(std::vector<bool>& modified_rows) {
     for(unsigned j=0; j< n_cols; ++j){
-        if(col_assignment[j] != FREE)
+        if(conf.cols[j] != FREE)
             remove_col(j, modified_rows);
     }
 }

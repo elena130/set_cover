@@ -22,7 +22,7 @@ LagrangianResult SetCover::lagrangian_lb(LagrangianPar& lp) {
     // calculate the initial offset, the costs of all the FIX_IN columns
     unsigned offset = 0;
     for (unsigned j = 0; j < n_cols; ++j) {
-        if (col_assignment[j] == FIX_IN)
+        if (conf.cols[j] == FIX_IN)
             offset += costs[j];
     }
 
@@ -87,7 +87,7 @@ LagrangianResult SetCover::lagrangian_lb(LagrangianPar& lp) {
         // update the best lower bound found
         if (removed > 0) {
             for (unsigned j = 0; j < n_cols; ++j) {
-                if (col_assignment[j] != FREE && lr.lb_sol.sol[j]) {
+                if (conf.cols[j] != FREE && lr.lb_sol.sol[j]) {
                     lr.lb_sol.remove_col(j);
                 }
             }
@@ -97,7 +97,7 @@ LagrangianResult SetCover::lagrangian_lb(LagrangianPar& lp) {
     }
 
     for (unsigned j = 0; j < n_cols; ++j) {
-        if (lr.lb_sol.sol[j] || col_assignment[j] == FIX_IN) {
+        if (lr.lb_sol.sol[j] || conf.cols[j] == FIX_IN) {
             lr.lb_sol.add_col(j);
         }
     }
@@ -111,20 +111,20 @@ unsigned SetCover::cost_fixing(LagrangianPar& lp, LagrangianVar& lv) {
     for (unsigned j : available_col) {
         if (lv.solution[j]) {
             if (lv.lb - lv.cost_lagrang[j] > lv.ub) {
-                col_assignment[j] = FIX_IN;
+                conf.cols[j] = FIX_IN;
                 offset += costs[j];
                 // rimetti la colonna 
                 lv.solution[j] = true;
                 Cell* ptr = cols[j];
                 for (unsigned k = 0; k < col_density[j]; ++k) {
-                    row_assignment[ptr->row] = FIX_OUT;
+                    conf.rows[ptr->row] = FIX_OUT;
                     lv.multipliers[ptr->row] = 0;
                     ptr = ptr->down;
                 }
             }
         }
         else if (lv.lb + lv.cost_lagrang[j] > lv.ub) {
-            col_assignment[j] = FIX_OUT;
+            conf.cols[j] = FIX_OUT;
             lv.solution[j] = false;
         }
     }
@@ -151,7 +151,7 @@ unsigned SetCover::cost_fixing(LagrangianPar& lp, LagrangianVar& lv) {
 
         // update the offset, adding the cost of fixed in cols
         for (unsigned j = 0; j < n_cols; ++j) {
-            if (col_assignment[j] == FIX_IN && cols[j] != NULL) {
+            if (conf.cols[j] == FIX_IN && cols[j] != NULL) {
                 offset += costs[j];
             }
         }

@@ -4,6 +4,7 @@
 #include "Solution.h"
 #include "LagrangianData.h"
 #include "status.h"
+#include "configuration.h"
 
 #ifndef SETCOVER_H
 #define SETCOVER_H
@@ -48,8 +49,7 @@ private:
     std::vector<unsigned> costs;
     std::vector<unsigned> row_density;
     std::vector<unsigned> col_density;
-    std::vector<Status> row_assignment;
-    std::vector <Status> col_assignment;
+    Configuration conf;
     std::set<unsigned> available_row;
     std::set<unsigned> available_col;
 
@@ -147,6 +147,16 @@ public:
     unsigned solution_value_without_fixed_in(const Solution& solution);
     
     void print_solution(const Solution solution);
+
+    const bool can_be_solved();
+
+    unsigned number_of_rows();
+
+    unsigned number_of_cols();
+
+    void change_configuration(Configuration &new_conf);
+
+    const Configuration& get_configuration();
 };
 
 #endif

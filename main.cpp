@@ -7,6 +7,7 @@
 #include "setcover.h"
 #include "logger.h"
 #include <cmath>
+#include "BAB.h"
 
 double normal_score(double cost, double covered) {
     return cost / covered;
@@ -144,23 +145,11 @@ int main(int argc, char* argv[]) {
         best_chvatal_sol = chvatal_nlog;
     }
 
-    LagrangianPar lp;
-    lp.init_ub = best_chvatal;
-    lp.init_ub_sol = best_chvatal_sol;
-    lp.init_pi = 2;         // Beasley
-    lp.init_t = 1;
-    lp.max_iter = 1000;
-    lp.min_t = 0.005;
-    LagrangianResult lagrangian_res = sc.lagrangian_lb(lp);
+    BAB bab;
+    LagrangianResult bab_res = bab.branch_and_bound(sc, best_chvatal, best_chvatal_sol);
 
     // opt_gap = (UB - LB) / LB * 100
-    double opt_gap = ((double(lagrangian_res.ub) - lagrangian_res.lb) / lagrangian_res.lb) * 100;
-
-    unsigned dynamic_lb = 0;
-    if(lagrangian_res.lb != lagrangian_res.ub)
-        dynamic_lb = sc.dynamic_prog(lagrangian_res.multipliers, lagrangian_res.ub, lagrangian_res.lb);
-    logger.log_endl("LB Dinamico: " + std::to_string(dynamic_lb));
-
+    double opt_gap = ((double(bab_res.ub) - bab_res.lb) / bab_res.lb) * 100;
    
     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
     auto time = std::chrono::duration_cast<std::chrono::seconds>(end - begin).count();
@@ -168,7 +157,7 @@ int main(int argc, char* argv[]) {
     logger.log_endl("Time difference [s] = " + std::to_string(time));
     
     std::cout << nr << "\t" << nc << "\t";
-    std::cout << sc.remaining_rows() << "\t" << sc.remaining_cols() << "\t" << lagrangian_res.ub << "\t" << lagrangian_res.lb << "\t"  << opt_gap << "\t" << time << "\t" << dynamic_lb << std::endl;
+    std::cout << sc.remaining_rows() << "\t" << sc.remaining_cols() << "\t" << bab_res.ub << "\t" << bab_res.lb << "\t"  << opt_gap << "\t" << time << std::endl;
 
     return 0;
 }

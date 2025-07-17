@@ -8,7 +8,7 @@ struct Solution {
     std::vector<bool> sol;
     std::set<unsigned> set_s;
 
-    Solution() {}
+    Solution() : sol(), set_s() {}
 
     Solution(const unsigned n_cols) : sol(n_cols, false) {}
 

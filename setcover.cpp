@@ -9,7 +9,7 @@
 #include <map>
 
 SetCover::SetCover(unsigned r, unsigned c) : n_rows(r), n_cols(c), rows(r), cols(c), costs(c),
-row_density(r, 0), col_density(c), row_assignment(r, FREE), col_assignment(c, FREE) {
+row_density(r, 0), col_density(c), conf(r,c) {
     
     for (unsigned i = 0; i < r; ++i) {
         available_row.insert(available_row.end(), i);
@@ -42,8 +42,7 @@ void SetCover::clear() {
     costs.clear();
     row_density.clear();
     col_density.clear();
-    row_assignment.clear();
-    col_assignment.clear();
+    conf.clear();
     available_row.clear();
     available_col.clear();
 }
@@ -56,14 +55,14 @@ void SetCover::copy(const SetCover& s) {
     costs.resize(n_cols);
     row_density.resize(n_rows);
     col_density.resize(n_cols);
-    row_assignment.resize(n_rows);
-    col_assignment.resize(n_cols);
+    conf.rows.resize(n_rows);
+    conf.cols.resize(n_cols);
     available_row = s.available_row;
     available_col = s.available_col;
 
     for (unsigned j = 0; j < n_cols; j++) {
         costs[j] = s.costs[j];
-        col_assignment[j] = s.col_assignment[j];
+        conf.cols[j] = s.conf.cols[j];
         Cell* ptr = s.cols[j];
         for (unsigned k = 0; k < s.col_density[j]; ++k) {
             insert_cell(ptr->row, j);
@@ -72,7 +71,7 @@ void SetCover::copy(const SetCover& s) {
     }
 
     for (unsigned i = 0; i < n_rows; i++) {
-        row_assignment[i] = s.row_assignment[i];
+        conf.rows[i] = s.conf.rows[i];
     }
 }
 
@@ -431,7 +430,7 @@ void SetCover::remove_redundant_cols(Solution& solution, std::vector<unsigned>& 
 unsigned SetCover::calc_offset() {
     unsigned offset = 0;
     for (unsigned j = 0; j < n_cols; ++j) {
-        if (col_assignment[j] == FIX_IN)
+        if (conf.cols[j] == FIX_IN)
             offset += costs[j];
     }
     return offset;
@@ -535,7 +534,7 @@ unsigned SetCover::solution_value(const Solution& solution) {
     unsigned solution_cost = 0;
 
     for (unsigned j = 0; j < n_cols; ++j) {
-        if (solution.sol[j] || col_assignment[j] == FIX_IN) {
+        if (solution.sol[j] || conf.cols[j] == FIX_IN) {
             solution_cost += costs[j];
         }
     }
@@ -547,7 +546,7 @@ unsigned SetCover::solution_value_without_fixed_in(const Solution& solution) {
     unsigned z = 0;
     //std::cout << "sol value without fixed: ";
     for (unsigned j : available_col) {
-        if (solution.sol[j] && col_assignment[j] != FIX_IN) {
+        if (solution.sol[j] && conf.cols[j] != FIX_IN) {
             z += costs[j];
             //std::cout << j << "\t";
         }
@@ -562,6 +561,45 @@ void SetCover::print_solution(const Solution solution) {
         std::cout << j << ",";
     }
     std::cout << std::endl;
+}
+
+const bool SetCover::can_be_solved(){
+    Cell* row_it;
+    for (unsigned i = 0; i < n_rows; ++i) {
+        if (conf.rows[i] == FIX_OUT)
+            continue;
+        row_it = rows[i];
+        bool coperta = false;
+
+        for (unsigned k = 0; k < row_density[i]; ++k) {
+            if (conf.cols[row_it->col] != FIX_OUT) {
+                coperta = true;
+                break;
+            }
+            row_it = row_it->right;
+        }
+        if (!coperta)
+            return false;
+    }
+
+    return true;
+}
+
+unsigned SetCover::number_of_rows(){
+    return n_rows;
+}
+
+unsigned SetCover::number_of_cols(){
+    return n_cols;
+}
+
+void SetCover::change_configuration(Configuration& new_conf) {
+    conf = new_conf;
+}
+
+const Configuration& SetCover::get_configuration()
+{
+    return conf;
 }
 
 void SetCover::set_cost(const unsigned j,  const unsigned cost) {
