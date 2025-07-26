@@ -1,44 +1,15 @@
 #include <vector>
 #include <queue>
 #include <cmath>
+#include <memory>
 #include "LagrangianData.h"
 #include "status.h"
 #include "setcover.h"
 #include "configuration.h"
+#include "VisitStrategy.h"
 
 #ifndef BAB_H
 #define BAB_H
-
-struct DebugInfo {
-	unsigned id;
-	unsigned depht;
-
-	DebugInfo() : id(1), depht(0) {}
-
-	DebugInfo(const unsigned node_id, const unsigned node_depht) : id(node_id), depht(node_depht){}
-
-	~DebugInfo(){}
-
-	DebugInfo(const DebugInfo& di) : id(di.id), depht(di.depht){}
-};
-
-struct BranchInfo {
-	unsigned col;
-	// f = 1 -> FIX_IN
-	// f = 2 -> FIX_OUT
-	unsigned f;
-
-	BranchInfo(const unsigned c, const unsigned f_op) : col(c), f(f_op){}
-
-	BranchInfo(const BranchInfo& bi) : col(bi.col), f(bi.f){}
-
-	~BranchInfo(){}
-
-	void operator=(const BranchInfo& bi) {
-		col = bi.col;
-		f = bi.f;
-	}
-};
 
 enum ProblemStatus {
 	SOLVED,
@@ -46,44 +17,88 @@ enum ProblemStatus {
 	UNSOLVABLE
 };
 
-	struct BNode {
-		DebugInfo di;
-		LagrangianResult lr;
-		Configuration conf;
-		ProblemStatus status;
-		BranchInfo branch_info;
+struct BNode {
+	unsigned id, level, son_id;
+	Configuration data;
+	LagrangianResult results;
+	unsigned branching_col;
+	ProblemStatus status;
 
-		BNode(const unsigned id, const unsigned depht, const LagrangianResult &lag_res, const Configuration& configuration, const BranchInfo &bi) : di(id, depht),  lr(lag_res), conf(configuration), status(OPEN), branch_info(bi) {}
+	BNode(const unsigned i, const unsigned lv, const unsigned s_id, const Configuration& d,
+		const LagrangianResult& lr, const unsigned branch_c) :
+	id(i), level(lv), son_id(s_id), data(d), results(lr), branching_col(branch_c), status(OPEN)
+	{}
 
-		BNode(const BNode &n) : di(n.di), lr(n.lr), conf(n.conf), status(n.status), branch_info(n.branch_info){}
+	~BNode(){}
 
-		~BNode(){}
+	BNode(const BNode& n): id(n.id), level(n.level), son_id(n.son_id), data(n.data), results(n.results),
+	branching_col(n.branching_col), status(n.status){}
 
-		void operator=(const BNode& n) {
-			di = n.di;
-			lr = n.lr;
-			status = n.status;
-			branch_info = n.branch_info;
+	void operator=(const BNode& n) {
+		id = n.id;
+		level = n.level;
+		results = LagrangianResult(n.results);
+		branching_col = n.branching_col;
+		status = n.status;
+	}
+};
+
+
+
+struct NodeComparator {
+	VisitStrategy strategy;
+
+	NodeComparator(VisitStrategy s) : strategy(s) {}
+
+	bool operator()(const BNode& a, const BNode& b) const {
+		switch (strategy) {
+		case VisitStrategy::DFS:
+			return a.level < b.level; // DFS: nodi più profondi prima
+		case VisitStrategy::BFS:
+			return a.level > b.level; // BFS: nodi più vicini prima
+		case VisitStrategy::BEST_FIRST:
+			return a.results.ub > b.results.ub; 
+		default:
+			return false;
 		}
+	}
+};
 
-		bool operator<(const BNode& other) const {
-			return lr.ub > other.lr.ub;
-		}
-	};
+
+class BNodeQueue {
+private:
+	VisitStrategy strategy;
+	NodeComparator comp;
+	using QueueType = std::priority_queue<BNode, std::vector<BNode>, NodeComparator>;
+	QueueType queue;
+
+public:
+	BNodeQueue(VisitStrategy s) : strategy(s), comp(s), queue(comp) {}
+
+	void insert_node(const BNode& node) {
+		queue.push(node); 
+	}
+
+	BNode extract_node() {
+		BNode n = queue.top();
+		queue.pop();
+		return n; 
+	}
+
+	bool empty() const {
+		return queue.empty();
+	}
+};
+
 
 class BAB {
 private:
-	std::priority_queue<BNode> queue;
-
-	// TODO: inserire parametri aggiuntivi 
-	// - numero massimo di nodi 
-	// - tempo massimo trascorso
-	// - UB e LB 
+	BNodeQueue queue;
 	LagrangianResult bounds;
 	ProblemStatus status;
 
 public:
-	BAB(LagrangianResult &lr);
+	BAB(VisitStrategy visit_strategy, LagrangianResult &lr);
 
 	~BAB();
 
@@ -97,7 +112,7 @@ public:
 
 	bool useful_bnode(const BNode& node);
 
-	void derive_bnode(const BNode& father, BNode son, unsigned f);
+	void derive_bnode(const BNode& father, BNode &son, unsigned f, const SetCover &sc);
 };
 
 #endif
