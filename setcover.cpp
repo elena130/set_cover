@@ -629,3 +629,12 @@ void SetCover::print_cols() {
         printf("%d\n", j);
     }
 }
+
+ConstRowRange SetCover::row(unsigned i) const {
+    return ConstRowRange(rows[i]);
+}
+
+ConstColRange SetCover::col(unsigned j) const {
+    return ConstColRange(cols[j]);
+}
+

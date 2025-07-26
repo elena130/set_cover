@@ -1,5 +1,6 @@
 #include <vector>
 #include <queue>
+#include <cmath>
 #include "LagrangianData.h"
 #include "status.h"
 #include "setcover.h"
@@ -21,59 +22,82 @@ struct DebugInfo {
 	DebugInfo(const DebugInfo& di) : id(di.id), depht(di.depht){}
 };
 
+struct BranchInfo {
+	unsigned col;
+	// f = 1 -> FIX_IN
+	// f = 2 -> FIX_OUT
+	unsigned f;
+
+	BranchInfo(const unsigned c, const unsigned f_op) : col(c), f(f_op){}
+
+	BranchInfo(const BranchInfo& bi) : col(bi.col), f(bi.f){}
+
+	~BranchInfo(){}
+
+	void operator=(const BranchInfo& bi) {
+		col = bi.col;
+		f = bi.f;
+	}
+};
+
 enum ProblemStatus {
 	SOLVED,
 	OPEN,
 	UNSOLVABLE
 };
 
-struct Node {
-	DebugInfo di;
-	LagrangianResult lr;
-	Configuration conf;
-	ProblemStatus status;
+	struct BNode {
+		DebugInfo di;
+		LagrangianResult lr;
+		Configuration conf;
+		ProblemStatus status;
+		BranchInfo branch_info;
 
-	Node(const unsigned id, const unsigned depht) : di(id, depht), lr(), status(OPEN){}
+		BNode(const unsigned id, const unsigned depht, const LagrangianResult &lag_res, const Configuration& configuration, const BranchInfo &bi) : di(id, depht),  lr(lag_res), conf(configuration), status(OPEN), branch_info(bi) {}
 
-	Node(const Node &n) : di(n.di), lr(n.lr), conf(n.conf), status(n.status){}
+		BNode(const BNode &n) : di(n.di), lr(n.lr), conf(n.conf), status(n.status), branch_info(n.branch_info){}
 
-	~Node(){}
+		~BNode(){}
 
-	void operator=(const Node& n) {
-		di = n.di;
-		lr = n.lr;
-		status = n.status;
-	}
+		void operator=(const BNode& n) {
+			di = n.di;
+			lr = n.lr;
+			status = n.status;
+			branch_info = n.branch_info;
+		}
 
-	bool operator<(const Node& other) const {
-		return lr.ub >= other.lr.ub;
-	}
-};
+		bool operator<(const BNode& other) const {
+			return lr.ub > other.lr.ub;
+		}
+	};
 
 class BAB {
 private:
-	std::priority_queue<Node> queue;
+	std::priority_queue<BNode> queue;
+
+	// TODO: inserire parametri aggiuntivi 
+	// - numero massimo di nodi 
+	// - tempo massimo trascorso
+	// - UB e LB 
+	LagrangianResult bounds;
+	ProblemStatus status;
 
 public:
-	BAB();
+	BAB(LagrangianResult &lr);
 
 	~BAB();
 
-	LagrangianResult branch_and_bound(SetCover& ref, const unsigned ub, Solution& ub_sol);
+	LagrangianResult branching(SetCover& ref_sc, LagrangianResult& b);
 
-	void process_node(SetCover & ref, Node& node);
+	void process_bnode(BNode& father, const SetCover& original);
 
-	void insert_node(Node& node);
+	void insert_bnode(const BNode& node);
 
-	Node extract_node();
+	BNode extract_bnode();
 
-	const bool is_useful(Node& node, SetCover& sc);
+	bool useful_bnode(const BNode& node);
 
-	void derive_info(Node& father, Node& son);
-
-	void create_scp_from_config(SetCover& scp, Configuration& config);
-
-	void branch_rule();
+	void derive_bnode(const BNode& father, BNode son, unsigned f);
 };
 
 #endif

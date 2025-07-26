@@ -1,5 +1,6 @@
 #include <vector>
 #include <set>
+#include <iterator>
 #include "logger.h"
 #include "Solution.h"
 #include "LagrangianData.h"
@@ -39,6 +40,94 @@ struct LagrangianVar {
     std::vector<double> direction;
     std::vector<double> prec_direction;
     unsigned worsening_it;
+};
+
+// Iteratore costante per righe
+class ConstRowIterator {
+    const Cell* current;
+    const Cell* head;  // per sapere dove fermarci
+
+public:
+    using iterator_category = std::forward_iterator_tag;
+    using value_type = const Cell*;
+    using difference_type = std::ptrdiff_t;
+    using pointer = const Cell**;
+    using reference = const Cell*&;
+
+    ConstRowIterator(const Cell* ptr, const Cell* start) : current(ptr), head(start) {}
+
+    const Cell* operator*() const { return current; }
+
+    ConstRowIterator& operator++() {
+        if (current && current->right != head)
+            current = current->right;
+        else
+            current = nullptr; // Fine iterazione
+        return *this;
+    }
+
+    bool operator!=(const ConstRowIterator& other) const {
+        return current != other.current;
+    }
+
+    bool operator==(const ConstRowIterator& other) const {
+        return current == other.current;
+    }
+};
+
+
+// Iteratore costante per colonne
+class ConstColIterator {
+    const Cell* current;
+    const Cell* head;
+
+public:
+    using iterator_category = std::forward_iterator_tag;
+    using value_type = const Cell*;
+    using difference_type = std::ptrdiff_t;
+    using pointer = const Cell**;
+    using reference = const Cell*&;
+
+    explicit ConstColIterator(const Cell* ptr, const Cell* start) : current(ptr), head(start) {}
+
+    const Cell* operator*() const { return current; }
+
+    ConstColIterator& operator++() {
+        if (current && current->down != head)
+            current = current->down;
+        else
+            current = nullptr;
+        return *this;
+    }
+
+    bool operator!=(const ConstColIterator& other) const {
+        return current != other.current;
+    }
+
+    bool operator==(const ConstColIterator& other) const {
+        return current == other.current;
+    }
+};
+
+// Wrapper per range-based for sulle righe
+class ConstRowRange {
+    const Cell* head;
+public:
+    explicit ConstRowRange(const Cell* h) : head(h) {}
+
+    ConstRowIterator begin() const { return ConstRowIterator(head, head); }
+    ConstRowIterator end()   const { return ConstRowIterator(nullptr, head); }
+};
+
+
+// Wrapper per range-based for sulle colonne
+class ConstColRange {
+    const Cell* head;
+public:
+    explicit ConstColRange(const Cell* h) : head(h) {}
+
+    ConstColIterator begin() const { return ConstColIterator(head, head); }
+    ConstColIterator end()   const { return ConstColIterator(nullptr, head); }
 };
 
 class SetCover {
@@ -157,6 +246,17 @@ public:
     void change_configuration(Configuration &new_conf);
 
     const Configuration& get_configuration();
+
+    ConstRowRange row(unsigned i) const;
+
+    ConstColRange col(unsigned j) const;
 };
 
+
+
 #endif
+
+
+
+
+

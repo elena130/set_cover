@@ -145,8 +145,13 @@ int main(int argc, char* argv[]) {
         best_chvatal_sol = chvatal_nlog;
     }
 
-    BAB bab;
-    LagrangianResult bab_res = bab.branch_and_bound(sc, best_chvatal, best_chvatal_sol);
+    LagrangianResult lr;
+    lr.lb = 0;
+    lr.lb_sol = Solution(sc.number_of_cols());
+    lr.ub = best_chvatal;
+    lr.ub_sol = best_chvatal_sol;
+    BAB bab(lr);
+    LagrangianResult bab_res = bab.branching(sc, lr);
 
     // opt_gap = (UB - LB) / LB * 100
     double opt_gap = ((double(bab_res.ub) - bab_res.lb) / bab_res.lb) * 100;
