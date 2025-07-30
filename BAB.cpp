@@ -73,15 +73,10 @@ void BAB::process_bnode(BNode& node, const SetCover& original) {
 		bounds.ub_sol = lagrangian_res.ub_sol;
 	}
 
-	if (lagrangian_res.lb > bounds.lb && lagrangian_res.lb <= bounds.ub) {
-		bounds.lb = lagrangian_res.lb;
-		bounds.lb_sol = lagrangian_res.lb_sol;
-	}
-
 	if (bounds.lb == bounds.ub)
 		status = SOLVED;
 
-	// genera info per creare i figli 
+	// generate info to create sons
 	node.results = lagrangian_res;
 
 	double max = 0;
@@ -117,14 +112,14 @@ BNode BAB::extract_bnode(){
 }
 
 bool BAB::useful_bnode(const BNode& node){
-	return node.status == OPEN && status != SOLVED && node.results.ub >= bounds.lb;
+	return node.status == OPEN && status != SOLVED && node.results.lb < bounds.ub;
 }
 
 void BAB::derive_bnode(const BNode& father, BNode &son, unsigned f, const SetCover& sc) {
 	son.data = father.data;
 	son.data.cols[father.branching_col] = son.son_id == 1 ? FIX_IN : FIX_OUT;
 
-	// remove the row covered by the fixed column
+	// remove the rows covered by the fixed column
 	if (son.son_id == 1) {
 		for (const Cell* c : sc.col(son.branching_col)) {
 			son.data.rows[c->row] = FIX_OUT;
