@@ -104,7 +104,7 @@ public:
 
 	LagrangianResult branching(SetCover& ref_sc, LagrangianResult& b);
 
-	void process_bnode(BNode& father, const SetCover& original);
+	void process_bnode(BNode& father, SetCover& sc);
 
 	void insert_bnode(const BNode& node);
 
@@ -113,6 +113,8 @@ public:
 	bool useful_bnode(const BNode& node);
 
 	void derive_bnode(const BNode& father, BNode &son, unsigned f, const SetCover &sc);
+
+	void derive_set_cover(SetCover& sc, Configuration &conf);
 };
 
 #endif
