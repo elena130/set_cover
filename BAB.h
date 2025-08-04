@@ -14,7 +14,14 @@
 enum ProblemStatus {
 	SOLVED,
 	OPEN,
-	UNSOLVABLE
+	UNSOLVABLE,
+	IRRELEVANT
+};
+
+enum SolutionStatus {
+	UNKNOWN,
+	PARTIAL,
+	COMPLETE
 };
 
 struct BNode {
@@ -95,7 +102,7 @@ class BAB {
 private:
 	BNodeQueue queue;
 	LagrangianResult bounds;
-	ProblemStatus status;
+	SolutionStatus status;
 
 public:
 	BAB(VisitStrategy visit_strategy, LagrangianResult &lr);
@@ -110,11 +117,15 @@ public:
 
 	BNode extract_bnode();
 
-	bool useful_bnode(const BNode& node);
+	bool useful_bnode( BNode& node, SetCover& ref_sc);
 
 	void derive_bnode(const BNode& father, BNode &son, unsigned f, const SetCover &sc);
 
 	void derive_set_cover(SetCover& sc, Configuration &conf);
+
+	bool problem_is_solvable(SetCover & sc, Configuration& conf);
+
+	void update_bounds(LagrangianResult &lr);
 };
 
 #endif

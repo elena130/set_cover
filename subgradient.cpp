@@ -1,20 +1,8 @@
 #include "setcover.h"
 #include <cmath>
 
-LagrangianResult SetCover::lagrangian_lb(LagrangianPar& lp) {
-    LagrangianVar lv;
-    lv.cost_lagrang = std::vector<double>(n_cols);
-    lv.ub = lp.init_ub;    // UB
-    lv.lb = 0;  // LB
-    lv.pi = lp.init_pi;
-    lv.solution = std::vector<bool>(n_cols, false);   // solution vector 
-    lv.t = lp.init_t;
-    lv.subgradients = std::vector<int>(n_rows);     // G_i
-    lv.prec_direction = std::vector<double>(n_rows, 0);
-    lv.direction = std::vector<double>(n_rows, 0);
-    lv.beta = 0;
-    lv.multipliers = std::vector<double>(n_rows, 0);
-    lv.worsening_it = 0;
+LagrangianResult SetCover::lagrangian_lb(LagrangianPar& lp, LagrangianVar& lv) {
+    
 
     unsigned max_worsening_it = 15;
 

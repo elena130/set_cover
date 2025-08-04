@@ -205,7 +205,7 @@ public:
 
     void chvtal(Solution & chvatal_sol, double (*calc_score)(double, double));
 
-    LagrangianResult lagrangian_lb(LagrangianPar& lp);
+    LagrangianResult lagrangian_lb(LagrangianPar& lp, LagrangianVar& lv);
 
     unsigned cost_fixing(LagrangianPar& lp, LagrangianVar& lv);
 
