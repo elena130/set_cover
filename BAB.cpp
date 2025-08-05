@@ -127,7 +127,7 @@ BNode BAB::extract_bnode(){
 
 bool BAB::useful_bnode( BNode& node, SetCover & ref_sc){
 	problem_is_solvable(ref_sc, node.data);
-	return node.status == OPEN && status != SOLVED && node.results.lb < bounds.ub;
+	return node.status == OPEN && status != COMPLETE && node.results.lb < bounds.ub;
 }
 
 void BAB::derive_bnode(const BNode& father, BNode &son, unsigned f, const SetCover& sc) {

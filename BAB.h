@@ -60,11 +60,17 @@ struct NodeComparator {
 	bool operator()(const BNode& a, const BNode& b) const {
 		switch (strategy) {
 		case VisitStrategy::DFS:
-			return a.level < b.level; // DFS: nodi più profondi prima
+			if (a.level == b.level) {
+				return a.id > b.id;
+			} 
+			else return a.level < b.level; // DFS: nodi più profondi prima
 		case VisitStrategy::BFS:
+			if (a.level == b.level) {
+				return a.id > b.id;
+			}
 			return a.level > b.level; // BFS: nodi più vicini prima
 		case VisitStrategy::BEST_FIRST:
-			return a.results.ub > b.results.ub; 
+			return a.results.lb < b.results.lb; 
 		default:
 			return false;
 		}
@@ -74,13 +80,12 @@ struct NodeComparator {
 
 class BNodeQueue {
 private:
-	VisitStrategy strategy;
 	NodeComparator comp;
 	using QueueType = std::priority_queue<BNode, std::vector<BNode>, NodeComparator>;
 	QueueType queue;
 
 public:
-	BNodeQueue(VisitStrategy s) : strategy(s), comp(s), queue(comp) {}
+	BNodeQueue(VisitStrategy s) : comp(s), queue(comp) {}
 
 	void insert_node(const BNode& node) {
 		queue.push(node); 
