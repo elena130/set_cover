@@ -1,21 +1,23 @@
 #include "BAB.h"
 
-BAB::BAB(VisitStrategy visit_strategy, LagrangianResult& lr) : strategy(visit_strategy), queue(), bounds(lr){
-	status = UNKNOWN;
-}
+BAB::BAB(std::unique_ptr<IBNodeQueue> &&q, LagrangianResult& lr) : 
+	queue(std::move(q)), bounds(lr), status(UNKNOWN){}
 
 BAB::~BAB(){}
 
 LagrangianResult BAB::branching(SetCover& ref_sc, LagrangianResult& b) {
 
 	unsigned id, f;
-	BNode * root = new BNode(1, 0, 0, ref_sc.get_configuration(), b, 0);
-	root->results.multipliers = std::vector<double>(ref_sc.number_of_rows(), 0);
+	BNode * root = new BNode();
+	root->par.multipliers = std::vector<double>(ref_sc.number_of_rows(), 0);
+	root->par.ub = b.ub;
+	root->par.ub_sol = b.ub_sol;
+	root->p_conf = ref_sc.get_configuration();
 	long examined_nodes, removed_nodes, waiting_nodes;
 
 	SetCover sc(ref_sc);
 	process_bnode(root, sc);
-	update_bounds(root->results);
+	update_bounds(root->par);
 	examined_nodes = 1;
 
 	insert_bnode(root);
@@ -23,7 +25,7 @@ LagrangianResult BAB::branching(SetCover& ref_sc, LagrangianResult& b) {
 
 	id = 1;
 	removed_nodes = 0;
-	while (!queue.empty() )
+	while (!queue->empty() )
 	{
 		BNode* father = extract_bnode();
 		waiting_nodes--;
@@ -33,18 +35,22 @@ LagrangianResult BAB::branching(SetCover& ref_sc, LagrangianResult& b) {
 			for (f = 1; f <= 2; f++)
 			{
 				id++;
-				BNode *son = new BNode(id, father->level + 1, f, father->data, father->results, 0);
+				BranchInfo bi(id, father->bi.level + 1, f);
+				BNode *son = new BNode(bi, father->p_conf, father->par);
 				SetCover sc(ref_sc);
 				derive_bnode(father, son, f, sc);
-				derive_set_cover(sc, son->data);
-					
+				derive_set_cover(sc, son->p_conf);
+				
+				if (son->bi.id == 3)
+					std::cout << "Nodo 3";
 				process_bnode(son, sc);
+				std::cout << "Nodo: " << son->bi.id << " [" << son->par.lb << " " << son->par.ub << "]" << std::endl;
 				examined_nodes++;
 
 				if (useful_bnode(son, ref_sc)) {
 					insert_bnode(son);
 					waiting_nodes++;
-					update_bounds(son->results);
+					update_bounds(son->par);
 				}
 				else {
 					delete son;
@@ -62,17 +68,17 @@ LagrangianResult BAB::branching(SetCover& ref_sc, LagrangianResult& b) {
 void BAB::process_bnode(BNode* node, SetCover& sc) {
 
 	LagrangianPar lp;
-	lp.init_ub = node->results.ub;
-	lp.init_ub_sol = node->results.ub_sol;
+	lp.init_ub = node->par.ub;
+	lp.init_ub_sol = node->par.ub_sol;
 	lp.init_pi = 2;         // Beasley
 	lp.init_t = 1;
 	lp.max_iter = 1000;
 	lp.min_t = 0.005;
 
 	LagrangianVar lv;
+	lv.ub = node->par.ub;
 	lv.cost_lagrang = std::vector<double>(sc.number_of_cols());
-	lv.ub = lp.init_ub;    // UB
-	lv.lb = 0;  // LB
+	lv.lb = node->par.lb;  // LB
 	lv.pi = lp.init_pi;
 	lv.solution = std::vector<bool>(sc.number_of_cols(), false);    // solution vector 
 	lv.t = lp.init_t;
@@ -80,8 +86,11 @@ void BAB::process_bnode(BNode* node, SetCover& sc) {
 	lv.prec_direction = std::vector<double>(sc.number_of_rows(), 0);
 	lv.direction = std::vector<double>(sc.number_of_rows(), 0);
 	lv.beta = 0;
-	lv.multipliers = node->results.multipliers;
+	lv.multipliers = node->par.multipliers;
 	lv.worsening_it = 0;
+
+	if (node->bi.id == 11)
+		std::cout << "Controllami";
 
 	LagrangianResult lagrangian_res = sc.lagrangian_lb(lp, lv);
 
@@ -94,14 +103,15 @@ void BAB::process_bnode(BNode* node, SetCover& sc) {
 
 	
 	// generate info to create sons
-	node->results = lagrangian_res;
+	node->par = lagrangian_res;
+	node->p_conf = sc.get_configuration();
 
 	double max = 0;
 	unsigned row = 0;
 	for (unsigned i = 0; i < sc.number_of_rows(); ++i) {
-		if (node->data.rows[i] != FREE)
+		if (node->p_conf.rows[i] != FREE)
 			continue;
-		double product = std::abs(node->results.multipliers[i] * node->results.subgradients[i]);
+		double product = std::abs(node->par.multipliers[i] * node->par.subgradients[i]);
 		if (product > max) {
 			max = product;
 			row = i;
@@ -111,59 +121,43 @@ void BAB::process_bnode(BNode* node, SetCover& sc) {
 	unsigned col = 0;
 	double min_cost = 10000;
 	for (const Cell* c : sc.row(row)) {
-		if (node->data.cols[c->col] != FREE)
+		if (node->p_conf.cols[c->col] != FREE)
 			continue;
-		if (node->results.lagrangian_costs[c->col] < min_cost) {
-			min_cost = node->results.lagrangian_costs[c->col];
+		if (node->par.lagrangian_costs[c->col] < min_cost) {
+			min_cost = node->par.lagrangian_costs[c->col];
 			col = c->col;
 		}
 	}
 
-	node->branching_col = col;
+	node->bi.b_col = col;
 }
 
 void BAB::insert_bnode(BNode* node){
-	switch (strategy) {
-	case VisitStrategy::DFS : 
-		queue.push_front(node);
-		break;
-	case VisitStrategy::BFS:
-		queue.push_back(node);
-		break;
-	case VisitStrategy::BEST_FIRST:
-		BNode* p = queue.top();
-		BNode* end = p!= NULL ? p->prec : NULL;
-		while (p!= NULL && p != end && (node->results.lb <= p->results.lb)  )
-		  p = p->next;
-		queue.push_before(node, p);
-		break;
-	}
+	queue->push(node);
 }
 
 BNode* BAB::extract_bnode(){
-	BNode* node = queue.top();
-	queue.extract_node(node);
-	return node;
+	return queue->pop();
 }
 
 bool BAB::useful_bnode(BNode* node, SetCover& ref_sc) {
-	problem_is_solvable(ref_sc, node->data);
-	return node->status == OPEN && status != COMPLETE && node->results.lb < bounds.ub;
+	problem_is_solvable(ref_sc, node->p_conf);
+	return node->status == OPEN && status != COMPLETE && node->par.lb < bounds.ub;
 }
 
 void BAB::derive_bnode(BNode* father, BNode* son, unsigned f, const SetCover& sc) {
-	son->results.multipliers = father->results.multipliers;
-	son->results.lb = father->results.lb;
-	son->results.lb_sol = father->results.lb_sol;
-	son->results.ub = father->results.ub;
-	son->results.ub_sol = father->results.ub_sol;
-	son->data = father->data;
-	son->data.cols[father->branching_col] = son->son_id == 1 ? FIX_IN : FIX_OUT;
+	son->par.multipliers = father->par.multipliers;
+	son->par.lb = father->par.lb;
+	son->par.lb_sol = father->par.lb_sol;
+	son->par.ub = father->par.ub;
+	son->par.ub_sol = father->par.ub_sol;
+	son->p_conf = father->p_conf;
+	son->p_conf.cols[father->bi.b_col] = son->bi.id == 1 ? FIX_IN : FIX_OUT;
 
 	// remove the rows covered by the fixed column, if it will be fixed in the solution
 	if (f == 1) {
-		for (const Cell* c : sc.col(father->branching_col)) {
-			son->data.rows[c->row] = FIX_OUT;
+		for (const Cell* c : sc.col(father->bi.b_col)) {
+			son->p_conf.rows[c->row] = FIX_OUT;
 		}
 	}
 }
@@ -203,4 +197,3 @@ void BAB::update_bounds(LagrangianResult& lr)
 		bounds.ub_sol = lr.ub_sol;
 	}
 }
-

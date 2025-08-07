@@ -151,7 +151,7 @@ int main(int argc, char* argv[]) {
     lr.lb_sol = Solution(sc.number_of_cols());
     lr.ub = best_chvatal;
     lr.ub_sol = best_chvatal_sol;
-    BAB bab(VisitStrategy::BEST_FIRST, lr);
+    BAB bab(std::make_unique<BestFistQueue>(), lr);
     LagrangianResult bab_res = bab.branching(sc, lr);
 
     // opt_gap = (UB - LB) / LB * 100

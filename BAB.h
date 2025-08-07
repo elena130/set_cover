@@ -1,5 +1,7 @@
 #include <vector>
 #include <queue>
+#include <stack>
+#include <memory>
 #include <cmath>
 #include "LagrangianData.h"
 #include "status.h"
@@ -23,141 +25,152 @@ enum SolutionStatus {
 	COMPLETE
 };
 
+struct BranchInfo {
+	unsigned id, level, son_id, b_col;
+
+	BranchInfo() : id(1), level(0), son_id(0), b_col(0) {}
+
+	BranchInfo(const unsigned i, const unsigned l, const unsigned s_id) : id(i), level(l), 
+	son_id(s_id), b_col(0){}
+
+	BranchInfo(const BranchInfo& b) : id(b.id), level(b.level), son_id(b.son_id), b_col(b.b_col) {}
+
+	~BranchInfo(){}
+
+	void operator=(const BranchInfo& b) {
+		id = b.id;
+		level = b.level;
+		son_id = b.son_id;
+		b_col = b.b_col;
+	}
+
+	// TODO: mettere stampa per i dati 
+};
+
 struct BNode {
-	unsigned id, level, son_id;
-	Configuration data;
-	LagrangianResult results;
-	unsigned branching_col;
+	BranchInfo bi;					// Info necessary for branching 
+	Configuration p_conf;			// problem configuration 
+	LagrangianResult par;			// parameters of subgradient optimization
 	ProblemStatus status;
 	BNode* prec;
 	BNode* next;
 
-	BNode(): id(0), level(0), son_id(0), data(), results(), branching_col(0), status(OPEN), prec(NULL),
-	next(NULL){}
+	BNode(): bi(), p_conf(), par(), status(OPEN), prec(NULL), next(NULL){}
 
-	BNode(const unsigned i, const unsigned lv, const unsigned s_id, const Configuration& d,
-		const LagrangianResult& lr, const unsigned branch_c) :
-	id(i), level(lv), son_id(s_id), data(d), results(lr), branching_col(branch_c), status(OPEN),
-		prec(NULL), next(NULL)
-	{}
+	BNode(BranchInfo& b_info, const Configuration& d, const LagrangianResult& lr) :
+	bi(b_info), p_conf(d), par(lr), status(OPEN),prec(NULL), next(NULL) {}
 
 	~BNode(){}
 
-	BNode(const BNode& n): id(n.id), level(n.level), son_id(n.son_id), data(n.data), results(n.results),
-	branching_col(n.branching_col), status(n.status), prec(n.prec), next(n.next){}
+	BNode(const BNode& n): bi(n.bi), p_conf(n.p_conf), par(n.par),status(n.status), 
+		prec(n.prec), next(n.next){}
 
 	void operator=(const BNode& n) {
-		id = n.id;
-		level = n.level;
-		results = LagrangianResult(n.results);
-		branching_col = n.branching_col;
-		data = n.data;
+		bi = n.bi;
+		p_conf = n.p_conf;
+		par = LagrangianResult(n.par);
 		status = n.status;
 	}
 };
 
+// Classe astratta per modellare il comportamento della queue 
+class IBNodeQueue {
+public:
+	IBNodeQueue(){}
+	virtual ~IBNodeQueue() = default;
 
-class BNodeQueue {
+	virtual void push(BNode* node) = 0;        // Rende il metodo virtuale 
+	virtual BNode* pop() = 0;                   
+	virtual bool empty() const = 0;
+};
+
+class DFSQueue : public IBNodeQueue{
 private:
-	BNode* queue;
-	unsigned n;
+	std::stack<BNode*> stack;
 
 public:
-	BNodeQueue() : queue(NULL), n(0) {}
-
-	void push_back(BNode* node) {
-		++n;
-		if (queue == NULL) {
-			queue = node;
-			node->next = node;
-			node->prec = node;
-			return;
-		}
-
-		BNode* l = last();
-		l->next = node;
-		node->prec = l;
-		node->next = queue;
-		queue->prec = node;
+	void push(BNode* node) override {
+		stack.push(node);
 	}
 
-	void push_front(BNode* node) {
-		++n;
-		if (queue == NULL) {
-			queue = node;
-			node->next = node;
-			node->prec = node;
-			return;
-		}
-
-		BNode* first = queue;
-		node->next = first;
-		node->prec = first->prec;
-		first->prec->next = node;
-		first->prec = node;
-		queue = node;
-	}
-
-	void push_before(BNode* node, BNode* ref) {
-		++n;
-
-		if (queue == NULL) {
-			queue = node;
-			node->next = node;
-			node->prec = node;
-			return;
-		}
-
-		if (ref == queue) {
-			queue = node;
-		}
-
-		node->next = ref;
-		node->prec = ref->prec;
-		ref->prec->next = node;
-		ref->prec = node;
-	}
-
-	void extract_node(BNode* to_be_extracted) {
-		if (n==0)
-			return;
-		else if (n == 1) {
-			to_be_extracted = queue;
-			queue = NULL;
-		} else if (n > 1) {
-			queue = to_be_extracted->next;
-			to_be_extracted->prec->next = to_be_extracted->next;
-			to_be_extracted->next->prec = to_be_extracted->prec;
-		}
-
-		--n;
-	}
-
-	BNode* top() {
-		return queue;
-	}
-
-	BNode* last() {
-		if (queue == NULL)
+	BNode* pop() override {
+		if (empty())
 			return NULL;
-		return queue->prec;
+		BNode* n = stack.top();
+		stack.pop();
+		return n;
 	}
 
-	bool empty() const {
-		return queue == NULL;
+	bool empty() const override {
+		return stack.empty();
 	}
 };
 
+class BFSQueue : public IBNodeQueue {
+private:
+	std::queue<BNode*> queue;
+
+public:
+	void push(BNode* node) override {
+		queue.push(node);
+	}
+
+	BNode* pop() override {
+		if (queue.empty()) return nullptr;
+		BNode* node = queue.front();
+		queue.pop();
+		return node;
+	}
+
+	bool empty() const override {
+		return queue.empty();
+	}
+};
+
+class BestFistQueue : public IBNodeQueue {
+private:
+	BNode* queue; // using a pseudo node to simplify the code. 
+
+public:
+	BestFistQueue() {
+		queue = new BNode();
+		queue->bi.id = 0;
+		queue->next = queue;
+		queue->prec = queue;
+	}
+
+	void push(BNode* node) override {
+		BNode* p = queue->next;
+		while ((node->par.lb >= p->par.lb) && p != queue)
+			p = p->next;
+		BNode* p_prec = p->prec;
+		p_prec->next = node;
+		node->prec = p_prec;
+		node->next = p;
+		p->prec = node;
+	}
+
+	BNode* pop() override {
+		if (empty()) return nullptr;
+		BNode* node = queue->next;
+		queue->next = node->next;
+		node->next->prec = queue;
+		return node;
+	}
+
+	bool empty() const override {
+		return queue->next == queue;
+	}
+};
 
 class BAB {
 private:
-	VisitStrategy strategy;
-	BNodeQueue queue;
+	std::unique_ptr<IBNodeQueue> queue;
 	LagrangianResult bounds;
 	SolutionStatus status;
 
 public:
-	BAB(VisitStrategy visit_strategy, LagrangianResult &lr);
+	BAB(std::unique_ptr<IBNodeQueue>&& q, LagrangianResult& lr);
 
 	~BAB();
 
