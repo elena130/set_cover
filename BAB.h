@@ -1,7 +1,6 @@
 #include <vector>
 #include <queue>
 #include <cmath>
-#include <memory>
 #include "LagrangianData.h"
 #include "status.h"
 #include "setcover.h"
@@ -52,9 +51,8 @@ struct BNode {
 		level = n.level;
 		results = LagrangianResult(n.results);
 		branching_col = n.branching_col;
+		data = n.data;
 		status = n.status;
-		prec = n.prec;
-		next = n.next;
 	}
 };
 
