@@ -30,16 +30,22 @@ struct BNode {
 	LagrangianResult results;
 	unsigned branching_col;
 	ProblemStatus status;
+	BNode* prec;
+	BNode* next;
+
+	BNode(): id(0), level(0), son_id(0), data(), results(), branching_col(0), status(OPEN), prec(NULL),
+	next(NULL){}
 
 	BNode(const unsigned i, const unsigned lv, const unsigned s_id, const Configuration& d,
 		const LagrangianResult& lr, const unsigned branch_c) :
-	id(i), level(lv), son_id(s_id), data(d), results(lr), branching_col(branch_c), status(OPEN)
+	id(i), level(lv), son_id(s_id), data(d), results(lr), branching_col(branch_c), status(OPEN),
+		prec(NULL), next(NULL)
 	{}
 
 	~BNode(){}
 
 	BNode(const BNode& n): id(n.id), level(n.level), son_id(n.son_id), data(n.data), results(n.results),
-	branching_col(n.branching_col), status(n.status){}
+	branching_col(n.branching_col), status(n.status), prec(n.prec), next(n.next){}
 
 	void operator=(const BNode& n) {
 		id = n.id;
@@ -47,64 +53,107 @@ struct BNode {
 		results = LagrangianResult(n.results);
 		branching_col = n.branching_col;
 		status = n.status;
-	}
-};
-
-
-
-struct NodeComparator {
-	VisitStrategy strategy;
-
-	NodeComparator(VisitStrategy s) : strategy(s) {}
-
-	bool operator()(const BNode& a, const BNode& b) const {
-		switch (strategy) {
-		case VisitStrategy::DFS:
-			if (a.level == b.level) {
-				return a.id > b.id;
-			} 
-			else return a.level < b.level; // DFS: nodi più profondi prima
-		case VisitStrategy::BFS:
-			if (a.level == b.level) {
-				return a.id > b.id;
-			}
-			return a.level > b.level; // BFS: nodi più vicini prima
-		case VisitStrategy::BEST_FIRST:
-			return a.results.lb < b.results.lb; 
-		default:
-			return false;
-		}
+		prec = n.prec;
+		next = n.next;
 	}
 };
 
 
 class BNodeQueue {
 private:
-	NodeComparator comp;
-	using QueueType = std::priority_queue<BNode, std::vector<BNode>, NodeComparator>;
-	QueueType queue;
+	BNode* queue;
+	unsigned n;
 
 public:
-	BNodeQueue(VisitStrategy s) : comp(s), queue(comp) {}
+	BNodeQueue() : queue(NULL), n(0) {}
 
-	void insert_node(const BNode& node) {
-		queue.push(node); 
+	void push_back(BNode* node) {
+		++n;
+		if (queue == NULL) {
+			queue = node;
+			node->next = node;
+			node->prec = node;
+			return;
+		}
+
+		BNode* l = last();
+		l->next = node;
+		node->prec = l;
+		node->next = queue;
+		queue->prec = node;
 	}
 
-	BNode extract_node() {
-		BNode n = queue.top();
-		queue.pop();
-		return n; 
+	void push_front(BNode* node) {
+		++n;
+		if (queue == NULL) {
+			queue = node;
+			node->next = node;
+			node->prec = node;
+			return;
+		}
+
+		BNode* first = queue;
+		node->next = first;
+		node->prec = first->prec;
+		first->prec->next = node;
+		first->prec = node;
+		queue = node;
+	}
+
+	void push_before(BNode* node, BNode* ref) {
+		++n;
+
+		if (queue == NULL) {
+			queue = node;
+			node->next = node;
+			node->prec = node;
+			return;
+		}
+
+		if (ref == queue) {
+			queue = node;
+		}
+
+		node->next = ref;
+		node->prec = ref->prec;
+		ref->prec->next = node;
+		ref->prec = node;
+	}
+
+	void extract_node(BNode* to_be_extracted) {
+		if (n==0)
+			return;
+		else if (n == 1) {
+			to_be_extracted = queue;
+			queue = NULL;
+		} else if (n > 1) {
+			queue = to_be_extracted->next;
+			to_be_extracted->prec->next = to_be_extracted->next;
+			to_be_extracted->next->prec = to_be_extracted->prec;
+		}
+
+		--n;
+	}
+
+	BNode* top() {
+		return queue;
+	}
+
+	BNode* last() {
+		if (queue == NULL)
+			return NULL;
+		return queue->prec;
 	}
 
 	bool empty() const {
-		return queue.empty();
+		return queue == NULL;
 	}
 };
 
 
 class BAB {
 private:
+	VisitStrategy strategy;
 	BNodeQueue queue;
 	LagrangianResult bounds;
 	SolutionStatus status;
@@ -116,15 +165,15 @@ public:
 
 	LagrangianResult branching(SetCover& ref_sc, LagrangianResult& b);
 
-	void process_bnode(BNode& father, SetCover& sc);
+	void process_bnode(BNode* node, SetCover& sc);
 
-	void insert_bnode(const BNode& node);
+	void insert_bnode(BNode* node);
 
-	BNode extract_bnode();
+	BNode* extract_bnode();
 
-	bool useful_bnode( BNode& node, SetCover& ref_sc);
+	bool useful_bnode(BNode * node, SetCover& ref_sc);
 
-	void derive_bnode(const BNode& father, BNode &son, unsigned f, const SetCover &sc);
+	void derive_bnode(BNode * father, BNode * son, unsigned f, const SetCover &sc);
 
 	void derive_set_cover(SetCover& sc, Configuration &conf);
 

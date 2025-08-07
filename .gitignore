@@ -34,3 +34,6 @@
 /.gitignore
 /.gitignore
 /run_all.bat
+/program/x64/Release
+/x64/Release
+/input_files.txt

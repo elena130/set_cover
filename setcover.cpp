@@ -563,7 +563,7 @@ void SetCover::print_solution(const Solution solution) {
     std::cout << std::endl;
 }
 
-const bool SetCover::can_be_solved(){
+bool SetCover::can_be_solved() {
     Cell* row_it;
     for (unsigned i = 0; i < n_rows; ++i) {
         if (conf.rows[i] == FIX_OUT)

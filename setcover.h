@@ -237,7 +237,7 @@ public:
     
     void print_solution(const Solution solution);
 
-    const bool can_be_solved();
+    bool can_be_solved();
 
     unsigned number_of_rows();
 
