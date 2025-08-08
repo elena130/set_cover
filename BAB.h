@@ -7,7 +7,6 @@
 #include "status.h"
 #include "setcover.h"
 #include "configuration.h"
-#include "VisitStrategy.h"
 
 #ifndef BAB_H
 #define BAB_H

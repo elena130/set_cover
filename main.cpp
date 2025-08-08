@@ -8,7 +8,6 @@
 #include "logger.h"
 #include <cmath>
 #include "BAB.h"
-#include "VisitStrategy.h"
 
 double normal_score(double cost, double covered) {
     return cost / covered;
