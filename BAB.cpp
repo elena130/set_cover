@@ -104,7 +104,10 @@ void BAB::process_bnode(BNode* node, SetCover& sc) {
 	// generate info to create sons
 	node->par = lagrangian_res;
 	node->p_conf = sc.get_configuration();
+	branch_column(sc, node);
+}
 
+void BAB::branch_column(SetCover& sc, BNode* node){
 	double max = 0;
 	unsigned row = 0;
 	for (unsigned i = 0; i < sc.number_of_rows(); ++i) {

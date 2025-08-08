@@ -190,6 +190,8 @@ public:
 	bool problem_is_solvable(SetCover & sc, Configuration& conf);
 
 	void update_bounds(LagrangianResult &lr);
+
+	void branch_column(SetCover& sc, BNode* node);
 };
 
 #endif
