@@ -18,11 +18,15 @@ LagrangianResult SetCover::lagrangian_lb(LagrangianPar& lp, LagrangianVar& lv) {
     LagrangianResult lr;
     lr.ub = lv.ub;
     lr.ub_sol = lp.init_ub_sol;
-    lr.lb = 0;
-    lr.lb_sol.sol = std::vector<bool>(n_cols, false);
+    lr.lb = lp.init_lb;
+    lr.lb_sol = lp.init_lb_sol;
+    lr.multipliers = lv.multipliers;
+    lr.subgradients = lv.subgradients;
+    lr.lagrangian_costs = lv.cost_lagrang;
+    // TODO other parameters 
 
     Solution best_ub;
-    double best_lb_value = 0;
+    double best_lb_value = lr.lb;
     unsigned removed = 0;
 
     for (unsigned it = 0; it < lp.max_iter && lv.pi > 0.005 && lv.ub != lr.lb;++it) {

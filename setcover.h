@@ -25,6 +25,8 @@ struct LagrangianPar {
     double min_t;           
     unsigned init_ub;
     Solution init_ub_sol;
+    unsigned init_lb;
+    Solution init_lb_sol;
 };
 
 struct LagrangianVar {

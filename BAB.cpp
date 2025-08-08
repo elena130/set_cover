@@ -41,10 +41,7 @@ LagrangianResult BAB::branching(SetCover& ref_sc, LagrangianResult& b) {
 				derive_bnode(father, son, f, sc);
 				derive_set_cover(sc, son->p_conf);
 				
-				if (son->bi.id == 3)
-					std::cout << "Nodo 3";
 				process_bnode(son, sc);
-				std::cout << "Nodo: " << son->bi.id << " [" << son->par.lb << " " << son->par.ub << "]" << std::endl;
 				examined_nodes++;
 
 				if (useful_bnode(son, ref_sc)) {
@@ -70,6 +67,8 @@ void BAB::process_bnode(BNode* node, SetCover& sc) {
 	LagrangianPar lp;
 	lp.init_ub = node->par.ub;
 	lp.init_ub_sol = node->par.ub_sol;
+	lp.init_lb = node->par.lb;
+	lp.init_lb_sol = node->par.lb_sol;
 	lp.init_pi = 2;         // Beasley
 	lp.init_t = 1;
 	lp.max_iter = 1000;
