@@ -173,7 +173,7 @@ public:
 
 	~BAB();
 
-	LagrangianResult branching(SetCover& ref_sc, LagrangianResult& b);
+	unsigned branching(SetCover& ref_sc, LagrangianResult& b);
 
 	void process_bnode(BNode* node, SetCover& sc);
 

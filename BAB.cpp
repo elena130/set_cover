@@ -5,7 +5,7 @@ BAB::BAB(std::unique_ptr<IBNodeQueue> &&q, LagrangianResult& lr) :
 
 BAB::~BAB(){}
 
-LagrangianResult BAB::branching(SetCover& ref_sc, LagrangianResult& b) {
+unsigned BAB::branching(SetCover& ref_sc, LagrangianResult& b) {
 
 	unsigned id, f;
 	BNode * root = new BNode();
@@ -58,7 +58,9 @@ LagrangianResult BAB::branching(SetCover& ref_sc, LagrangianResult& b) {
 		removed_nodes++;
 	}
 
-	return bounds;
+	b = bounds;
+
+	return examined_nodes;
 }
 
 // cancella il nodo dopo che hai finito di usarlo 
@@ -87,9 +89,6 @@ void BAB::process_bnode(BNode* node, SetCover& sc) {
 	lv.beta = 0;
 	lv.multipliers = node->par.multipliers;
 	lv.worsening_it = 0;
-
-	if (node->bi.id == 11)
-		std::cout << "Controllami";
 
 	LagrangianResult lagrangian_res = sc.lagrangian_lb(lp, lv);
 
@@ -199,3 +198,4 @@ void BAB::update_bounds(LagrangianResult& lr)
 		bounds.ub_sol = lr.ub_sol;
 	}
 }
+

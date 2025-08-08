@@ -151,10 +151,10 @@ int main(int argc, char* argv[]) {
     lr.ub = best_chvatal;
     lr.ub_sol = best_chvatal_sol;
     BAB bab(std::make_unique<BestFistQueue>(), lr);
-    LagrangianResult bab_res = bab.branching(sc, lr);
+    unsigned examined_nodes = bab.branching(sc, lr);
 
     // opt_gap = (UB - LB) / LB * 100
-    double opt_gap = ((double(bab_res.ub) - bab_res.lb) / bab_res.lb) * 100;
+    double opt_gap = ((double(lr.ub) - lr.lb) / lr.lb) * 100;
    
     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
     auto time = std::chrono::duration_cast<std::chrono::seconds>(end - begin).count();
@@ -162,7 +162,8 @@ int main(int argc, char* argv[]) {
     logger.log_endl("Time difference [s] = " + std::to_string(time));
     
     std::cout << nr << "\t" << nc << "\t";
-    std::cout << sc.remaining_rows() << "\t" << sc.remaining_cols() << "\t" << bab_res.ub << "\t" << bab_res.lb << "\t"  << opt_gap << "\t" << time << std::endl;
+    std::cout << sc.remaining_rows() << "\t" << sc.remaining_cols() << "\t" << lr.ub << "\t";
+    std::cout << lr.lb << "\t" << opt_gap << "\t" << time << "\t" << examined_nodes << std::endl;
 
     return 0;
 }
