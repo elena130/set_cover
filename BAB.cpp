@@ -11,6 +11,8 @@ unsigned BAB::branching(SetCover& ref_sc, LagrangianResult& b) {
 	std::chrono::steady_clock::time_point end;
 	long long time = 0;
 
+
+
 	unsigned id, f;
 	BNode * root = new BNode();
 	root->par.multipliers = std::vector<double>(ref_sc.number_of_rows(), 0);

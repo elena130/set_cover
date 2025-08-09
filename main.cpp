@@ -68,7 +68,7 @@ int main(int argc, char* argv[]) {
     unsigned int nr, nc;
     Logger logger;
     std::string file_name;
-    bool print = false;
+    bool print_flag = false;
     unsigned max_time = 0;
 
     if (argc < 2) {
@@ -76,8 +76,9 @@ int main(int argc, char* argv[]) {
         return 1;
     } 
 
-    parse_parameters(argc, argv, file_name, print, max_time);
+    parse_parameters(argc, argv, file_name, print_flag, max_time);
 
+    logger.set_show_prints(print_flag);
     logger.log_endl("READING MATRIX");
     Reader input(file_name);
 
