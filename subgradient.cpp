@@ -184,7 +184,15 @@ Solution SetCover::lagrangian_heuristic(LagrangianVar& lv) {
         if (covered == false) {
             solution.add_col(min_cost_col);
             // lv.solution[min_cost_col] = true;
+            // update the counter for the previous rows 
             covered_by[i]++;
+            /*
+            for (const Cell* c : col(min_cost_col)) {
+                if (c->row >= i)
+                    break;
+                ++covered_by[c->row];
+            }
+            */
         }
     }
 

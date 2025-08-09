@@ -210,7 +210,7 @@ public:
 
 	unsigned branching(SetCover& ref_sc, LagrangianResult& b);
 
-	void process_bnode(BNode* node, SetCover& sc);
+	void process_bnode(BNode* node, SetCover& sc, SetCover& ref_sc);
 
 	void insert_bnode(BNode* node);
 
