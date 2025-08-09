@@ -1,11 +1,15 @@
 #include "BAB.h"
 
-BAB::BAB(std::unique_ptr<IBNodeQueue> &&q, LagrangianResult& lr) : 
-	queue(std::move(q)), bounds(lr), status(UNKNOWN){}
+BAB::BAB(std::unique_ptr<IBNodeQueue>&& q, LagrangianResult& lr, BranchParameters& branch_par) :
+	queue(std::move(q)), bounds(lr), status(UNKNOWN), bp(branch_par) {
+}
 
 BAB::~BAB(){}
 
 unsigned BAB::branching(SetCover& ref_sc, LagrangianResult& b) {
+	std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
+	std::chrono::steady_clock::time_point end;
+	long long time = 0;
 
 	unsigned id, f;
 	BNode * root = new BNode();
@@ -25,7 +29,7 @@ unsigned BAB::branching(SetCover& ref_sc, LagrangianResult& b) {
 
 	id = 1;
 	removed_nodes = 0;
-	while (!queue->empty() )
+	while (!queue->empty() &&  time < bp.max_time)
 	{
 		BNode* father = extract_bnode();
 		waiting_nodes--;
@@ -43,16 +47,23 @@ unsigned BAB::branching(SetCover& ref_sc, LagrangianResult& b) {
 				
 				std::cout << "Node " << son->bi.id << " bc: " << father->bi.b_col << " ";
 				process_bnode(son, sc);
+				update_bounds(son->par);
+
 				std::cout << "[" << son->par.lb << ", " << son->par.ub << "]" << std::endl;
+				end = std::chrono::steady_clock::now();
+				time = std::chrono::duration_cast<std::chrono::seconds>(end - begin).count();
 				examined_nodes++;
 
 				if (useful_bnode(son, ref_sc)) {
 					insert_bnode(son);
 					waiting_nodes++;
-					update_bounds(son->par);
 				}
 				else {
 					delete son;
+				}
+
+				if (time > bp.max_time) {
+					break;
 				}
 			}
 		}

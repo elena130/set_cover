@@ -3,6 +3,7 @@
 #include <stack>
 #include <memory>
 #include <cmath>
+#include <chrono>
 #include "LagrangianData.h"
 #include "status.h"
 #include "setcover.h"
@@ -72,12 +73,15 @@ struct BNode {
 	}
 };
 
+struct BranchParameters {
+	unsigned max_time;		// default value: 0, no time limit on the computation 
+};
+
 // Classe astratta per modellare il comportamento della queue 
 class IBNodeQueue {
 public:
 	IBNodeQueue(){}
 	virtual ~IBNodeQueue() = default;
-
 	virtual void push(BNode* node) = 0;        // Rende il metodo virtuale 
 	virtual BNode* pop() = 0;                   
 	virtual bool empty() const = 0;
@@ -88,6 +92,13 @@ private:
 	std::stack<BNode*> stack;
 
 public:
+	~DFSQueue() {
+		while (!stack.empty()) {
+			BNode* n = pop();
+			delete n;
+		}
+	}
+
 	void push(BNode* node) override {
 		stack.push(node);
 	}
@@ -110,6 +121,13 @@ private:
 	std::queue<BNode*> queue;
 
 public:
+	~BFSQueue() {
+		while (!queue.empty()) {
+			BNode* node = pop();
+			delete node;
+		}
+	}
+
 	void push(BNode* node) override {
 		queue.push(node);
 	}
@@ -126,16 +144,24 @@ public:
 	}
 };
 
-class BestFistQueue : public IBNodeQueue {
+class BestFirstQueue : public IBNodeQueue {
 private:
 	BNode* queue; // using a pseudo node to simplify the code. 
 
 public:
-	BestFistQueue() {
+	BestFirstQueue() {
 		queue = new BNode();
 		queue->bi.id = 0;
 		queue->next = queue;
 		queue->prec = queue;
+	}
+
+	~BestFirstQueue() {
+		while (!empty()) {
+			BNode* node = pop();
+			delete node;
+		}
+		delete queue;
 	}
 
 	void push(BNode* node) override {
@@ -167,9 +193,10 @@ private:
 	std::unique_ptr<IBNodeQueue> queue;
 	LagrangianResult bounds;
 	SolutionStatus status;
+	BranchParameters bp;
 
 public:
-	BAB(std::unique_ptr<IBNodeQueue>&& q, LagrangianResult& lr);
+	BAB(std::unique_ptr<IBNodeQueue>&& q, LagrangianResult& lr, BranchParameters& branch_par);
 
 	~BAB();
 
