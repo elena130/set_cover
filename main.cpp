@@ -1,6 +1,7 @@
 #include <iostream>
 #include <string>
 #include <algorithm>
+#include <climits>
 #include <chrono>
 #include "string.h"
 #include "parser.h"
@@ -25,23 +26,60 @@ double nlog_score(double cost, double covered) {
     return cost / (covered * std::log2(covered));
 }
 
+unsigned char_to_unsigned(const char* s) {
+    errno = 0;
+    char* end;
+    unsigned long val = strtoul(s, &end, 10);
+
+    if (errno == ERANGE || *end != '\0' || end == s || val > UINT_MAX) {
+        std::cerr << "Valore non valido o fuori da range unsigned int\n";
+        return 1;
+    }
+
+    return static_cast<unsigned int>(val);
+}
+
+void parse_parameters(const int argc, char* argv[], std::string &file_name, bool &print, unsigned &time) {
+    print = false;
+    time = 0;
+
+    for (int i = 1; i < argc; ++i) {
+        std::string arg = argv[i];
+
+        if (arg == "--file" && i + 1 < argc) {
+            file_name = argv[++i];
+        }
+        else if (arg == "--print") {
+            print = true;
+        }
+        else if (arg == "--time" && i + 1 < argc) {
+            time = char_to_unsigned(argv[++i]);
+        }
+        else {
+            std::cerr << "Unknown parameter: " << arg << "\n";
+        }
+    }
+}
+
 int main(int argc, char* argv[]) {
     std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
     std::fstream file;
     std::string line;
     unsigned int nr, nc;
     Logger logger;
+    std::string file_name;
+    bool print = false;
+    unsigned max_time = 0;
 
     if (argc < 2) {
         std::cout << "Error, path to input file is not specified. Terminating" << std::endl;
         return 1;
     } 
 
-    if (argc == 3)
-        logger.set_show_prints( strcmp(argv[2],"p") == 0);
+    parse_parameters(argc, argv, file_name, print, max_time);
 
     logger.log_endl("READING MATRIX");
-    Reader input(argv[1]);
+    Reader input(file_name);
 
     nr = input.next_int();
     nc = input.next_int();
