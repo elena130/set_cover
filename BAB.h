@@ -85,6 +85,7 @@ public:
 	virtual void push(BNode* node) = 0;        // Rende il metodo virtuale 
 	virtual BNode* pop() = 0;                   
 	virtual bool empty() const = 0;
+	virtual unsigned min_lb() const = 0;
 };
 
 class DFSQueue : public IBNodeQueue{
@@ -186,6 +187,13 @@ public:
 	bool empty() const override {
 		return queue->next == queue;
 	}
+
+	unsigned min_lb() const override {
+		if (empty())
+			return 0;
+		return queue->next->par.lb;
+	}
+
 };
 
 class BAB {

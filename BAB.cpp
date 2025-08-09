@@ -31,6 +31,7 @@ unsigned BAB::branching(SetCover& ref_sc, LagrangianResult& b) {
 	removed_nodes = 0;
 	while (!queue->empty() &&  time < bp.max_time)
 	{
+		bounds.lb = queue->min_lb();
 		BNode* father = extract_bnode();
 		waiting_nodes--;
 
@@ -56,6 +57,7 @@ unsigned BAB::branching(SetCover& ref_sc, LagrangianResult& b) {
 
 				if (useful_bnode(son, ref_sc)) {
 					insert_bnode(son);
+					bounds.lb = queue->min_lb();
 					waiting_nodes++;
 				}
 				else {
@@ -107,9 +109,11 @@ void BAB::process_bnode(BNode* node, SetCover& sc) {
 
 	if (lagrangian_res.ub == lagrangian_res.lb) {
 		node->status = SOLVED;
-		status = COMPLETE;
-
 		update_bounds(lagrangian_res);
+	}
+
+	if (bounds.lb == bounds.ub) {
+		status = COMPLETE;
 	}
 
 	
