@@ -41,7 +41,9 @@ unsigned BAB::branching(SetCover& ref_sc, LagrangianResult& b) {
 				derive_bnode(father, son, f, sc);
 				derive_set_cover(sc, son->p_conf);
 				
+				std::cout << "Node " << son->bi.id << " bc: " << father->bi.b_col << " ";
 				process_bnode(son, sc);
+				std::cout << "[" << son->par.lb << ", " << son->par.ub << "]" << std::endl;
 				examined_nodes++;
 
 				if (useful_bnode(son, ref_sc)) {
