@@ -31,7 +31,7 @@ unsigned BAB::branching(SetCover& ref_sc, LagrangianResult& b) {
 
 	id = 1;
 	removed_nodes = 0;
-	while (!queue->empty() &&  time < bp.max_time)
+	while (!queue->empty() && (bp.max_time == 0 || time < bp.max_time))
 	{
 		bounds.lb = queue->min_lb();
 		BNode* father = extract_bnode();
@@ -67,7 +67,7 @@ unsigned BAB::branching(SetCover& ref_sc, LagrangianResult& b) {
 					delete son;
 				}
 
-				if (time > bp.max_time) {
+				if (bp.max_time != 0 && time > bp.max_time) {
 					break;
 				}
 			}
