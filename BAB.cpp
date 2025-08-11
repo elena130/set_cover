@@ -36,7 +36,7 @@ unsigned BAB::branching(SetCover& ref_sc, LagrangianResult& b) {
 	removed_nodes = 0;
 	while (!queue->empty() &&  !forced_termination)
 	{
-			bounds.lb = queue->min_lb();
+		bounds.lb = queue->min_lb();
 		BNode* father = extract_bnode();
 		waiting_nodes--;
 
