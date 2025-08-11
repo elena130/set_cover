@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <climits>
 #include <chrono>
+#include <iomanip>
 #include "string.h"
 #include "parser.h"
 #include "setcover.h"
@@ -193,8 +194,11 @@ int main(int argc, char* argv[]) {
     BAB bab(std::make_unique<BestFirstQueue>(), lr, bp);
     unsigned examined_nodes = bab.branching(sc, lr);
 
-    // opt_gap = (UB - LB) / LB * 100
-    double opt_gap = ((double(lr.ub) - lr.lb) / lr.lb) * 100;
+    double opt_gap = 0;
+    if (lr.lb != 0) {
+        // opt_gap = (UB - LB) / LB * 100
+        opt_gap = ((double(lr.ub) - lr.lb) / lr.lb) * 100;
+    }
    
     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
     double time = std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count();
@@ -202,8 +206,10 @@ int main(int argc, char* argv[]) {
     logger.log_endl("Time difference [s] = " + std::to_string(time));
     
     std::cout << nr << "\t" << nc << "\t";
-    std::cout << sc.remaining_rows() << "\t" << sc.remaining_cols() << "\t" << lr.ub << "\t";
-    std::cout << lr.lb << "\t" << opt_gap << "\t" << time/1000 << "\t" << examined_nodes << std::endl;
+    std::cout << sc.remaining_rows() << "\t" << sc.remaining_cols() << "\t" ;
+    std::cout << lr.ub << "\t" << lr.lb << "\t";
+    std::cout << std::fixed << std::setprecision(2) << opt_gap << "\t";
+    std::cout << time / 1000 << "\t" << examined_nodes << std::endl;
 
     return 0;
 }
