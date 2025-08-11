@@ -31,7 +31,7 @@ unsigned BAB::branching(SetCover& ref_sc, LagrangianResult& b) {
 
 	id = 1;
 	removed_nodes = 0;
-	while (!queue->empty() && (bp.max_time == 0 || time < bp.max_time))
+	while (!queue->empty() &&  !forced_termination)
 	{
 		if(status != COMPLETE)
 			bounds.lb = queue->min_lb();
@@ -72,6 +72,8 @@ unsigned BAB::branching(SetCover& ref_sc, LagrangianResult& b) {
 				}
 
 				if (bp.max_time != 0 && time > bp.max_time) {
+					forced_termination = true;
+					lb_at_stop = queue->min_lb();
 					break;
 				}
 			}
@@ -81,6 +83,7 @@ unsigned BAB::branching(SetCover& ref_sc, LagrangianResult& b) {
 	}
 
 	b = bounds;
+	b.lb = lb_at_stop;
 
 	return examined_nodes;
 }
