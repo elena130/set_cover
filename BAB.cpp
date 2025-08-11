@@ -11,6 +11,9 @@ unsigned BAB::branching(SetCover& ref_sc, LagrangianResult& b) {
 	std::chrono::steady_clock::time_point end;
 	long long time = 0;
 
+	bool forced_termination = false;
+	unsigned lb_at_stop = 0;
+
 	unsigned id, f;
 	BNode * root = new BNode();
 	root->par.multipliers = std::vector<double>(ref_sc.number_of_rows(), 0);
@@ -33,7 +36,6 @@ unsigned BAB::branching(SetCover& ref_sc, LagrangianResult& b) {
 	removed_nodes = 0;
 	while (!queue->empty() &&  !forced_termination)
 	{
-		if(status != COMPLETE)
 			bounds.lb = queue->min_lb();
 		BNode* father = extract_bnode();
 		waiting_nodes--;

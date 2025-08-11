@@ -78,6 +78,7 @@ int main(int argc, char* argv[]) {
     } 
 
     parse_parameters(argc, argv, file_name, print_flag, max_time);
+    std::cout << file_name << std::endl;
 
     logger.set_show_prints(print_flag);
     logger.log_endl("READING MATRIX");
