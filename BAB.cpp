@@ -85,7 +85,11 @@ unsigned BAB::branching(SetCover& ref_sc, LagrangianResult& b) {
 	}
 
 	b = bounds;
-	b.lb = lb_at_stop;
+	if(forced_termination) {
+		b.lb = lb_at_stop;
+	} else {
+		b.lb = b.ub;
+	}
 
 	return examined_nodes;
 }
