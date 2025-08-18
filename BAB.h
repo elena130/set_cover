@@ -172,7 +172,8 @@ public:
 
 	void push(BNode* node) override {
 		BNode* p = queue->next;
-		while ((node->par.lb >= p->par.lb) && p != queue)
+		while (((node->par.lb >= p->par.lb) || (node->par.lb == p->par.lb && node->par.ub < p->par.ub))&& p != queue)
+		//while ((node->par.lb >= p->par.lb) && p != queue)
 			p = p->next;
 		BNode* p_prec = p->prec;
 		p_prec->next = node;
