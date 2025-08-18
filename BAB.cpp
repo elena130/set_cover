@@ -76,6 +76,9 @@ unsigned BAB::branching(SetCover& ref_sc, LagrangianResult& b) {
 				if (bp.max_time != 0 && time > bp.max_time) {
 					forced_termination = true;
 					lb_at_stop = queue->min_lb();
+					if(father->par.lb < lb_at_stop) {
+						lb_at_stop = father->par.lb;
+					}
 					break;
 				}
 			}
