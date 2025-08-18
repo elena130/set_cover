@@ -194,6 +194,15 @@ public:
 		return queue->next->par.lb;
 	}
 
+	void print() const  override{
+		const BNode* node = queue->next;
+		while(node != queue) {
+			std::cout << node->bi.id << " LB:" << node->par.lb << " UB:" << node->par.ub << std::endl;
+			node = node->next;
+		}
+		std::cout << "------------" << std::endl;
+	}
+
 };
 
 class BAB {
