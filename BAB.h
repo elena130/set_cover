@@ -86,6 +86,7 @@ public:
 	virtual BNode* pop() = 0;                   
 	virtual bool empty() const = 0;
 	virtual unsigned min_lb() const = 0;
+	virtual void print() const = 0;
 };
 
 class DFSQueue : public IBNodeQueue{
@@ -93,7 +94,7 @@ private:
 	std::stack<BNode*> stack;
 
 public:
-	~DFSQueue() {
+	~DFSQueue() override {
 		while (!stack.empty()) {
 			BNode* n = pop();
 			delete n;
@@ -115,6 +116,8 @@ public:
 	bool empty() const override {
 		return stack.empty();
 	}
+
+	unsigned min_lb() const override;
 };
 
 class BFSQueue : public IBNodeQueue {
@@ -122,7 +125,7 @@ private:
 	std::queue<BNode*> queue;
 
 public:
-	~BFSQueue() {
+	~BFSQueue() override {
 		while (!queue.empty()) {
 			BNode* node = pop();
 			delete node;
@@ -143,6 +146,8 @@ public:
 	bool empty() const override {
 		return queue.empty();
 	}
+
+	unsigned min_lb() const override;
 };
 
 class BestFirstQueue : public IBNodeQueue {
@@ -157,7 +162,7 @@ public:
 		queue->prec = queue;
 	}
 
-	~BestFirstQueue() {
+	~BestFirstQueue() override {
 		while (!empty()) {
 			BNode* node = pop();
 			delete node;
