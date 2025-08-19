@@ -55,9 +55,6 @@ unsigned BAB::branching(SetCover& ref_sc, LagrangianResult& b) {
 				process_bnode(son, sc, ref_sc);
 				update_bounds(son->par);
 
-				if (bounds.lb == bounds.ub)
-					status = COMPLETE;
-
 				//std::cout << "[" << son->par.lb << ", " << son->par.ub << "] ";
 				//std::cout << "[" << bounds.lb << ", " << bounds.ub << "]" << std::endl;
 				end = std::chrono::steady_clock::now();
