@@ -203,7 +203,7 @@ int main(int argc, char* argv[]) {
     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
     double time = std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count();
     
-    logger.log_endl("Time difference [s] = " + std::to_string(time));
+    logger.log_endl("Time difference [s] = " + std::to_string(time / 1000));
     
     std::cout << nr << "\t" << nc << "\t";
     std::cout << sc.remaining_rows() << "\t" << sc.remaining_cols() << "\t" ;
