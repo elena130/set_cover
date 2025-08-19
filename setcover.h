@@ -179,11 +179,11 @@ public:
 
     void set_cost(const unsigned j, const unsigned cost);
 
-    unsigned get_cost(const unsigned j);
+    unsigned get_cost(const unsigned j) const;
 
     unsigned get_row_den(const unsigned i);
 
-    unsigned get_col_den(const unsigned j);
+    unsigned get_col_den(const unsigned j) const;
 
     void print_rows();
 
@@ -241,9 +241,9 @@ public:
 
     bool can_be_solved();
 
-    unsigned number_of_rows();
+    unsigned number_of_rows() const;
 
-    unsigned number_of_cols();
+    unsigned number_of_cols() const;
 
     void change_configuration(Configuration &new_conf);
 
@@ -252,6 +252,10 @@ public:
     ConstRowRange row(unsigned i) const;
 
     ConstColRange col(unsigned j) const;
+
+    const std::set<unsigned>& get_available_rows() const;
+
+    const std::set<unsigned>& get_available_cols() const;
 };
 
 

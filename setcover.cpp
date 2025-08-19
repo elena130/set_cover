@@ -585,11 +585,11 @@ bool SetCover::can_be_solved() {
     return true;
 }
 
-unsigned SetCover::number_of_rows(){
+unsigned SetCover::number_of_rows() const {
     return n_rows;
 }
 
-unsigned SetCover::number_of_cols(){
+unsigned SetCover::number_of_cols() const {
     return n_cols;
 }
 
@@ -606,7 +606,7 @@ void SetCover::set_cost(const unsigned j,  const unsigned cost) {
     costs[j] = cost;
 }
 
-unsigned SetCover::get_cost(const unsigned j) {
+unsigned SetCover::get_cost(const unsigned j) const {
     return costs[j];
 }
 
@@ -614,7 +614,7 @@ unsigned SetCover::get_row_den(const unsigned i){
     return row_density[i];
 }
 
-unsigned SetCover::get_col_den(const unsigned j) {
+unsigned SetCover::get_col_den(const unsigned j) const{
     return col_density[j];
 }
 
@@ -636,5 +636,13 @@ ConstRowRange SetCover::row(unsigned i) const {
 
 ConstColRange SetCover::col(unsigned j) const {
     return ConstColRange(cols[j]);
+}
+
+const std::set<unsigned> & SetCover::get_available_rows() const {
+    return available_row;
+}
+
+const std::set<unsigned> & SetCover::get_available_cols() const {
+    return available_col;
 }
 
