@@ -86,7 +86,6 @@ int main(int argc, char* argv[]) {
     Logger logger;
     std::string file_name;
     bool print_flag = false;
-    unsigned max_time = 0;
 
     if (argc < 2) {
         std::cout << "Error, path to input file is not specified. Terminating" << std::endl;
@@ -207,9 +206,8 @@ int main(int argc, char* argv[]) {
     lr.lb_sol = Solution(sc.number_of_cols());
     lr.ub = best_chvatal;
     lr.ub_sol = best_chvatal_sol;
-    BranchParameters bp = { max_time };
     BAB bab(std::make_unique<BestFirstQueue>(), lr, bp);
-    unsigned examined_nodes = bab.branching(sc, lr);
+    unsigned examined_nodes = bab.branching(sc, lr, original_sc);
 
     double opt_gap = 0;
     if (lr.lb != 0) {

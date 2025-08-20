@@ -1,4 +1,6 @@
 #include <vector>
+
+#include "configuration.h"
 #include "Solution.h"
 
 #ifndef LAGDATA_H
@@ -12,6 +14,7 @@ struct LagrangianResult {
     unsigned ub;
     unsigned lb;
     Solution lb_sol;
+    Configuration conf;
 };
 
 #endif 
