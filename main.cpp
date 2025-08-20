@@ -56,7 +56,6 @@ double char_to_double(const char* s) {
 
 void parse_parameters(const int argc, char* argv[], std::string &file_name, bool &print, BranchParameters &bp) {
     print = false;
-    time = 0;
 
     for (int i = 1; i < argc; ++i) {
         std::string arg = argv[i];
