@@ -74,7 +74,10 @@ struct BNode {
 };
 
 struct BranchParameters {
-	unsigned max_time;		// default value: 0, no time limit on the computation 
+	unsigned max_time;		// default value: 0, no time limit on the computation
+	double min_pi;			// default value: 0.005
+
+	BranchParameters() : max_time(0), min_pi(0.005) {}
 };
 
 // Classe astratta per modellare il comportamento della queue 

@@ -30,7 +30,7 @@ LagrangianResult SetCover::lagrangian_lb(LagrangianPar& lp, LagrangianVar& lv) {
     unsigned removed = 0;
 
     unsigned it;
-    for ( it = 0; it < lp.max_iter && lv.pi > 0.005 && lv.ub != lr.lb;++it) {
+    for ( it = 0; it < lp.max_iter && lv.pi > lp.min_pi && lv.ub != lr.lb;++it) {
         lagrangian_solution(lv);
         lv.lb = lagrangian_sol_value(lv.solution, lv.cost_lagrang, lv.multipliers) + offset;
         calc_subgradients(lv);

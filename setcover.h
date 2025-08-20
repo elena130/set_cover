@@ -22,6 +22,7 @@ struct LagrangianPar {
     double init_pi;         // initial value pi
     double init_t;          // initial value of step size
     unsigned max_iter;      // max number of iterations
+    double min_pi;
     double min_t;           
     unsigned init_ub;
     Solution init_ub_sol;

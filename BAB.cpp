@@ -105,6 +105,7 @@ void BAB::process_bnode(BNode* node, SetCover& sc, SetCover& ref_sc) {
 	lp.init_pi = 2;         // Beasley
 	lp.init_t = 1;
 	lp.max_iter = 1000;
+	lp.min_pi = bp.min_pi;
 	lp.min_t = 0.005;
 
 	LagrangianVar lv;

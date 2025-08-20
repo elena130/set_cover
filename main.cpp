@@ -4,6 +4,7 @@
 #include <climits>
 #include <chrono>
 #include <iomanip>
+#include <cfloat>
 #include "string.h"
 #include "parser.h"
 #include "setcover.h"
@@ -40,7 +41,20 @@ unsigned char_to_unsigned(const char* s) {
     return static_cast<unsigned int>(val);
 }
 
-void parse_parameters(const int argc, char* argv[], std::string &file_name, bool &print, unsigned &time) {
+double char_to_double(const char* s) {
+    errno = 0;
+    char* end;
+    double val = strtod(s, &end);
+
+    if (errno == ERANGE || *end != '\0' || end == s) {
+        std::cerr << "Valore non valido o fuori da range double\n";
+        return 0.0;
+    }
+
+    return val;
+}
+
+void parse_parameters(const int argc, char* argv[], std::string &file_name, bool &print, BranchParameters &bp) {
     print = false;
     time = 0;
 
@@ -54,7 +68,10 @@ void parse_parameters(const int argc, char* argv[], std::string &file_name, bool
             print = true;
         }
         else if (arg == "--time" && i + 1 < argc) {
-            time = char_to_unsigned(argv[++i]);
+            bp.max_time = char_to_unsigned(argv[++i]);
+        }
+        else if(arg == "--min-pi" && i + 1 < argc) {
+            bp.min_pi = char_to_double(argv[++i]);
         }
         else {
             std::cerr << "Unknown parameter: " << arg << "\n";
@@ -77,7 +94,8 @@ int main(int argc, char* argv[]) {
         return 1;
     } 
 
-    parse_parameters(argc, argv, file_name, print_flag, max_time);
+    BranchParameters bp;
+    parse_parameters(argc, argv, file_name, print_flag, bp);
 
     logger.set_show_prints(print_flag);
     logger.log_endl("READING MATRIX");
