@@ -123,6 +123,11 @@ void BAB::process_bnode(BNode* node, SetCover& sc, SetCover& ref_sc) {
 
 	LagrangianResult lagrangian_res = sc.lagrangian_lb(lp, lv);
 
+	// generate info to create sons
+	node->par = lagrangian_res;
+	node->p_conf = sc.get_configuration();
+	branch_column(sc, node);
+
 	if (!problem_is_solvable(ref_sc, node->p_conf)) {
 		node->status = UNSOLVABLE;
 	}
