@@ -243,11 +243,16 @@ double SetCover::lagrangian_sol_value(const std::vector<bool> solution, const st
 void SetCover::calc_subgradients(LagrangianVar& lv) {
     for (unsigned i : available_row) {
         lv.subgradients[i] = 1;
-        Cell* ptr = rows[i];
-        for (unsigned k = 0; k < row_density[i]; ++k) {
-            if (lv.solution[ptr->col])
-                lv.subgradients[i] -= 1;
-            ptr = ptr->right;
+    }
+
+    for (unsigned j : available_col) {
+        if (lv.solution[j]) {
+            Cell* ptr = cols[j];
+            for (unsigned k = 0; k < col_density[j]; ++k) {
+                lv.subgradients[ptr->row] -= 1;
+                ptr = ptr->down;
+            }
+          
         }
     }
 }
