@@ -104,7 +104,7 @@ unsigned SetCover::cost_fixing(LagrangianPar& lp, LagrangianVar& lv) {
     unsigned offset = 0;
     for (unsigned j : available_col) {
         if (lv.solution[j]) {
-            if (lv.lb - lv.cost_lagrang[j] > lv.ub) {
+            if (std::ceil(lv.lb - lv.cost_lagrang[j]) > lv.ub) {
                 conf.cols[j] = FIX_IN;
                 offset += costs[j];
                 // rimetti la colonna 
@@ -117,7 +117,7 @@ unsigned SetCover::cost_fixing(LagrangianPar& lp, LagrangianVar& lv) {
                 }
             }
         }
-        else if (lv.lb + lv.cost_lagrang[j] > lv.ub) {
+        else if (std::ceil(lv.lb + lv.cost_lagrang[j]) > lv.ub) {
             conf.cols[j] = FIX_OUT;
             lv.solution[j] = false;
         }
