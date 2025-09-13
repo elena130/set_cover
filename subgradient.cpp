@@ -1,10 +1,11 @@
 #include "setcover.h"
 #include <cmath>
+#include <climits>
 
-LagrangianResult SetCover::lagrangian_lb(LagrangianPar& lp, LagrangianVar& lv) {
+LagrangianResult SetCover::lagrangian_lb(LagrangianPar& lp, LagrangianVar& lv, unsigned int node_id) {
     
 
-    unsigned max_worsening_it = 15;
+    unsigned max_worsening_it = lp.worsening_it;
 
 
     // calculate the initial offset, the costs of all the FIX_IN columns
@@ -30,7 +31,8 @@ LagrangianResult SetCover::lagrangian_lb(LagrangianPar& lp, LagrangianVar& lv) {
     unsigned removed = 0;
 
     unsigned it;
-    for ( it = 0; it < lp.max_iter && lv.pi > lp.min_pi && lv.ub != lr.lb;++it) {
+
+    for ( it = 0; it < UINT_MAX && lv.pi > lp.min_pi && lr.lb < lv.ub;++it) {
         lagrangian_solution(lv);
         lv.lb = lagrangian_sol_value(lv.solution, lv.cost_lagrang, lv.multipliers) + offset;
         calc_subgradients(lv);
@@ -75,7 +77,31 @@ LagrangianResult SetCover::lagrangian_lb(LagrangianPar& lp, LagrangianVar& lv) {
 
         update_multipliers(lp, lv);
 
+        if (lr.lb >= lv.ub)
+            break;
+
         // calculate the costs of the removed elements
+        //if (node_id == 3472) {
+        //    std::cout << "Nodo: " << node_id << " iterazione: " << it << std::endl;
+        //    std::cout << "LB: " << lv.lb << std::endl;
+        //    std::cout << "Offset: " << offset << std::endl;
+        //    std::cout << "BEST LB: " << best_lb_value << std::endl;
+        //    std::cout << "LB Sol: ";
+        //    for (unsigned j = 0; j < n_cols; ++j) {
+        //        if (lv.solution[j] == true)
+        //            std::cout << j << "\t";
+        //    }
+        //    std::cout << std::endl;
+        //    
+        //    std::cout << "UB: " << lr.ub << std::endl;
+        //    std::cout << "UB Sol: ";
+        //    for (unsigned j = 0; j < n_cols; ++j) {
+        //        if (lr.ub_sol.sol[j] == 1)
+        //            std::cout << j << "\t";
+        //    }
+        //    std::cout << std::endl;
+        //}
+
         removed = cost_fixing(lp, lv);
         offset += removed;
         // update the best lower bound found
@@ -86,7 +112,35 @@ LagrangianResult SetCover::lagrangian_lb(LagrangianPar& lp, LagrangianVar& lv) {
                 }
             }
             best_lb_value = lagrangian_sol_value(lr.lb_sol.sol, lr.lagrangian_costs, lr.multipliers) + offset;
+
             lr.lb = std::ceil(best_lb_value);
+
+            //if (node_id == 3472) {
+                //std::cout << "Nodo: " << node_id << " iterazione: " << it << std::endl;
+                //std::cout << "LB: " << lv.lb << std::endl;
+                //std::cout << "Offset: " << offset << std::endl;
+                //std::cout << "BEST LB: " << best_lb_value << std::endl;
+                //std::cout << "UB: " << lr.ub << std::endl;
+            //}
+
+            
+                //std::cout << "DOPO riduzioni" << std::endl;
+                //std::cout << "ERRORE a nodo: " << node_id << " iterazione: " << it <<  std::endl;
+                //
+                //std::cout << "Colonne: " << std::endl;
+                //for (unsigned j = 0; j < n_cols; ++j) {
+                //    if (c_prec.cols[j] != conf.cols[j]) {
+                //        std::cout << j << "\t" << conf.cols[j] << std::endl;
+                //    }
+                //}
+                //
+                //std::cout << "Righe" << std::endl;
+                //for (unsigned i = 0;i < n_rows; ++i) {
+                //    if (c_prec.rows[i] != conf.rows[i]) {
+                //        std::cout << i << "\t" << conf.rows[i] << std::endl;
+                //    }
+                //}
+            
         }
     }
 
@@ -104,7 +158,7 @@ unsigned SetCover::cost_fixing(LagrangianPar& lp, LagrangianVar& lv) {
     unsigned offset = 0;
     for (unsigned j : available_col) {
         if (lv.solution[j]) {
-            if (std::ceil(lv.lb - lv.cost_lagrang[j]) > lv.ub) {
+            if (std::ceil(lv.lb - lv.cost_lagrang[j]) >= lv.ub) {
                 conf.cols[j] = FIX_IN;
                 offset += costs[j];
                 // rimetti la colonna 
@@ -117,7 +171,7 @@ unsigned SetCover::cost_fixing(LagrangianPar& lp, LagrangianVar& lv) {
                 }
             }
         }
-        else if (std::ceil(lv.lb + lv.cost_lagrang[j]) > lv.ub) {
+        else if (std::ceil(lv.lb + lv.cost_lagrang[j]) >= lv.ub) {
             conf.cols[j] = FIX_OUT;
             lv.solution[j] = false;
         }

@@ -72,6 +72,12 @@ void parse_parameters(const int argc, char* argv[], std::string &file_name, bool
         else if(arg == "--min-pi" && i + 1 < argc) {
             bp.min_pi = char_to_double(argv[++i]);
         }
+        else if (arg == "--init-pi" && i + 1 < argc) {
+            bp.init_pi = char_to_double(argv[++i]);
+        }
+        else if (arg == "--worse" && i + 1 < argc) {
+            bp.worsening_it = char_to_unsigned(argv[++i]);
+        }
         else {
             std::cerr << "Unknown parameter: " << arg << "\n";
         }
@@ -137,6 +143,8 @@ int main(int argc, char* argv[]) {
     logger.log_endl("");
     logger.log_endl("REDUCTIONS");
 
+    std::chrono::steady_clock::time_point begin_reduction = std::chrono::steady_clock::now();
+
     SetCover sc(original_sc);
     std::vector<bool> modified_cols(nc, false);
     std::vector<bool> modified_rows(nr, false);
@@ -163,8 +171,10 @@ int main(int argc, char* argv[]) {
         logger.log_endl("Remaining cols: " + std::to_string(sc.remaining_cols()));
     } while (deleted != 0);
 
-    logger.log_endl("");
+    std::chrono::steady_clock::time_point end_reduction = std::chrono::steady_clock::now();
+    double reduction_time = std::chrono::duration_cast<std::chrono::milliseconds>(end_reduction - begin_reduction).count() / 1000;
 
+    logger.log_endl("");
     logger.log_endl("CHVATAL");
 
     std::set<unsigned> selected;
@@ -207,7 +217,8 @@ int main(int argc, char* argv[]) {
     lr.ub = best_chvatal;
     lr.ub_sol = best_chvatal_sol;
     BAB bab(std::make_unique<BestFirstQueue>(), lr, bp);
-    unsigned examined_nodes = bab.branching(sc, lr, original_sc);
+    LagrangianResult lr_root;
+    unsigned examined_nodes = bab.branching(sc, lr, original_sc, lr_root);
 
     double opt_gap = 0;
     if (lr.lb != 0) {
@@ -222,9 +233,10 @@ int main(int argc, char* argv[]) {
     
     std::cout << nr << "\t" << nc << "\t";
     std::cout << sc.remaining_rows() << "\t" << sc.remaining_cols() << "\t" ;
-    std::cout << lr.ub << "\t" << lr.lb << "\t";
+    std::cout << lr.ub << "\t" << lr.lb << "\t" << time / 1000 << "\t";
+    std::cout << lr_root.ub << "\t" << lr_root.lb << "\t" << lr_root.time << "\t";
     std::cout << std::fixed << std::setprecision(2) << opt_gap << "\t";
-    std::cout << time / 1000 << "\t" << examined_nodes << std::endl;
+    std::cout << examined_nodes << "\t" << reduction_time  << std::endl;
 
     return 0;
 }

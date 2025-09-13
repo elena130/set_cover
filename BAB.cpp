@@ -6,7 +6,7 @@ BAB::BAB(std::unique_ptr<IBNodeQueue>&& q, LagrangianResult& lr, BranchParameter
 
 BAB::~BAB(){}
 
-unsigned BAB::branching(SetCover& ref_sc, LagrangianResult& b) {
+unsigned BAB::branching(SetCover& ref_sc, LagrangianResult& b, SetCover& original, LagrangianResult& root_res) {
 	std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
 	std::chrono::steady_clock::time_point end;
 	long long time = 0;
@@ -17,8 +17,8 @@ unsigned BAB::branching(SetCover& ref_sc, LagrangianResult& b) {
 	unsigned id, f;
 	BNode * root = new BNode();
 	root->par.multipliers = std::vector<double>(ref_sc.number_of_rows(), 0);
-	root->par.lagrangian_costs = std::vector<double>(ref_sc.number_of_cols(),0);
-	root->par.subgradients = std::vector<int>(ref_sc.number_of_rows(),0);
+	root->par.lagrangian_costs = std::vector<double>(ref_sc.number_of_cols(), 0);
+	root->par.subgradients = std::vector<int>(ref_sc.number_of_rows(), 0);
 	root->par.ub = b.ub;
 	root->par.ub_sol = b.ub_sol;
 	root->p_conf = ref_sc.get_configuration();
@@ -26,6 +26,12 @@ unsigned BAB::branching(SetCover& ref_sc, LagrangianResult& b) {
 
 	SetCover sc(ref_sc);
 	process_bnode(root, sc, ref_sc);
+	end = std::chrono::steady_clock::now();
+	time = std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count();
+
+	root_res.lb = root->par.lb;
+	root_res.ub = root->par.ub;
+	root_res.time = time / 1000;
 	update_bounds(root->par);
 	examined_nodes = 1;
 
@@ -34,6 +40,14 @@ unsigned BAB::branching(SetCover& ref_sc, LagrangianResult& b) {
 
 	id = 1;
 	removed_nodes = 0;
+
+	// before beginning the loop check if the root node hasn't already exceeded 
+	// the max time during its processing
+	end = std::chrono::steady_clock::now();
+	time = std::chrono::duration_cast<std::chrono::seconds>(end - begin).count();
+	forced_termination = (bp.max_time != 0 && time > bp.max_time);
+	lb_at_stop = queue->min_lb();
+
 	while (!queue->empty() &&  !forced_termination)
 	{
 		bounds.lb = queue->min_lb();
@@ -50,10 +64,17 @@ unsigned BAB::branching(SetCover& ref_sc, LagrangianResult& b) {
 				SetCover sc(ref_sc);
 				derive_bnode(father, son, f, sc);
 				derive_set_cover(sc, son->p_conf);
-
+				
 				//std::cout << "Node " << son->bi.id << " bc: " << father->bi.b_col << " ";
 				process_bnode(son, sc, ref_sc);
 				update_bounds(son->par);
+
+				//if (son->bi.id == 1144) {
+				//	std::cout << "Dopo: " << std::endl;
+				//	std::cout << "[" << son->par.ub << ", " << son->par.lb << "]" << std::endl;
+				//	std::cout << "[" << bounds.lb << ", " << bounds.ub << "]" << std::endl;
+				//	std::cout << "Stato: " << son->status << std::endl;
+				//}
 
 				//std::cout << "[" << son->par.lb << ", " << son->par.ub << "] ";
 				//std::cout << "[" << bounds.lb << ", " << bounds.ub << "]" << std::endl;
@@ -102,11 +123,12 @@ void BAB::process_bnode(BNode* node, SetCover& sc, SetCover& ref_sc) {
 	lp.init_ub_sol = node->par.ub_sol;
 	lp.init_lb = node->par.lb;
 	lp.init_lb_sol = node->par.lb_sol;
-	lp.init_pi = 2;         // Beasley
+	lp.init_pi = bp.init_pi;         // Beasley
 	lp.init_t = 1;
-	lp.max_iter = node->bi.id == 1 ? 1000 : 300;
+	lp.max_iter = 1000 ;
 	lp.min_pi = bp.min_pi;
 	lp.min_t = 0.005;
+	lp.worsening_it = bp.worsening_it;
 
 	LagrangianVar lv;
 	lv.ub = node->par.ub;
@@ -122,7 +144,7 @@ void BAB::process_bnode(BNode* node, SetCover& sc, SetCover& ref_sc) {
 	lv.multipliers = node->par.multipliers;
 	lv.worsening_it = 0;
 
-	LagrangianResult lagrangian_res = sc.lagrangian_lb(lp, lv);
+	LagrangianResult lagrangian_res = sc.lagrangian_lb(lp, lv, node->bi.id);
 
 	// generate info to create sons
 	node->par = lagrangian_res;

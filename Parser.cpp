@@ -1,7 +1,7 @@
 #include <iostream>
 #include <string>
 #include <fstream>
-#include "Parser.h"
+#include "parser.h"
 
 
 Reader::Reader(const std::string fn) : file_name(fn) {

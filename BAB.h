@@ -76,8 +76,10 @@ struct BNode {
 struct BranchParameters {
 	unsigned max_time;		// default value: 0, no time limit on the computation
 	double min_pi;			// default value: 0.005
+	double init_pi;			// default value: 2
+	unsigned worsening_it;  // default value: 30. Number of worsening iterations before halfing 
 
-	BranchParameters() : max_time(0), min_pi(0.005) {}
+	BranchParameters() : max_time(0), min_pi(0.005), init_pi(2), worsening_it(30) {}
 };
 
 // Classe astratta per modellare il comportamento della queue 
@@ -175,8 +177,9 @@ public:
 
 	void push(BNode* node) override {
 		BNode* p = queue->next;
-		while (((node->par.lb >= p->par.lb) || (node->par.lb == p->par.lb && node->par.ub < p->par.ub))&& p != queue)
-		//while ((node->par.lb >= p->par.lb) && p != queue)
+		//while (((node->par.lb >= p->par.lb) || (node->par.lb == p->par.lb && node->bi.level < p->bi.level)) && p != queue)
+		//while (((node->par.lb >= p->par.lb) || (node->par.lb == p->par.lb && node->par.ub < p->par.ub))&& p != queue)
+		while ((node->par.lb >= p->par.lb) && p != queue)
 			p = p->next;
 		BNode* p_prec = p->prec;
 		p_prec->next = node;
@@ -226,7 +229,7 @@ public:
 
 	~BAB();
 
-	unsigned branching(SetCover& ref_sc, LagrangianResult& b, SetCover &original);
+	unsigned branching(SetCover& ref_sc, LagrangianResult& b, SetCover& original, LagrangianResult& root_res);
 
 	void process_bnode(BNode* node, SetCover& sc, SetCover& ref_sc);
 

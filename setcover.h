@@ -23,7 +23,8 @@ struct LagrangianPar {
     double init_t;          // initial value of step size
     unsigned max_iter;      // max number of iterations
     double min_pi;
-    double min_t;           
+    double min_t;   
+    unsigned worsening_it; 
     unsigned init_ub;
     Solution init_ub_sol;
     unsigned init_lb;
@@ -208,7 +209,7 @@ public:
 
     void chvtal(Solution & chvatal_sol, double (*calc_score)(double, double));
 
-    LagrangianResult lagrangian_lb(LagrangianPar& lp, LagrangianVar& lv);
+    LagrangianResult lagrangian_lb(LagrangianPar& lp, LagrangianVar& lv, unsigned int node_id);
 
     unsigned cost_fixing(LagrangianPar& lp, LagrangianVar& lv);
 

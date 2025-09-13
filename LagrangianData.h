@@ -15,6 +15,7 @@ struct LagrangianResult {
     unsigned lb;
     Solution lb_sol;
     Configuration conf;
+    double time;
 };
 
 #endif 
