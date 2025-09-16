@@ -9,7 +9,7 @@ BAB::~BAB(){}
 unsigned BAB::branching(SetCover& ref_sc, LagrangianResult& b, SetCover& original, LagrangianResult& root_res) {
 	std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
 	std::chrono::steady_clock::time_point end;
-	long long time = 0;
+	double time = 0;
 
 	bool forced_termination = false;
 	unsigned lb_at_stop = 0;
@@ -31,7 +31,8 @@ unsigned BAB::branching(SetCover& ref_sc, LagrangianResult& b, SetCover& origina
 
 	root_res.lb = root->par.lb;
 	root_res.ub = root->par.ub;
-	root_res.time = time / 1000;
+	root_res.time = std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count() / 1000;
+	lb_at_stop = root->par.lb;
 	update_bounds(root->par);
 	examined_nodes = 1;
 
@@ -41,11 +42,10 @@ unsigned BAB::branching(SetCover& ref_sc, LagrangianResult& b, SetCover& origina
 	id = 1;
 	removed_nodes = 0;
 
-	// before beginning the loop check if the root node hasn't already exceeded 
-	// the max time during its processing
+	// before beginning the loop check if the root node hasn't already exceeded during its processing
 	end = std::chrono::steady_clock::now();
-	time = std::chrono::duration_cast<std::chrono::seconds>(end - begin).count();
-	forced_termination = (bp.max_time != 0 && time > bp.max_time);
+	time = std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count();
+	forced_termination = (bp.max_time != 0 && time > bp.max_time * 1000);
 	lb_at_stop = queue->min_lb();
 
 	while (!queue->empty() &&  !forced_termination)

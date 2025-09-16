@@ -227,16 +227,16 @@ int main(int argc, char* argv[]) {
     }
    
     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
-    double time = std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count();
+    double time = std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count() / 1000;
     
-    logger.log_endl("Time difference [s] = " + std::to_string(time / 1000));
+    logger.log_endl("Time difference [s] = " + std::to_string(time));
     
     std::cout << nr << "\t" << nc << "\t";
-    std::cout << sc.remaining_rows() << "\t" << sc.remaining_cols() << "\t" ;
-    std::cout << lr.ub << "\t" << lr.lb << "\t" << time / 1000 << "\t";
-    std::cout << lr_root.ub << "\t" << lr_root.lb << "\t" << lr_root.time << "\t";
+    std::cout << sc.remaining_rows() << "\t" << sc.remaining_cols() << "\t";
+    std::cout << lr.ub << "\t" << lr.lb << "\t";
+    std::cout << lr_root.ub << "\t" << lr_root.lb << "\t";
     std::cout << std::fixed << std::setprecision(2) << opt_gap << "\t";
-    std::cout << examined_nodes << "\t" << reduction_time  << std::endl;
+    std::cout << examined_nodes << "\t" << reduction_time << "\t" << lr_root.time << "\t" << time << "\t" << std::endl;
 
     return 0;
 }
