@@ -7,6 +7,7 @@
 #include <cmath>
 #include "limits.h"
 #include <map>
+#include <string>
 
 SetCover::SetCover(unsigned r, unsigned c) : n_rows(r), n_cols(c), rows(r), cols(c), costs(c),
 row_density(r, 0), col_density(c), conf(r,c) {
@@ -167,6 +168,33 @@ void SetCover::insert_cell(const unsigned i, const unsigned j) {
         }
     }
     
+}
+
+void SetCover::logic_reductions(Logger& logger) {
+    std::vector<bool> modified_cols(n_cols, false);
+    std::vector<bool> modified_rows(n_rows, false);
+    unsigned deleted;
+    bool first_reduction = true;
+
+    do {
+        deleted = 0;
+
+        deleted += fix_essential_columns(first_reduction, modified_rows);
+        deleted += fix_out_cols_dom_set(first_reduction, modified_cols);
+        deleted += fix_out_dominated_cols(first_reduction, modified_cols, logger);
+        for (unsigned i = 0; i < n_rows; ++i)
+            modified_rows[i] = false;
+        delete_fix_out_cols(modified_rows);
+
+        deleted += fix_out_dominated_rows(first_reduction, modified_rows);
+        for (unsigned j = 0; j < n_cols; ++j)
+            modified_cols[j] = false;
+        delete_fix_out_rows(modified_cols);
+
+        first_reduction = false;
+        logger.log_endl("Remaining rows: " + std::to_string(remaining_rows()));
+        logger.log_endl("Remaining cols: " + std::to_string(remaining_cols()));
+    } while (deleted != 0);
 }
 
 // check if the set of columns that cover row i is a subset of the columns that cover 

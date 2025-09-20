@@ -171,6 +171,8 @@ public:
 
     void insert_cell(const unsigned i, const unsigned j);
 
+    void logic_reductions(Logger& logger);
+
     bool row_is_subset_of(const unsigned i, const unsigned k);
 
     bool col_is_dominated(const unsigned j, const unsigned k);

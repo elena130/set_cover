@@ -27,7 +27,6 @@ unsigned BAB::branching(SetCover& ref_sc, LagrangianResult& b, SetCover& origina
 	SetCover sc(ref_sc);
 	process_bnode(root, sc, ref_sc);
 	end = std::chrono::steady_clock::now();
-	time = std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count();
 
 	root_res.lb = root->par.lb;
 	root_res.ub = root->par.ub;
@@ -65,26 +64,20 @@ unsigned BAB::branching(SetCover& ref_sc, LagrangianResult& b, SetCover& origina
 				derive_bnode(father, son, f, sc);
 				derive_set_cover(sc, son->p_conf);
 				
-				//std::cout << "Node " << son->bi.id << " bc: " << father->bi.b_col << " ";
 				process_bnode(son, sc, ref_sc);
+
+				if (!sc.can_be_solved()) {
+					std::cout << "ID=" << son->bi.id << " DUB=" << son->par.ub << " LB=" << son->par.lb << std::endl;
+				}
+
 				update_bounds(son->par);
 
-				//if (son->bi.id == 1144) {
-				//	std::cout << "Dopo: " << std::endl;
-				//	std::cout << "[" << son->par.ub << ", " << son->par.lb << "]" << std::endl;
-				//	std::cout << "[" << bounds.lb << ", " << bounds.ub << "]" << std::endl;
-				//	std::cout << "Stato: " << son->status << std::endl;
-				//}
-
-				//std::cout << "[" << son->par.lb << ", " << son->par.ub << "] ";
-				//std::cout << "[" << bounds.lb << ", " << bounds.ub << "]" << std::endl;
 				end = std::chrono::steady_clock::now();
 				time = std::chrono::duration_cast<std::chrono::seconds>(end - begin).count();
 				examined_nodes++;
 
-				if (useful_bnode(son, ref_sc)) {
+				if (useful_bnode(son, ref_sc) && sc.can_be_solved() && problem_is_solvable(ref_sc, son->p_conf)) {
 					insert_bnode(son);
-					//bounds.lb = queue->min_lb();
 					waiting_nodes++;
 				}
 				else {
@@ -226,6 +219,7 @@ void BAB::derive_bnode(BNode* father, BNode* son, unsigned f, const SetCover& sc
 	}
 }
 
+// check qua 
 void BAB::derive_set_cover(SetCover& sc, Configuration& conf){
 	sc.change_configuration(conf);
 
@@ -233,6 +227,22 @@ void BAB::derive_set_cover(SetCover& sc, Configuration& conf){
 	std::vector<bool> modified_cols(sc.number_of_cols(), false);
 	sc.delete_fix_out_cols(modified_rows);
 	sc.delete_fix_out_rows(modified_cols);
+
+	Configuration c = sc.get_configuration();
+
+	// scorri le righe scoperte e fissa le colonne essenziali e le fissiamo 
+	unsigned deleted = 1;
+	bool first_reduction = true;
+	modified_rows = std::vector<bool>(sc.number_of_rows(), false);
+	do {
+		deleted = 0;
+		deleted += sc.fix_essential_columns(first_reduction, modified_rows);
+		for (unsigned i = 0; i < sc.number_of_rows(); ++i)
+			modified_rows[i] = false;
+		sc.delete_fix_out_cols(modified_rows);
+
+		first_reduction = false;
+	} while (deleted != 0);
 }
 
 bool BAB::problem_is_solvable(SetCover& sc, Configuration& conf) {

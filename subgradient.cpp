@@ -80,28 +80,6 @@ LagrangianResult SetCover::lagrangian_lb(LagrangianPar& lp, LagrangianVar& lv, u
         if (lr.lb >= lv.ub)
             break;
 
-        // calculate the costs of the removed elements
-        //if (node_id == 3472) {
-        //    std::cout << "Nodo: " << node_id << " iterazione: " << it << std::endl;
-        //    std::cout << "LB: " << lv.lb << std::endl;
-        //    std::cout << "Offset: " << offset << std::endl;
-        //    std::cout << "BEST LB: " << best_lb_value << std::endl;
-        //    std::cout << "LB Sol: ";
-        //    for (unsigned j = 0; j < n_cols; ++j) {
-        //        if (lv.solution[j] == true)
-        //            std::cout << j << "\t";
-        //    }
-        //    std::cout << std::endl;
-        //    
-        //    std::cout << "UB: " << lr.ub << std::endl;
-        //    std::cout << "UB Sol: ";
-        //    for (unsigned j = 0; j < n_cols; ++j) {
-        //        if (lr.ub_sol.sol[j] == 1)
-        //            std::cout << j << "\t";
-        //    }
-        //    std::cout << std::endl;
-        //}
-
         removed = cost_fixing(lp, lv);
         offset += removed;
         // update the best lower bound found
@@ -114,33 +92,6 @@ LagrangianResult SetCover::lagrangian_lb(LagrangianPar& lp, LagrangianVar& lv, u
             best_lb_value = lagrangian_sol_value(lr.lb_sol.sol, lr.lagrangian_costs, lr.multipliers) + offset;
 
             lr.lb = std::ceil(best_lb_value);
-
-            //if (node_id == 3472) {
-                //std::cout << "Nodo: " << node_id << " iterazione: " << it << std::endl;
-                //std::cout << "LB: " << lv.lb << std::endl;
-                //std::cout << "Offset: " << offset << std::endl;
-                //std::cout << "BEST LB: " << best_lb_value << std::endl;
-                //std::cout << "UB: " << lr.ub << std::endl;
-            //}
-
-            
-                //std::cout << "DOPO riduzioni" << std::endl;
-                //std::cout << "ERRORE a nodo: " << node_id << " iterazione: " << it <<  std::endl;
-                //
-                //std::cout << "Colonne: " << std::endl;
-                //for (unsigned j = 0; j < n_cols; ++j) {
-                //    if (c_prec.cols[j] != conf.cols[j]) {
-                //        std::cout << j << "\t" << conf.cols[j] << std::endl;
-                //    }
-                //}
-                //
-                //std::cout << "Righe" << std::endl;
-                //for (unsigned i = 0;i < n_rows; ++i) {
-                //    if (c_prec.rows[i] != conf.rows[i]) {
-                //        std::cout << i << "\t" << conf.rows[i] << std::endl;
-                //    }
-                //}
-            
         }
     }
 
@@ -172,8 +123,8 @@ unsigned SetCover::cost_fixing(LagrangianPar& lp, LagrangianVar& lv) {
             }
         }
         else if (std::ceil(lv.lb + lv.cost_lagrang[j]) >= lv.ub) {
-            conf.cols[j] = FIX_OUT;
-            lv.solution[j] = false;
+                conf.cols[j] = FIX_OUT;
+                lv.solution[j] = false;
         }
     }
 
