@@ -65,11 +65,6 @@ unsigned BAB::branching(SetCover& ref_sc, LagrangianResult& b, SetCover& origina
 				derive_set_cover(sc, son->p_conf);
 				
 				process_bnode(son, sc, ref_sc);
-
-				if (!sc.can_be_solved()) {
-					std::cout << "ID=" << son->bi.id << " DUB=" << son->par.ub << " LB=" << son->par.lb << std::endl;
-				}
-
 				update_bounds(son->par);
 
 				end = std::chrono::steady_clock::now();

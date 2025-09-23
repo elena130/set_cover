@@ -412,7 +412,6 @@ void SetCover::chvtal(Solution& chvatal_sol, double (*calc_score)(double, double
 
 void SetCover::remove_redundant_cols(Solution& solution, std::vector<unsigned>& coperte) {
     std::vector<unsigned> cols_by_cost(solution.set_s.begin(), solution.set_s.end());
-    Cell* ptr;
     bool remove_col;
 
     // order the columns by their cost, using their index to break ties
@@ -426,13 +425,13 @@ void SetCover::remove_redundant_cols(Solution& solution, std::vector<unsigned>& 
             else {
                 return false;
             }
-        });
+    });
 
     auto iter = cols_by_cost.begin();
     while (iter != cols_by_cost.end()) {
         unsigned j = *iter;
         remove_col = true;
-        ptr = cols[j];
+        Cell* ptr = cols[j];
 
         for (unsigned k = 0; k < col_density[j]; ++k) {
             if (coperte[ptr->row] == 1) {
@@ -444,7 +443,7 @@ void SetCover::remove_redundant_cols(Solution& solution, std::vector<unsigned>& 
         
         if (remove_col) {
             // update the number of columns which cover a row after removing column j 
-            Cell* ptr = cols[j];
+            ptr = cols[j];
             for (unsigned k = 0; k < col_density[j]; ++k) {
                 --coperte[ptr->row];
                 ptr = ptr->down;

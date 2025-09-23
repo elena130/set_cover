@@ -213,6 +213,10 @@ public:
 
     LagrangianResult lagrangian_lb(LagrangianPar& lp, LagrangianVar& lv, unsigned int node_id);
 
+    void print_remaining_cols();
+
+    void print_remaining_rows();
+
     unsigned cost_fixing(LagrangianPar& lp, LagrangianVar& lv);
 
     Solution lagrangian_heuristic(LagrangianVar& lv);

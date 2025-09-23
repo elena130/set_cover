@@ -81,6 +81,7 @@ LagrangianResult SetCover::lagrangian_lb(LagrangianPar& lp, LagrangianVar& lv, u
             break;
 
         removed = cost_fixing(lp, lv);
+
         offset += removed;
         // update the best lower bound found
         if (removed > 0) {
@@ -93,6 +94,10 @@ LagrangianResult SetCover::lagrangian_lb(LagrangianPar& lp, LagrangianVar& lv, u
 
             lr.lb = std::ceil(best_lb_value);
         }
+
+        if (!can_be_solved()) {
+            lr.lb = UINT_MAX;
+        }
     }
 
     for (unsigned j = 0; j < n_cols; ++j) {
@@ -102,6 +107,24 @@ LagrangianResult SetCover::lagrangian_lb(LagrangianPar& lp, LagrangianVar& lv, u
     }
 
     return lr;
+}
+
+void SetCover::print_remaining_cols()
+{
+    std::cout << "Remaining cols: ";
+    for (unsigned j : available_col) {
+        std::cout << j << " ";
+    }
+    std::cout << std::endl;
+}
+
+void SetCover::print_remaining_rows()
+{
+    std::cout << "Remaining rows: ";
+    for (unsigned i : available_row) {
+        std::cout << i << " ";
+    }
+    std::cout << std::endl;
 }
 
 // returns the offset given by the fixed columns
@@ -188,7 +211,7 @@ Solution SetCover::lagrangian_heuristic(LagrangianVar& lv) {
             ptr = ptr->right;
         }
         if (covered == false) {
-            solution.add_col(min_cost_col);
+        solution.add_col(min_cost_col);
             // lv.solution[min_cost_col] = true;
             // update the counter for the previous rows 
             covered_by[i]++;
