@@ -294,6 +294,7 @@ void SetCover::remove_row(const unsigned i, std::vector<bool>& modified_cols) {
             cols[j] = NULL;
             costs[j] = UINT_MAX;
             available_col.erase(j);
+            conf.cols[j] = FIX_OUT;
         }
         modified_cols[j] = true;
     }
@@ -340,6 +341,7 @@ void SetCover::remove_col(unsigned j, std::vector<bool>& modified_rows) {
         if (row_density[i] == 0) {
             rows[i] = NULL;
             available_row.erase(i);
+            conf.rows[i] = FIX_OUT;
         }
 
         delete old_ptr;
@@ -542,7 +544,7 @@ bool SetCover::solution_is_correct(const Solution& solution) {
         unsigned counter = 0;
         //std::cout << i << "\t";
         while (counter < row_density[i] && !solution.sol[ptr->col]) {
-            
+
             ++counter;
             ptr = ptr->right;
         }
