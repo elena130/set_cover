@@ -134,11 +134,6 @@ void BAB::process_bnode(BNode* node, SetCover& sc, SetCover& ref_sc) {
 
 	LagrangianResult lagrangian_res = sc.lagrangian_lb(lp, lv, node->bi.id);
 
-	// generate info to create sons
-	node->par = lagrangian_res;
-	node->p_conf = sc.get_configuration();
-	branch_column(sc, node);
-
 	if (!problem_is_solvable(ref_sc, node->p_conf)) {
 		node->status = UNSOLVABLE;
 	}
@@ -228,13 +223,15 @@ void BAB::derive_set_cover(SetCover& sc, Configuration& conf){
 	// scorri le righe scoperte e fissa le colonne essenziali e le fissiamo 
 	unsigned deleted = 1;
 	bool first_reduction = true;
-	modified_rows = std::vector<bool>(sc.number_of_rows(), false);
+	//modified_rows = std::vector<bool>(sc.number_of_rows(), false);
+	//modified_cols = std::vector<bool>(sc.number_of_cols(), false);
 	do {
 		deleted = 0;
 		deleted += sc.fix_essential_columns(first_reduction, modified_rows);
 		for (unsigned i = 0; i < sc.number_of_rows(); ++i)
 			modified_rows[i] = false;
 		sc.delete_fix_out_cols(modified_rows);
+		sc.delete_fix_out_rows(modified_cols);
 
 		first_reduction = false;
 	} while (deleted != 0);

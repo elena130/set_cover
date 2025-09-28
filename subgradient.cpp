@@ -32,7 +32,7 @@ LagrangianResult SetCover::lagrangian_lb(LagrangianPar& lp, LagrangianVar& lv, u
 
     unsigned it;
 
-    for ( it = 0; lv.pi > lp.min_pi && lr.lb < lv.ub;++it) {
+    for ( it = 0; it < UINT_MAX && lv.pi > lp.min_pi && lr.lb < lv.ub;++it) {
         lagrangian_solution(lv);
         lv.lb = lagrangian_sol_value(lv.solution, lv.cost_lagrang, lv.multipliers) + offset;
         calc_subgradients(lv);
@@ -45,6 +45,17 @@ LagrangianResult SetCover::lagrangian_lb(LagrangianPar& lp, LagrangianVar& lv, u
 
             Solution ub_sol = lagrangian_heuristic(lv);
             unsigned ub = solution_value(ub_sol);
+
+            /*
+            if (ub <= 559) {
+                std::cout << "controllami";
+                conf.print();
+                std::cout << std::endl;
+                for (unsigned j = 0; j < n_cols; ++j) {
+                    std::cout << lv.solution[j] << "\t" << costs[j] << std::endl;
+                }
+            }
+            */
 
             if (ub < lr.ub) {
                 lv.ub = ub;
@@ -82,7 +93,7 @@ LagrangianResult SetCover::lagrangian_lb(LagrangianPar& lp, LagrangianVar& lv, u
 
         removed = cost_fixing(lp, lv);
 
-        offset += removed;
+        //offset += removed;
         // update the best lower bound found
         if (removed > 0) {
             for (unsigned j = 0; j < n_cols; ++j) {
@@ -90,6 +101,7 @@ LagrangianResult SetCover::lagrangian_lb(LagrangianPar& lp, LagrangianVar& lv, u
                     lr.lb_sol.remove_col(j);
                 }
             }
+            offset = calc_offset();
             best_lb_value = lagrangian_sol_value(lr.lb_sol.sol, lr.lagrangian_costs, lr.multipliers) + offset;
 
             lr.lb = std::ceil(best_lb_value);
@@ -234,7 +246,12 @@ Solution SetCover::lagrangian_heuristic(LagrangianVar& lv) {
 // C_j = c_j - \sum_i \lambda_i * a_ij
 // z = \sum_j C_j*x_j + \sum_i \lambda_i
 void SetCover::lagrangian_solution(LagrangianVar& lv) {
-    for (unsigned j : available_col) {
+    for (unsigned j = 0; j < n_cols; ++j) {
+        if (conf.cols[j] == FIX_OUT) {
+            lv.solution[j] = false;
+            continue;
+        }
+
         lv.cost_lagrang[j] = costs[j];
         Cell* ptr = cols[j];
         for (unsigned k = 0; k < col_density[j]; ++k) {
