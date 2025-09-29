@@ -150,7 +150,7 @@ int main(int argc, char* argv[]) {
     SetCover sc(original_sc);
 
     std::chrono::steady_clock::time_point end_reduction = std::chrono::steady_clock::now();
-    double reduction_time = std::chrono::duration_cast<std::chrono::milliseconds>(end_reduction - begin_reduction).count() / 1000;
+    double reduction_time = std::chrono::duration_cast<std::chrono::milliseconds>(end_reduction - begin_reduction).count() / 1000.0;
 
     logger.log_endl("");
     logger.log_endl("CHVATAL");
@@ -205,7 +205,7 @@ int main(int argc, char* argv[]) {
     }
    
     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
-    double time = std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count() / 1000;
+    double time = std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count() / 1000.0;
     
     logger.log_endl("Time difference [s] = " + std::to_string(time));
     

@@ -4,7 +4,7 @@ BAB::BAB(std::unique_ptr<IBNodeQueue>&& q, LagrangianResult& lr, BranchParameter
 	queue(std::move(q)), bounds(lr), status(UNKNOWN), bp(branch_par) {
 }
 
-BAB::~BAB(){}
+BAB::~BAB() {}
 
 unsigned BAB::branching(SetCover& ref_sc, LagrangianResult& b, SetCover& original, LagrangianResult& root_res) {
 	std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
@@ -15,7 +15,7 @@ unsigned BAB::branching(SetCover& ref_sc, LagrangianResult& b, SetCover& origina
 	unsigned lb_at_stop = 0;
 
 	unsigned id, f;
-	BNode * root = new BNode();
+	BNode* root = new BNode();
 	root->par.multipliers = std::vector<double>(ref_sc.number_of_rows(), 0);
 	root->par.lagrangian_costs = std::vector<double>(ref_sc.number_of_cols(), 0);
 	root->par.subgradients = std::vector<int>(ref_sc.number_of_rows(), 0);
@@ -30,7 +30,7 @@ unsigned BAB::branching(SetCover& ref_sc, LagrangianResult& b, SetCover& origina
 
 	root_res.lb = root->par.lb;
 	root_res.ub = root->par.ub;
-	root_res.time = std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count() / 1000;
+	root_res.time = std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count() / 1000.0;
 	lb_at_stop = root->par.lb;
 	update_bounds(root->par);
 	examined_nodes = 1;
@@ -47,7 +47,7 @@ unsigned BAB::branching(SetCover& ref_sc, LagrangianResult& b, SetCover& origina
 	forced_termination = (bp.max_time != 0 && time > bp.max_time * 1000);
 	lb_at_stop = queue->min_lb();
 
-	while (!queue->empty() &&  !forced_termination)
+	while (!queue->empty() && !forced_termination)
 	{
 		bounds.lb = queue->min_lb();
 		BNode* father = extract_bnode();
@@ -59,12 +59,19 @@ unsigned BAB::branching(SetCover& ref_sc, LagrangianResult& b, SetCover& origina
 			{
 				id++;
 				BranchInfo bi(id, father->bi.level + 1, f);
-				BNode *son = new BNode(bi, father->p_conf, father->par);
+				BNode* son = new BNode(bi, father->p_conf, father->par);
 				SetCover sc(ref_sc);
 				derive_bnode(father, son, f, sc);
 				derive_set_cover(sc, son->p_conf);
-				
+
+				/*
+				if (son->bi.id == 12)
+					std::cout << "err";
+				*/
+
 				process_bnode(son, sc, ref_sc);
+				if (son->par.ub <= 559)
+					std::cout << son->bi.id;
 				update_bounds(son->par);
 
 				end = std::chrono::steady_clock::now();
@@ -82,7 +89,7 @@ unsigned BAB::branching(SetCover& ref_sc, LagrangianResult& b, SetCover& origina
 				if (bp.max_time != 0 && time > bp.max_time) {
 					forced_termination = true;
 					lb_at_stop = queue->min_lb();
-					if(father->par.lb < lb_at_stop) {
+					if (father->par.lb < lb_at_stop) {
 						lb_at_stop = father->par.lb;
 					}
 					break;
@@ -94,9 +101,10 @@ unsigned BAB::branching(SetCover& ref_sc, LagrangianResult& b, SetCover& origina
 	}
 
 	b = bounds;
-	if(forced_termination) {
+	if (forced_termination) {
 		b.lb = lb_at_stop;
-	} else {
+	}
+	else {
 		b.lb = b.ub;
 	}
 
@@ -113,7 +121,7 @@ void BAB::process_bnode(BNode* node, SetCover& sc, SetCover& ref_sc) {
 	lp.init_lb_sol = node->par.lb_sol;
 	lp.init_pi = bp.init_pi;         // Beasley
 	lp.init_t = 1;
-	lp.max_iter = 1000 ;
+	lp.max_iter = 1000;
 	lp.min_pi = bp.min_pi;
 	lp.min_t = 0.005;
 	lp.worsening_it = bp.worsening_it;
@@ -151,7 +159,7 @@ void BAB::process_bnode(BNode* node, SetCover& sc, SetCover& ref_sc) {
 	branch_column(sc, node);
 }
 
-void BAB::branch_column(SetCover& sc, BNode* node){
+void BAB::branch_column(SetCover& sc, BNode* node) {
 	double max = 0;
 	unsigned row = 0;
 	for (unsigned i = 0; i < sc.number_of_rows(); ++i) {
@@ -178,11 +186,11 @@ void BAB::branch_column(SetCover& sc, BNode* node){
 	node->bi.b_col = col;
 }
 
-void BAB::insert_bnode(BNode* node){
+void BAB::insert_bnode(BNode* node) {
 	queue->push(node);
 }
 
-BNode* BAB::extract_bnode(){
+BNode* BAB::extract_bnode() {
 	return queue->pop();
 }
 
@@ -210,7 +218,7 @@ void BAB::derive_bnode(BNode* father, BNode* son, unsigned f, const SetCover& sc
 }
 
 // check qua 
-void BAB::derive_set_cover(SetCover& sc, Configuration& conf){
+void BAB::derive_set_cover(SetCover& sc, Configuration& conf) {
 	sc.change_configuration(conf);
 
 	std::vector<bool> modified_rows(sc.number_of_rows(), false);
@@ -238,7 +246,7 @@ void BAB::derive_set_cover(SetCover& sc, Configuration& conf){
 }
 
 bool BAB::problem_is_solvable(SetCover& sc, Configuration& conf) {
-	
+
 	for (unsigned i = 0; i < sc.number_of_rows(); ++i) {
 		if (conf.rows[i] == FIX_OUT)
 			continue;

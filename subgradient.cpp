@@ -3,7 +3,7 @@
 #include <climits>
 
 LagrangianResult SetCover::lagrangian_lb(LagrangianPar& lp, LagrangianVar& lv, unsigned int node_id) {
-    
+
 
     unsigned max_worsening_it = lp.worsening_it;
 
@@ -32,7 +32,7 @@ LagrangianResult SetCover::lagrangian_lb(LagrangianPar& lp, LagrangianVar& lv, u
 
     unsigned it;
 
-    for ( it = 0; it < UINT_MAX && lv.pi > lp.min_pi && lr.lb < lv.ub;++it) {
+    for (it = 0; it < UINT_MAX && lv.pi > lp.min_pi && lr.lb < lv.ub;++it) {
         lagrangian_solution(lv);
         lv.lb = lagrangian_sol_value(lv.solution, lv.cost_lagrang, lv.multipliers) + offset;
         calc_subgradients(lv);
@@ -158,8 +158,8 @@ unsigned SetCover::cost_fixing(LagrangianPar& lp, LagrangianVar& lv) {
             }
         }
         else if (std::ceil(lv.lb + lv.cost_lagrang[j]) >= lv.ub) {
-                conf.cols[j] = FIX_OUT;
-                lv.solution[j] = false;
+            conf.cols[j] = FIX_OUT;
+            lv.solution[j] = false;
         }
     }
 
@@ -223,7 +223,7 @@ Solution SetCover::lagrangian_heuristic(LagrangianVar& lv) {
             ptr = ptr->right;
         }
         if (covered == false) {
-        solution.add_col(min_cost_col);
+            solution.add_col(min_cost_col);
             // lv.solution[min_cost_col] = true;
             // update the counter for the previous rows 
             covered_by[i]++;
@@ -297,7 +297,7 @@ void SetCover::calc_subgradients(LagrangianVar& lv) {
                 lv.subgradients[ptr->row] -= 1;
                 ptr = ptr->down;
             }
-          
+
         }
     }
 }
@@ -315,7 +315,7 @@ void SetCover::update_step_size(LagrangianPar& lp, LagrangianVar& lv) {
         lv.worsening_it = 0;
     }
     else {
-        lv.t = lv.pi * (1.05*(double)lv.ub - lv.lb) / direction_norm_2;
+        lv.t = lv.pi * (1.05 * (double)lv.ub - lv.lb) / direction_norm_2;
     }
 }
 
